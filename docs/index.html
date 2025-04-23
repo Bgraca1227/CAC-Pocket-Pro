@@ -7,8 +7,6 @@
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <!-- Leaflet Draw CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     
@@ -506,6 +504,19 @@
             opacity: 1;
         }
 
+        /* Guide lines for drawing */
+        .guide-line {
+            stroke-dasharray: 5, 5;
+            animation: dash 20s linear infinite;
+            stroke-width: 3;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: 1000;
+            }
+        }
+
         /* Help modal */
         .help-modal {
             position: fixed;
@@ -720,7 +731,7 @@
                         <ol class="help-list">
                             <li>Tap the blue + button to access drawing tools</li>
                             <li>Select what you want to add: street pitch, curb pitch, catch basin or high point</li>
-                            <li>Follow on-screen instructions to place elements</li>
+                            <li>For pitches: tap once to start line, tap again to end and set %</li>
                             <li>Areas where water might be trapped will automatically highlight in red</li>
                         </ol>
                     </div>
@@ -783,7 +794,7 @@
                         <div class="help-heading">Tips & Tricks</div>
                         <ul class="help-list">
                             <li>Use the locate button to center the map on your current position</li>
-                            <li>Clear button removes all elements from the map</li>
+                            <li>Switch to satellite view to better see streets and curbs</li>
                             <li>Make sure to place catch basins at low points where water should drain</li>
                             <li>Any red glowing areas indicate potential drainage problems that need to be fixed</li>
                         </ul>
@@ -803,9 +814,8 @@
     </div>
 
     <!-- Scripts -->
-    <!-- Leaflet and Plugins -->
+    <!-- Leaflet -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -823,9 +833,9 @@
                 let map, userMarker, currentPosition;
                 let drawingMode = null;
                 let drawingType = null;
-                let tempPolyline = null;
+                let startPoint = null;
+                let guideLayer = null;
                 let pitchPercent = 2.0;
-                let drawControl;
                 let drawnItems = new L.FeatureGroup(); // All drawn lines
                 let catchBasins = new L.FeatureGroup(); // Catch basins
                 let highPoints = new L.FeatureGroup(); // High points
@@ -856,10 +866,38 @@
                         position: 'bottomleft'
                     }).addTo(map);
 
-                    // Add tile layer (OpenStreetMap)
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    // Add tile layers with layer control
+                    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                         maxZoom: 22
+                    });
+
+                    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                        maxZoom: 22
+                    });
+
+                    const hybridLayer = L.layerGroup([
+                        satelliteLayer,
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                            maxZoom: 22,
+                            opacity: 0.4
+                        })
+                    ]);
+
+                    const baseMaps = {
+                        "Street": streetLayer,
+                        "Satellite": satelliteLayer,
+                        "Hybrid": hybridLayer
+                    };
+
+                    // Add hybrid layer by default (best for seeing streets and curbs)
+                    hybridLayer.addTo(map);
+
+                    // Add layer control to top right
+                    L.control.layers(baseMaps, null, {
+                        position: 'topright'
                     }).addTo(map);
 
                     // Add feature groups to map
@@ -869,8 +907,8 @@
                     map.addLayer(auxiliaryMarkers);
                     map.addLayer(trappedAreas);
 
-                    // Initialize draw control
-                    initializeDrawControl();
+                    // Guide layer for drawing
+                    guideLayer = L.layerGroup().addTo(map);
 
                     // Get user location
                     getUserLocation();
@@ -879,31 +917,15 @@
                     map.on('click', handleMapClick);
                 }
 
-                function initializeDrawControl() {
-                    // We'll only use this for programmatic drawing
-                    drawControl = new L.Draw.Polyline(map, {
-                        shapeOptions: {
-                            color: STREET_COLOR,
-                            weight: 5,
-                            opacity: 0.8
-                        }
-                    });
-                }
-
                 function handleMapClick(e) {
                     if (drawingMode === 'draw') {
-                        // If we're not currently drawing a line, start one
-                        if (!tempPolyline) {
-                            // Create a new polyline with just the click point
-                            const color = drawingType === 'street' ? STREET_COLOR : CURB_COLOR;
-                            tempPolyline = L.polyline([e.latlng], {
-                                color: color,
-                                weight: 5,
-                                opacity: 0.8
-                            }).addTo(map);
+                        // If we don't have a start point, set it
+                        if (!startPoint) {
+                            startPoint = e.latlng;
                             
-                            // Add first point marker to indicate starting point
-                            L.circleMarker(e.latlng, {
+                            // Add start marker
+                            const color = drawingType === 'street' ? STREET_COLOR : CURB_COLOR;
+                            L.circleMarker(startPoint, {
                                 radius: 5,
                                 fillColor: color,
                                 color: '#fff',
@@ -911,27 +933,55 @@
                                 opacity: 1,
                                 fillOpacity: 0.8,
                                 className: 'temp-marker'
-                            }).addTo(map);
+                            }).addTo(guideLayer);
                             
-                            showToast("Click to add points, double-click to finish");
-                        } else {
-                            // Add the new point to the existing polyline
-                            const latlngs = tempPolyline.getLatLngs();
-                            latlngs.push(e.latlng);
-                            tempPolyline.setLatLngs(latlngs);
+                            // Add guide line to follow cursor
+                            const guideLine = L.polyline([startPoint, e.latlng], {
+                                color: color,
+                                opacity: 0.6,
+                                weight: 3,
+                                dashArray: '5, 5',
+                                className: 'guide-line'
+                            }).addTo(guideLayer);
                             
-                            // If we have at least 2 points, show the finish button
-                            if (latlngs.length >= 2) {
-                                // Check for double click to finish
-                                const now = new Date().getTime();
-                                if (tempPolyline.lastClickTime && now - tempPolyline.lastClickTime < 300) {
-                                    // Double click - finish the line
-                                    finishDrawing();
-                                } else {
-                                    // Single click - update last click time
-                                    tempPolyline.lastClickTime = now;
+                            // Update guide line on mouse move
+                            map.on('mousemove', function(ev) {
+                                if (guideLine) {
+                                    guideLine.setLatLngs([startPoint, ev.latlng]);
                                 }
-                            }
+                            });
+                            
+                            showToast("Tap again to complete the line");
+                        } else {
+                            // Complete the line
+                            const endPoint = e.latlng;
+                            
+                            // Remove guide layer
+                            guideLayer.clearLayers();
+                            map.off('mousemove');
+                            
+                            // Create final polyline
+                            const color = drawingType === 'street' ? STREET_COLOR : CURB_COLOR;
+                            const finalPolyline = L.polyline([startPoint, endPoint], {
+                                color: color,
+                                weight: 5,
+                                opacity: 0.8,
+                                pitchType: drawingType,
+                                endpoints: [startPoint, endPoint] // Store endpoints for later use
+                            });
+                            
+                            // Show pitch input overlay
+                            document.getElementById('pitch-title').innerText = 
+                                `Set ${drawingType === 'street' ? 'Street' : 'Curb'} Pitch Percentage`;
+                            document.getElementById('pitch-overlay').classList.add('visible');
+                            document.getElementById('pitch-input').value = pitchPercent;
+                            document.getElementById('pitch-input').focus();
+                            
+                            // Store the polyline temporarily
+                            window.tempFinalPolyline = finalPolyline;
+                            
+                            // Reset start point
+                            startPoint = null;
                         }
                     } else if (drawingMode === 'catchBasin') {
                         // Add catch basin at click location
@@ -941,37 +991,6 @@
                         // Add high point at click location
                         addHighPoint(e.latlng);
                         exitDrawingMode();
-                    }
-                }
-
-                function finishDrawing() {
-                    if (tempPolyline && tempPolyline.getLatLngs().length >= 2) {
-                        // Save the final polyline
-                        const finalPolyline = L.polyline(tempPolyline.getLatLngs(), {
-                            color: tempPolyline.options.color,
-                            weight: 5,
-                            opacity: 0.8,
-                            pitchType: drawingType
-                        });
-                        
-                        // Remove temporary polyline and markers
-                        map.removeLayer(tempPolyline);
-                        document.querySelectorAll('.temp-marker').forEach(marker => {
-                            marker.remove();
-                        });
-                        
-                        // Clear the temporary polyline reference
-                        tempPolyline = null;
-                        
-                        // Show pitch input overlay to get the percentage
-                        document.getElementById('pitch-title').innerText = 
-                            `Set ${drawingType === 'street' ? 'Street' : 'Curb'} Pitch Percentage`;
-                        document.getElementById('pitch-overlay').classList.add('visible');
-                        document.getElementById('pitch-input').value = pitchPercent;
-                        document.getElementById('pitch-input').focus();
-                        
-                        // Store the polyline temporarily
-                        window.tempFinalPolyline = finalPolyline;
                     }
                 }
 
@@ -998,15 +1017,15 @@
                         // Show toast notification
                         showToast(`Added ${pitchPercent}% ${drawingType} pitch line`);
                         
-                        // Exit drawing mode
-                        exitDrawingMode();
-                        
                         // Clear the temporary final polyline
                         window.tempFinalPolyline = null;
                     }
                     
                     // Hide the pitch overlay
                     document.getElementById('pitch-overlay').classList.remove('visible');
+                    
+                    // Exit drawing mode
+                    exitDrawingMode();
                 }
 
                 function cancelPitch() {
@@ -1026,12 +1045,15 @@
                     if (coords.length < 2) return;
                     
                     // Get midpoint of line
-                    const midIndex = Math.floor(coords.length / 2);
-                    const midPoint = coords[midIndex];
+                    const startPoint = coords[0];
+                    const endPoint = coords[coords.length - 1];
+                    const midPoint = L.latLng(
+                        (startPoint.lat + endPoint.lat) / 2,
+                        (startPoint.lng + endPoint.lng) / 2
+                    );
                     
-                    // Get direction angle
-                    const prevPoint = coords[midIndex - 1];
-                    const angle = getAngle(prevPoint, midPoint);
+                    // Get direction angle - assuming water flows from startPoint to endPoint
+                    const angle = getAngle(startPoint, endPoint);
                     
                     // Create arrow marker
                     const arrowIcon = L.divIcon({
@@ -1056,7 +1078,7 @@
                     const coords = polyline.getLatLngs();
                     if (coords.length < 2) return;
                     
-                    // Get first point of line
+                    // Get first point of line (high point)
                     const point = coords[0];
                     
                     // Create label marker
@@ -1099,7 +1121,7 @@
                     // Show toast notification
                     showToast("Catch basin added");
                     
-                    // Check for trapped water areas
+                    // Re-check for trapped water
                     detectTrappedWater();
                 }
 
@@ -1124,10 +1146,13 @@
                     
                     // Show toast notification
                     showToast("High point added");
+                    
+                    // Re-check for trapped water
+                    detectTrappedWater();
                 }
 
                 function getAngle(start, end) {
-                    // Calculate angle in degrees
+                    // Calculate angle in degrees for arrow direction
                     const lat1 = start.lat * Math.PI / 180;
                     const lat2 = end.lat * Math.PI / 180;
                     const lng1 = start.lng * Math.PI / 180;
@@ -1146,16 +1171,29 @@
                     // Clear existing trapped areas
                     trappedAreas.clearLayers();
                     
-                    // Get all polylines
-                    const polylines = [];
+                    // Get all line endpoints
+                    const endpoints = [];
                     drawnItems.eachLayer(function(layer) {
                         if (layer instanceof L.Polyline) {
-                            polylines.push(layer);
+                            // Get the coordinates (only first and last point matter for us)
+                            const points = layer.getLatLngs();
+                            const startPoint = points[0];
+                            const endPoint = points[points.length - 1];
+                            
+                            // Assuming water flows from start to end
+                            endpoints.push({
+                                point: endPoint,
+                                type: 'end', // Water flows to this point
+                                lineId: L.stamp(layer)
+                            });
+                            
+                            endpoints.push({
+                                point: startPoint,
+                                type: 'start', // Water flows from this point
+                                lineId: L.stamp(layer)
+                            });
                         }
                     });
-                    
-                    // If we have less than 2 polylines, there can't be trapped water
-                    if (polylines.length < 2) return;
                     
                     // Get all catch basin positions
                     const basinPositions = [];
@@ -1163,117 +1201,101 @@
                         basinPositions.push(layer.getLatLng());
                     });
                     
-                    // Check for intersections between polylines
-                    const intersections = [];
-                    for (let i = 0; i < polylines.length; i++) {
-                        for (let j = i + 1; j < polylines.length; j++) {
-                            const intersection = findIntersection(polylines[i], polylines[j]);
-                            if (intersection) {
-                                intersections.push({
-                                    point: intersection,
-                                    lines: [polylines[i], polylines[j]]
-                                });
-                            }
-                        }
-                    }
+                    // Group endpoints that are close to each other (potential intersection points)
+                    const pointGroups = groupClosePoints(endpoints);
                     
-                    // Check each intersection to see if water would be trapped
-                    intersections.forEach(intersection => {
-                        const point = intersection.point;
-                        const lines = intersection.lines;
+                    // Check each point group for trapped water
+                    pointGroups.forEach(group => {
+                        // Skip if there's only one point in the group
+                        if (group.points.length <= 1) return;
                         
-                        // Check if any catch basin is close to this intersection
-                        const hasNearbyCatchBasin = basinPositions.some(basinPos => {
-                            const distance = map.distance(point, basinPos);
-                            return distance < 20; // 20 meters threshold
+                        // Count how many endpoints and startpoints we have
+                        let endCount = 0;
+                        
+                        group.points.forEach(point => {
+                            if (point.type === 'end') {
+                                endCount++;
+                            }
                         });
                         
-                        // If there's a nearby catch basin, water won't be trapped
-                        if (hasNearbyCatchBasin) return;
-                        
-                        // Get the flow directions of the two lines
-                        const flows = lines.map(line => {
-                            const coords = line.getLatLngs();
-                            const firstPoint = coords[0];
-                            const lastPoint = coords[coords.length - 1];
-                            
-                            // Calculate distances from intersection to start and end points
-                            const distToStart = map.distance(point, firstPoint);
-                            const distToEnd = map.distance(point, lastPoint);
-                            
-                            // If intersection is closer to end, water flows toward intersection
-                            // If intersection is closer to start, water flows away from intersection
-                            return distToEnd < distToStart ? 'toward' : 'away';
-                        });
-                        
-                        // If both lines flow toward the intersection, water will be trapped
-                        if (flows[0] === 'toward' && flows[1] === 'toward') {
-                            // Create trapped water marker
-                            const trappedIcon = L.divIcon({
-                                html: `<div class="trapped-water"><i class="fas fa-exclamation-triangle" style="color: ${TRAP_COLOR};"></i></div>`,
-                                className: '',
-                                iconSize: [30, 30]
+                        // If we have multiple 'end' points, water might be trapped here
+                        if (endCount >= 2) {
+                            // Check if any catch basin is close to this group
+                            const hasNearbyCatchBasin = basinPositions.some(basinPos => {
+                                return isPointClose(basinPos, group.centroid, 15);
                             });
                             
-                            // Add marker
-                            const marker = L.marker(point, {
-                                icon: trappedIcon,
-                                draggable: false
-                            }).addTo(trappedAreas);
-                            
-                            // Show warning toast
-                            showToast("Warning: Water trap detected! Add a catch basin at this location.");
+                            // If there's no nearby catch basin, water will be trapped
+                            if (!hasNearbyCatchBasin) {
+                                // Create trapped water marker
+                                const trappedIcon = L.divIcon({
+                                    html: `<div class="trapped-water"><i class="fas fa-exclamation-triangle" style="color: ${TRAP_COLOR};"></i></div>`,
+                                    className: '',
+                                    iconSize: [30, 30]
+                                });
+                                
+                                // Add marker at the centroid of the group
+                                const marker = L.marker(group.centroid, {
+                                    icon: trappedIcon,
+                                    draggable: false
+                                }).addTo(trappedAreas);
+                                
+                                // Show warning toast
+                                showToast("Warning: Water trap detected! Add a catch basin here.");
+                            }
                         }
                     });
                 }
 
-                function findIntersection(line1, line2) {
-                    // Get coordinates of both lines
-                    const coords1 = line1.getLatLngs();
-                    const coords2 = line2.getLatLngs();
+                function groupClosePoints(points) {
+                    const groups = [];
+                    const processed = new Set();
                     
-                    // Check each segment of line1 against each segment of line2
-                    for (let i = 0; i < coords1.length - 1; i++) {
-                        for (let j = 0; j < coords2.length - 1; j++) {
-                            const seg1 = [coords1[i], coords1[i + 1]];
-                            const seg2 = [coords2[j], coords2[j + 1]];
+                    // Process each point
+                    for (let i = 0; i < points.length; i++) {
+                        // Skip if already processed
+                        if (processed.has(i)) continue;
+                        
+                        // Start a new group with this point
+                        const group = {
+                            points: [points[i]],
+                            centroid: points[i].point
+                        };
+                        processed.add(i);
+                        
+                        // Find all close points
+                        for (let j = 0; j < points.length; j++) {
+                            if (i === j || processed.has(j)) continue;
                             
-                            const intersection = segmentIntersection(seg1, seg2);
-                            if (intersection) {
-                                return intersection;
+                            if (isPointClose(points[i].point, points[j].point, 10)) {
+                                // Add to group
+                                group.points.push(points[j]);
+                                processed.add(j);
                             }
                         }
+                        
+                        // Calculate centroid if we have multiple points
+                        if (group.points.length > 1) {
+                            const latSum = group.points.reduce((sum, p) => sum + p.point.lat, 0);
+                            const lngSum = group.points.reduce((sum, p) => sum + p.point.lng, 0);
+                            
+                            group.centroid = L.latLng(
+                                latSum / group.points.length,
+                                lngSum / group.points.length
+                            );
+                        }
+                        
+                        // Add group
+                        groups.push(group);
                     }
                     
-                    return null;
+                    return groups;
                 }
 
-                function segmentIntersection(seg1, seg2) {
-                    // Extract points
-                    const p1 = seg1[0], p2 = seg1[1];
-                    const p3 = seg2[0], p4 = seg2[1];
-                    
-                    // Convert to simple x,y coordinates
-                    const x1 = p1.lng, y1 = p1.lat;
-                    const x2 = p2.lng, y2 = p2.lat;
-                    const x3 = p3.lng, y3 = p3.lat;
-                    const x4 = p4.lng, y4 = p4.lat;
-                    
-                    // Check if segments intersect
-                    const d = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-                    if (d === 0) return null; // Parallel lines
-                    
-                    const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / d;
-                    const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / d;
-                    
-                    // Check if intersection is on both segments
-                    if (ua < 0 || ua > 1 || ub < 0 || ub > 1) return null;
-                    
-                    // Calculate intersection point
-                    const x = x1 + ua * (x2 - x1);
-                    const y = y1 + ua * (y2 - y1);
-                    
-                    return L.latLng(y, x);
+                function isPointClose(point1, point2, thresholdMeters) {
+                    // Calculate distance between points in meters
+                    const distance = map.distance(point1, point2);
+                    return distance <= thresholdMeters;
                 }
 
                 function enterDrawingMode(mode, type) {
@@ -1281,26 +1303,32 @@
                     drawingMode = mode;
                     drawingType = type;
                     
+                    // Reset start point
+                    startPoint = null;
+                    
+                    // Clear guide layer
+                    guideLayer.clearLayers();
+                    
                     // Update mode indicator
                     const modeIndicator = document.getElementById('mode-indicator');
                     const modeText = document.getElementById('mode-text');
                     
                     if (mode === 'draw') {
                         if (type === 'street') {
-                            modeText.innerText = 'Drawing Street Pitch';
+                            modeText.innerText = 'Tap to Start Street Pitch';
                             modeIndicator.querySelector('i').className = 'fas fa-road';
                             modeIndicator.querySelector('i').style.color = STREET_COLOR;
                         } else {
-                            modeText.innerText = 'Drawing Curb Pitch';
+                            modeText.innerText = 'Tap to Start Curb Pitch';
                             modeIndicator.querySelector('i').className = 'fas fa-grip-lines';
                             modeIndicator.querySelector('i').style.color = CURB_COLOR;
                         }
                     } else if (mode === 'catchBasin') {
-                        modeText.innerText = 'Adding Catch Basin';
+                        modeText.innerText = 'Tap to Add Catch Basin';
                         modeIndicator.querySelector('i').className = 'fas fa-drain';
                         modeIndicator.querySelector('i').style.color = BASIN_COLOR;
                     } else if (mode === 'highPoint') {
-                        modeText.innerText = 'Adding High Point';
+                        modeText.innerText = 'Tap to Add High Point';
                         modeIndicator.querySelector('i').className = 'fas fa-chevron-up';
                         modeIndicator.querySelector('i').style.color = HIGH_POINT_COLOR;
                     }
@@ -1316,15 +1344,14 @@
                     // Reset drawing mode
                     drawingMode = null;
                     drawingType = null;
+                    startPoint = null;
+                    
+                    // Clear guide layer
+                    guideLayer.clearLayers();
+                    map.off('mousemove');
                     
                     // Hide mode indicator
                     document.getElementById('mode-indicator').classList.remove('visible');
-                    
-                    // Remove any temporary drawing
-                    if (tempPolyline) {
-                        map.removeLayer(tempPolyline);
-                        tempPolyline = null;
-                    }
                     
                     // Remove any temporary markers
                     document.querySelectorAll('.temp-marker').forEach(marker => {
@@ -1395,7 +1422,7 @@
                             document.querySelector('.loading-overlay').style.display = 'none';
                             
                             // Set default view
-                            map.setView([40.7128, -74.0060], 14);
+                            map.setView([40.7128, -74.0060], 16);
                             
                             // Show toast notification
                             showToast("Please enable location access for best experience");
@@ -1412,7 +1439,7 @@
                         document.querySelector('.loading-overlay').style.display = 'none';
                         
                         // Set default view
-                        map.setView([40.7128, -74.0060], 14);
+                        map.setView([40.7128, -74.0060], 16);
                         
                         // Show toast notification
                         showToast("Your browser doesn't support geolocation");
@@ -1440,6 +1467,7 @@
                     highPoints.clearLayers();
                     auxiliaryMarkers.clearLayers();
                     trappedAreas.clearLayers();
+                    guideLayer.clearLayers();
                     
                     // Exit drawing mode
                     exitDrawingMode();
