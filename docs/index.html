@@ -89,6 +89,34 @@
         .toolbar-button i {
             font-size: 24px;
         }
+        
+        /* Mode indicator */
+        .mode-indicator {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            z-index: 1000;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .mode-indicator.drawing-mode {
+            background-color: var(--primary-color);
+        }
+        
+        .tool-btn {
+            display: none;
+        }
+        
+        .tool-btn.visible {
+            display: flex;
+        }
 
         .bottom-panel {
             position: absolute;
@@ -481,6 +509,134 @@
         .notification i {
             margin-right: 10px;
         }
+        
+        /* Pitch Input Modal */
+        .pitch-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .pitch-modal-content {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 320px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .pitch-modal-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: var(--dark-color);
+            text-align: center;
+        }
+        
+        .pitch-presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+        
+        .pitch-preset-btn {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--primary-color);
+            background-color: white;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .pitch-preset-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .pitch-custom {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .pitch-custom input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .pitch-modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .pitch-modal-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .pitch-modal-btn.cancel {
+            background-color: #f5f5f5;
+            color: var(--gray-color);
+        }
+        
+        .pitch-modal-btn.apply {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* Water trap visualization */
+        .water-trap {
+            stroke: #f44336;
+            stroke-width: 3;
+            fill: rgba(244, 67, 54, 0.2);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.5; }
+        }
+        
+        .type-selector {
+            display: flex;
+            margin-bottom: 15px;
+            background-color: #f5f5f5;
+            border-radius: 25px;
+            padding: 5px;
+        }
+        
+        .type-option {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .type-option.active {
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -521,20 +677,31 @@
             <i class="fas fa-map-marker-alt"></i>
             <div class="status-text">Initializing location...</div>
         </div>
+        
+        <!-- Mode Indicator -->
+        <div class="mode-indicator">
+            <span class="mode-text">Navigation Mode</span>
+        </div>
 
         <!-- Toolbar -->
         <div class="toolbar">
+            <button class="toolbar-button" id="mode-toggle-btn" title="Toggle between navigation and drawing modes">
+                <i class="fas fa-hand-paper"></i>
+            </button>
             <button class="toolbar-button" id="locate-btn" title="Center on my location">
                 <i class="fas fa-crosshairs"></i>
             </button>
-            <button class="toolbar-button" id="draw-pitch-btn" title="Draw pitch line">
+            <button class="toolbar-button tool-btn" id="draw-pitch-btn" title="Draw pitch line">
                 <i class="fas fa-pencil-alt"></i>
             </button>
-            <button class="toolbar-button" id="high-point-btn" title="Add high point">
+            <button class="toolbar-button tool-btn" id="high-point-btn" title="Add high point">
                 <i class="fas fa-chevron-up"></i>
             </button>
-            <button class="toolbar-button" id="catch-basin-btn" title="Add catch basin">
+            <button class="toolbar-button tool-btn" id="catch-basin-btn" title="Add catch basin">
                 <i class="fas fa-drain"></i>
+            </button>
+            <button class="toolbar-button" id="analyze-btn" title="Analyze water traps">
+                <i class="fas fa-tint"></i>
             </button>
             <button class="toolbar-button" id="clear-btn" title="Clear all">
                 <i class="fas fa-trash"></i>
@@ -651,10 +818,19 @@
                         
                         <div class="feature-item">
                             <div class="feature-icon">
+                                <i class="fas fa-hand-paper"></i>
+                            </div>
+                            <div class="feature-text">
+                                <strong>Navigation/Drawing Mode</strong> - Toggle between navigation mode (for moving the map) and drawing mode (for adding elements). This prevents accidental drawing when trying to move the map.
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
                                 <i class="fas fa-pencil-alt"></i>
                             </div>
                             <div class="feature-text">
-                                <strong>Pitch Lines</strong> - Draw slope lines to indicate drainage direction. Set the percentage slope and choose between curb or street type.
+                                <strong>Pitch Lines</strong> - Draw slope lines to indicate drainage direction. Simply draw the line, then set the percentage slope and type (curb or street) in the popup dialog.
                             </div>
                         </div>
                         
@@ -673,6 +849,15 @@
                             </div>
                             <div class="feature-text">
                                 <strong>Catch Basins</strong> - Mark drainage points where water will collect.
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-tint"></i>
+                            </div>
+                            <div class="feature-text">
+                                <strong>Water Trap Detection</strong> - Automatically detect and highlight areas where water will be trapped due to converging slopes without a catch basin.
                             </div>
                         </div>
                         
@@ -718,6 +903,36 @@
             <i class="fas fa-info-circle"></i>
             <span id="notification-text">Notification message</span>
         </div>
+        
+        <!-- Pitch Input Modal -->
+        <div class="pitch-modal" id="pitch-modal">
+            <div class="pitch-modal-content">
+                <div class="pitch-modal-title">Set Pitch Percentage</div>
+                
+                <div class="type-selector">
+                    <div class="type-option active" data-type="curb">Curb</div>
+                    <div class="type-option" data-type="street">Street</div>
+                </div>
+                
+                <div class="pitch-presets">
+                    <button class="pitch-preset-btn" data-value="0.5">0.5%</button>
+                    <button class="pitch-preset-btn" data-value="1.0">1.0%</button>
+                    <button class="pitch-preset-btn" data-value="1.5">1.5%</button>
+                    <button class="pitch-preset-btn" data-value="2.0">2.0%</button>
+                    <button class="pitch-preset-btn" data-value="2.5">2.5%</button>
+                    <button class="pitch-preset-btn" data-value="3.0">3.0%</button>
+                </div>
+                
+                <div class="pitch-custom">
+                    <input type="number" id="custom-pitch-percent" min="0.1" max="100" step="0.1" value="2.0" placeholder="Custom %">
+                </div>
+                
+                <div class="pitch-modal-buttons">
+                    <button class="pitch-modal-btn cancel" id="pitch-cancel-btn">Cancel</button>
+                    <button class="pitch-modal-btn apply" id="pitch-apply-btn">Apply</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
@@ -748,8 +963,12 @@
                 let markers = new L.FeatureGroup();
                 let highPoints = new L.FeatureGroup();
                 let catchBasins = new L.FeatureGroup();
+                let waterTraps = new L.FeatureGroup();
                 let editMode = false;
                 let selectedMarker = null;
+                let isNavigationMode = true;
+                let tempPolyline = null;
+                let tempLatLngs = [];
 
                 // Initialize the map
                 initMap();
@@ -779,6 +998,7 @@
                     map.addLayer(markers);
                     map.addLayer(highPoints);
                     map.addLayer(catchBasins);
+                    map.addLayer(waterTraps);
 
                     // Initialize draw control
                     initializeDrawControl();
@@ -788,6 +1008,11 @@
 
                     // Map interaction events
                     map.on('click', handleMapClick);
+                    
+                    // Handle map clicks for drawing lines
+                    map.on('mousedown', handleMouseDown);
+                    map.on('mousemove', handleMouseMove);
+                    map.on('mouseup', handleMouseUp);
                 }
 
                 function initializeDrawControl() {
@@ -1069,11 +1294,60 @@
                     }
                 }
 
+                function handleMouseDown(e) {
+                    if (!isNavigationMode && drawingMode === 'draw') {
+                        tempLatLngs = [e.latlng];
+                        tempPolyline = L.polyline(tempLatLngs, {
+                            color: currentColor,
+                            weight: 5,
+                            opacity: 0.8
+                        }).addTo(map);
+                        
+                        // Prevent map dragging
+                        map.dragging.disable();
+                    }
+                }
+                
+                function handleMouseMove(e) {
+                    if (tempPolyline && !isNavigationMode && drawingMode === 'draw') {
+                        tempLatLngs.push(e.latlng);
+                        tempPolyline.setLatLngs(tempLatLngs);
+                    }
+                }
+                
+                function handleMouseUp(e) {
+                    if (tempPolyline && !isNavigationMode && drawingMode === 'draw') {
+                        // Finalize the line
+                        if (tempLatLngs.length >= 2) {
+                            // Store final polyline
+                            const finalLatLngs = [...tempLatLngs];
+                            
+                            // Remove temp polyline
+                            map.removeLayer(tempPolyline);
+                            tempPolyline = null;
+                            tempLatLngs = [];
+                            
+                            // Show pitch input modal
+                            showPitchModal(finalLatLngs);
+                        } else {
+                            // Remove temp polyline if too short
+                            map.removeLayer(tempPolyline);
+                            tempPolyline = null;
+                            tempLatLngs = [];
+                        }
+                        
+                        // Re-enable map dragging
+                        map.dragging.enable();
+                    }
+                }
+
                 function handleMapClick(e) {
-                    if (drawingMode === 'highPoint') {
-                        addHighPoint(e.latlng);
-                    } else if (drawingMode === 'catchBasin') {
-                        addCatchBasin(e.latlng);
+                    if (!isNavigationMode) {
+                        if (drawingMode === 'highPoint') {
+                            addHighPoint(e.latlng);
+                        } else if (drawingMode === 'catchBasin') {
+                            addCatchBasin(e.latlng);
+                        }
                     }
                 }
 
@@ -1189,32 +1463,67 @@
                     // Set new mode
                     drawingMode = mode;
                     
+                    // Check if switching to navigation mode
+                    if (mode === null) {
+                        isNavigationMode = true;
+                        document.querySelector('.mode-indicator').classList.remove('drawing-mode');
+                        document.querySelector('.mode-text').textContent = 'Navigation Mode';
+                        document.getElementById('mode-toggle-btn').innerHTML = '<i class="fas fa-hand-paper"></i>';
+                        
+                        // Hide tool buttons
+                        document.querySelectorAll('.tool-btn').forEach(btn => {
+                            btn.classList.remove('visible');
+                        });
+                        
+                        // Reset any temp drawing
+                        if (tempPolyline) {
+                            map.removeLayer(tempPolyline);
+                            tempPolyline = null;
+                        }
+                        tempLatLngs = [];
+                    } else {
+                        isNavigationMode = false;
+                        document.querySelector('.mode-indicator').classList.add('drawing-mode');
+                        document.querySelector('.mode-text').textContent = 'Drawing Mode';
+                        document.getElementById('mode-toggle-btn').innerHTML = '<i class="fas fa-map"></i>';
+                        document.getElementById('mode-toggle-btn').classList.add('active');
+                        
+                        // Show tool buttons
+                        document.querySelectorAll('.tool-btn').forEach(btn => {
+                            btn.classList.add('visible');
+                        });
+                    }
+                    
                     // Update UI based on mode
                     if (mode === 'draw') {
                         document.getElementById('draw-pitch-btn').classList.add('active');
                         document.getElementById('pitch-options').style.display = 'block';
                         document.getElementById('marker-options').style.display = 'none';
-                        
-                        // Start drawing mode
-                        new L.Draw.Polyline(map, drawControl.options.draw.polyline).enable();
+                        document.querySelector('.mode-text').textContent = 'Drawing Mode: Pitch Line';
                         
                     } else if (mode === 'highPoint') {
                         document.getElementById('high-point-btn').classList.add('active');
                         document.getElementById('pitch-options').style.display = 'none';
                         document.getElementById('marker-options').style.display = 'block';
+                        document.querySelector('.mode-text').textContent = 'Drawing Mode: High Point';
                         
                     } else if (mode === 'catchBasin') {
                         document.getElementById('catch-basin-btn').classList.add('active');
                         document.getElementById('pitch-options').style.display = 'none';
                         document.getElementById('marker-options').style.display = 'block';
+                        document.querySelector('.mode-text').textContent = 'Drawing Mode: Catch Basin';
                         
-                    } else {
+                    } else if (mode !== null) {
                         document.getElementById('pitch-options').style.display = 'none';
                         document.getElementById('marker-options').style.display = 'block';
                     }
                     
-                    // Show/expand bottom panel
-                    document.querySelector('.bottom-panel').classList.add('expanded');
+                    // Show/expand bottom panel if in drawing mode
+                    if (mode !== null) {
+                        document.querySelector('.bottom-panel').classList.add('expanded');
+                    } else {
+                        document.querySelector('.bottom-panel').classList.remove('expanded');
+                    }
                 }
 
                 function updateEditHandlers() {
@@ -1251,6 +1560,7 @@
                     markers.clearLayers();
                     highPoints.clearLayers();
                     catchBasins.clearLayers();
+                    waterTraps.clearLayers();
                     
                     // Reset selection
                     selectedMarker = null;
@@ -1401,7 +1711,243 @@
                     input.click();
                 }
 
+                function showPitchModal(latLngs) {
+                    // Set default values
+                    document.getElementById('custom-pitch-percent').value = "2.0";
+                    
+                    // Reset type selector
+                    document.querySelectorAll('.type-option').forEach(option => {
+                        option.classList.remove('active');
+                    });
+                    document.querySelector('.type-option[data-type="curb"]').classList.add('active');
+                    pitchType = 'curb';
+                    
+                    // Show modal
+                    document.getElementById('pitch-modal').style.display = 'flex';
+                    
+                    // Store latLngs for later use
+                    document.getElementById('pitch-modal').setAttribute('data-latlngs', JSON.stringify(latLngs));
+                }
+                
+                function applyPitch() {
+                    // Get values from modal
+                    const customPitchValue = parseFloat(document.getElementById('custom-pitch-percent').value);
+                    
+                    // Validate pitch value
+                    if (isNaN(customPitchValue) || customPitchValue <= 0 || customPitchValue > 100) {
+                        alert('Please enter a valid pitch percentage (0.1-100)');
+                        return;
+                    }
+                    
+                    // Get latLngs from modal attribute
+                    const latLngsString = document.getElementById('pitch-modal').getAttribute('data-latlngs');
+                    if (!latLngsString) return;
+                    
+                    const latLngsData = JSON.parse(latLngsString);
+                    const latLngs = latLngsData.map(point => L.latLng(point.lat, point.lng));
+                    
+                    // Set current values
+                    pitchPercent = customPitchValue;
+                    
+                    // Create polyline
+                    const polyline = L.polyline(latLngs, {
+                        color: currentColor,
+                        weight: 5,
+                        opacity: 0.8,
+                        pitchPercent: pitchPercent,
+                        pitchType: pitchType
+                    });
+                    
+                    // Add to drawn items layer
+                    drawnItems.addLayer(polyline);
+                    
+                    // Add direction arrow
+                    addDirectionArrow(polyline);
+                    
+                    // Add pitch label
+                    addPitchLabel(polyline);
+                    
+                    // Hide modal
+                    document.getElementById('pitch-modal').style.display = 'none';
+                    
+                    // Show notification
+                    showNotification(`Added ${pitchPercent}% ${pitchType} pitch line`);
+                    
+                    // Update edit handlers
+                    updateEditHandlers();
+                    
+                    // Check for water traps
+                    analyzeWaterTraps();
+                }
+                
+                function analyzeWaterTraps() {
+                    // Clear existing water traps
+                    waterTraps.clearLayers();
+                    
+                    // Get all pitch lines
+                    const pitchLines = [];
+                    drawnItems.eachLayer(function(layer) {
+                        if (layer instanceof L.Polyline) {
+                            pitchLines.push(layer);
+                        }
+                    });
+                    
+                    // Check for intersections
+                    for (let i = 0; i < pitchLines.length; i++) {
+                        for (let j = i + 1; j < pitchLines.length; j++) {
+                            const line1 = pitchLines[i];
+                            const line2 = pitchLines[j];
+                            
+                            // Find intersections
+                            const intersection = findIntersection(line1, line2);
+                            if (intersection) {
+                                // Check if there's a catch basin nearby
+                                const hasNearbyBasin = checkForNearbyBasin(intersection);
+                                
+                                if (!hasNearbyBasin) {
+                                    // Check flow directions
+                                    const flowsToIntersection1 = checkFlowDirection(line1, intersection);
+                                    const flowsToIntersection2 = checkFlowDirection(line2, intersection);
+                                    
+                                    // If both flow to intersection, it's a trap
+                                    if (flowsToIntersection1 && flowsToIntersection2) {
+                                        markWaterTrap(intersection);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                function findIntersection(line1, line2) {
+                    const coords1 = line1.getLatLngs();
+                    const coords2 = line2.getLatLngs();
+                    
+                    // Simple line segment intersection check
+                    for (let i = 0; i < coords1.length - 1; i++) {
+                        for (let j = 0; j < coords2.length - 1; j++) {
+                            const p1 = coords1[i];
+                            const p2 = coords1[i + 1];
+                            const p3 = coords2[j];
+                            const p4 = coords2[j + 1];
+                            
+                            // Simplified intersection test for demonstration
+                            // In a real application, use a proper line intersection algorithm
+                            
+                            // Convert to x,y for easier calculation
+                            const x1 = p1.lng, y1 = p1.lat;
+                            const x2 = p2.lng, y2 = p2.lat;
+                            const x3 = p3.lng, y3 = p3.lat;
+                            const x4 = p4.lng, y4 = p4.lat;
+                            
+                            // Check bounding boxes first for efficiency
+                            if (Math.max(x1, x2) < Math.min(x3, x4) || 
+                                Math.min(x1, x2) > Math.max(x3, x4) ||
+                                Math.max(y1, y2) < Math.min(y3, y4) ||
+                                Math.min(y1, y2) > Math.max(y3, y4)) {
+                                continue; // No overlap in bounding boxes
+                            }
+                            
+                            // Calculate intersection point
+                            const den = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+                            if (den === 0) continue; // Lines are parallel
+                            
+                            const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / den;
+                            const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / den;
+                            
+                            if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1) {
+                                // Lines intersect
+                                const x = x1 + ua * (x2 - x1);
+                                const y = y1 + ua * (y2 - y1);
+                                return L.latLng(y, x);
+                            }
+                        }
+                    }
+                    
+                    return null; // No intersection
+                }
+                
+                function checkForNearbyBasin(point) {
+                    // Check if there's a catch basin within a certain distance
+                    const threshold = 0.0001; // Approximately 10 meters
+                    
+                    let hasNearby = false;
+                    catchBasins.eachLayer(function(basin) {
+                        const basinPos = basin.getLatLng();
+                        const distance = point.distanceTo(basinPos);
+                        
+                        if (distance < threshold) {
+                            hasNearby = true;
+                        }
+                    });
+                    
+                    return hasNearby;
+                }
+                
+                function checkFlowDirection(line, point) {
+                    // Simplified: check if water would flow towards the intersection
+                    // In a real app, this would use elevation data and more complex calculations
+                    
+                    // For demo, we'll use the arrow direction as an indicator
+                    const coords = line.getLatLngs();
+                    const arrowPos = line.arrowMarker.getLatLng();
+                    
+                    // Find which segment of the line contains the intersection
+                    for (let i = 0; i < coords.length - 1; i++) {
+                        const p1 = coords[i];
+                        const p2 = coords[i + 1];
+                        
+                        // Check if point is on this segment (approximate)
+                        const threshold = 0.0001;
+                        const onSegment = Math.abs(
+                            point.distanceTo(p1) + point.distanceTo(p2) - p1.distanceTo(p2)
+                        ) < threshold;
+                        
+                        if (onSegment) {
+                            // Check if arrow points towards intersection
+                            const midPoint = L.latLng(
+                                (p1.lat + p2.lat) / 2,
+                                (p1.lng + p2.lng) / 2
+                            );
+                            
+                            // If arrow is after midpoint and point is after midpoint, flows to point
+                            // Or if arrow is before midpoint and point is before midpoint, flows to point
+                            const arrowDist = p1.distanceTo(arrowPos);
+                            const midDist = p1.distanceTo(midPoint);
+                            const pointDist = p1.distanceTo(point);
+                            
+                            return (arrowDist > midDist && pointDist > midDist) || 
+                                   (arrowDist < midDist && pointDist < midDist);
+                        }
+                    }
+                    
+                    return false;
+                }
+                
+                function markWaterTrap(point) {
+                    // Add a visual indicator for water trap
+                    const trapCircle = L.circle(point, {
+                        radius: 5,
+                        className: 'water-trap'
+                    }).addTo(waterTraps);
+                    
+                    // Add a tooltip
+                    trapCircle.bindTooltip('Water Trap - No Drainage', {
+                        permanent: false,
+                        direction: 'top'
+                    });
+                }
+
                 function initUIHandlers() {
+                    // Mode toggle button
+                    document.getElementById('mode-toggle-btn').addEventListener('click', function() {
+                        if (isNavigationMode) {
+                            setDrawingMode('draw'); // Switch to drawing mode
+                        } else {
+                            setDrawingMode(null); // Switch to navigation mode
+                        }
+                    });
+                
                     // Toolbar button handlers
                     document.getElementById('locate-btn').addEventListener('click', function() {
                         if (currentPosition) {
@@ -1424,10 +1970,20 @@
                         setDrawingMode('catchBasin');
                     });
                     
+                    document.getElementById('analyze-btn').addEventListener('click', function() {
+                        analyzeWaterTraps();
+                        showNotification('Water trap analysis complete');
+                        this.classList.add('active');
+                        setTimeout(() => {
+                            this.classList.remove('active');
+                        }, 1000);
+                    });
+                    
                     document.getElementById('clear-btn').addEventListener('click', function() {
                         // Confirm before clearing
                         if (confirm('Are you sure you want to clear all items?')) {
                             clearAll();
+                            waterTraps.clearLayers();
                         }
                     });
                     
@@ -1503,6 +2059,37 @@
                         if (e.target === this) {
                             this.style.display = 'none';
                         }
+                    });
+                    
+                    // Pitch modal handlers
+                    document.getElementById('pitch-cancel-btn').addEventListener('click', function() {
+                        document.getElementById('pitch-modal').style.display = 'none';
+                    });
+                    
+                    document.getElementById('pitch-apply-btn').addEventListener('click', applyPitch);
+                    
+                    // Pitch preset buttons
+                    document.querySelectorAll('.pitch-preset-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            // Update custom input with preset value
+                            document.getElementById('custom-pitch-percent').value = this.getAttribute('data-value');
+                        });
+                    });
+                    
+                    // Type selector
+                    document.querySelectorAll('.type-option').forEach(function(option) {
+                        option.addEventListener('click', function() {
+                            // Remove active class from all
+                            document.querySelectorAll('.type-option').forEach(opt => {
+                                opt.classList.remove('active');
+                            });
+                            
+                            // Add active class to selected
+                            this.classList.add('active');
+                            
+                            // Update pitch type
+                            pitchType = this.getAttribute('data-type');
+                        });
                     });
                 }
             }
