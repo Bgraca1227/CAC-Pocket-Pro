@@ -1,49 +1,39 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FlowMaster Pro 2.0</title>
+    <title>FlowMaster Pro</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    
+    <!-- Material Design Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/4.0.0/font/MaterialIcons-Regular.min.css" />
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         :root {
-            --primary-blue: #2196F3;
-            --primary-yellow: #FFC107;
-            --primary-red: #F44336;
-            --primary-green: #4CAF50;
-            --dark-blue: #1976D2;
-            --dark-yellow: #FFA000;
-            --dark-red: #D32F2F;
-            --dark-green: #388E3C;
-            --text-dark: #212121;
-            --text-light: #FFFFFF;
-            --bg-light: #F5F5F5;
-            --bg-dark: #263238;
-            --gray-light: #EEEEEE;
-            --gray-med: #9E9E9E;
-            --gray-dark: #616161;
-            --shadow-light: 0 2px 5px rgba(0,0,0,0.1);
-            --shadow-med: 0 4px 10px rgba(0,0,0,0.15);
-            --shadow-dark: 0 6px 15px rgba(0,0,0,0.2);
-            --border-radius-sm: 4px;
-            --border-radius-md: 8px;
-            --border-radius-lg: 12px;
-            --border-radius-xl: 20px;
-            --transition-fast: 0.2s ease;
-            --transition-med: 0.3s ease;
-            --transition-slow: 0.5s ease;
+            --primary-color: #2962ff;
+            --street-color: #2962ff;
+            --curb-color: #ffb300;
+            --marker-color: #7c4dff;
+            --error-color: #f44336;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --background-color: #f5f5f5;
+            --card-color: #ffffff;
+            --text-color: #212121;
+            --text-light: #757575;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -51,10 +41,11 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            color: var(--text-dark);
-            background-color: var(--bg-light);
+            color: var(--text-color);
+            background-color: var(--background-color);
         }
 
+        /* Map */
         #map {
             height: 100%;
             width: 100%;
@@ -67,104 +58,154 @@
             width: 100vw;
         }
 
-        /* Action button - main floating action button */
-        .action-button {
+        /* Action Bar */
+        .action-bar {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            background-color: var(--card-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 8px;
+            gap: 12px;
+            max-width: 95%;
+        }
+
+        .action-button {
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
-            background-color: var(--primary-blue);
-            color: white;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: var(--shadow-med);
-            z-index: 1000;
+            background-color: var(--card-color);
+            color: var(--text-color);
+            border: none;
             cursor: pointer;
-            transition: var(--transition-med);
+            transition: all 0.2s ease;
+            box-shadow: none;
+            position: relative;
         }
 
         .action-button:active {
             transform: scale(0.95);
-            box-shadow: var(--shadow-light);
+        }
+
+        .action-button:focus {
+            outline: none;
+        }
+
+        .action-button.active {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+
+        .action-button.street-tool {
+            background-color: var(--street-color);
+            color: #ffffff;
+        }
+
+        .action-button.curb-tool {
+            background-color: var(--curb-color);
+            color: #212121;
+        }
+
+        .action-button.catchbasin-tool {
+            background-color: var(--marker-color);
+            color: #ffffff;
+        }
+
+        .action-button.highpoint-tool {
+            background-color: var(--warning-color);
+            color: #212121;
         }
 
         .action-button i {
             font-size: 24px;
         }
 
-        /* Action menu - appears when action button is tapped */
-        .action-menu {
+        .action-button-label {
             position: absolute;
-            bottom: 90px;
-            right: 20px;
-            display: none;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 1000;
-        }
-
-        .action-menu.visible {
-            display: flex;
-        }
-
-        .menu-item {
-            display: flex;
-            align-items: center;
-            background-color: white;
-            padding: 10px 15px;
-            border-radius: var(--border-radius-xl);
-            box-shadow: var(--shadow-med);
-            cursor: pointer;
-            transition: var(--transition-fast);
-        }
-
-        .menu-item:active {
-            transform: scale(0.97);
-            box-shadow: var(--shadow-light);
-        }
-
-        .menu-item i {
-            margin-right: 12px;
-            font-size: 20px;
-        }
-
-        .menu-item.curb-item i {
-            color: var(--primary-yellow);
-        }
-
-        .menu-item.street-item i {
-            color: var(--primary-blue);
-        }
-
-        .menu-item.basin-item i {
-            color: var(--primary-green);
-        }
-
-        .menu-item.highpoint-item i {
-            color: var(--primary-red);
-        }
-
-        /* Status badge - shows current status */
-        .status-badge {
-            position: absolute;
-            top: 20px;
-            left: 20px;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-color);
             background-color: rgba(255, 255, 255, 0.9);
-            border-radius: var(--border-radius-xl);
-            padding: 8px 15px;
-            display: flex;
-            align-items: center;
-            box-shadow: var(--shadow-light);
-            max-width: 80%;
-            z-index: 900;
+            padding: 2px 8px;
+            border-radius: 10px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
         }
 
-        .status-badge i {
+        .action-button:hover .action-button-label {
+            opacity: 1;
+        }
+
+        .main-action-button {
+            width: 64px;
+            height: 64px;
+            transform: translateY(-10px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Location & Zoom Controls */
+        .map-controls {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .map-control-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--card-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--shadow);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-color);
+        }
+
+        .map-control-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Status Bar */
+        .status-bar {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background-color: var(--card-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            z-index: 1000;
+            max-width: 70%;
+        }
+
+        .status-bar i {
             margin-right: 8px;
-            color: var(--primary-blue);
+            color: var(--primary-color);
         }
 
         .status-text {
@@ -174,83 +215,75 @@
             text-overflow: ellipsis;
         }
 
-        /* Tools bar - for map control buttons */
-        .tools-bar {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 900;
-        }
-
-        .tool-button {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: var(--shadow-light);
-            cursor: pointer;
-            transition: var(--transition-fast);
-        }
-
-        .tool-button:active {
-            transform: scale(0.95);
-        }
-
-        .tool-button i {
-            font-size: 18px;
-            color: var(--gray-dark);
-        }
-
-        /* Mode indicator - shows current drawing mode */
-        .mode-indicator {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background-color: white;
-            border-radius: var(--border-radius-xl);
-            padding: 8px 15px;
-            display: flex;
-            align-items: center;
-            box-shadow: var(--shadow-med);
-            z-index: 900;
-            transition: var(--transition-med);
-            transform: translateX(-120%);
-        }
-
-        .mode-indicator.visible {
-            transform: translateX(0);
-        }
-
-        .mode-indicator i {
-            margin-right: 8px;
-        }
-
-        .mode-indicator .cancel-btn {
-            margin-left: 12px;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background-color: var(--gray-light);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .mode-indicator .cancel-btn i {
+        /* Map Overlays */
+        .pitch-label {
+            background-color: var(--card-color);
+            border: none;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 4px 8px;
+            box-shadow: var(--shadow);
+            white-space: nowrap;
+            color: var(--text-color);
             font-size: 12px;
-            margin: 0;
-            color: var(--gray-dark);
         }
 
-        /* Pitch input overlay */
-        .pitch-overlay {
+        .street-label {
+            border-left: 4px solid var(--street-color);
+        }
+
+        .curb-label {
+            border-left: 4px solid var(--curb-color);
+        }
+
+        .arrow-icon {
+            background-color: var(--card-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .street-arrow {
+            color: var(--street-color);
+        }
+
+        .curb-arrow {
+            color: var(--curb-color);
+        }
+
+        .high-point-icon, .catch-basin-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background-color: var(--card-color);
+            box-shadow: var(--shadow);
+        }
+
+        .high-point-icon {
+            color: var(--warning-color);
+        }
+
+        .catch-basin-icon {
+            color: var(--marker-color);
+        }
+
+        .water-trap {
+            background-color: rgba(244, 67, 54, 0.6);
+            border: 2px solid var(--error-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Dialogs and Modals */
+        .dialog {
             position: fixed;
             top: 0;
             left: 0;
@@ -261,164 +294,120 @@
             display: none;
             justify-content: center;
             align-items: center;
+            padding: 16px;
         }
 
-        .pitch-overlay.visible {
-            display: flex;
+        .dialog-card {
+            background-color: var(--card-color);
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 320px;
+            overflow: hidden;
         }
 
-        .pitch-container {
-            background-color: white;
-            border-radius: var(--border-radius-lg);
-            padding: 20px;
-            width: 90%;
-            max-width: 350px;
-            box-shadow: var(--shadow-dark);
+        .dialog-header {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
         }
 
-        .pitch-title {
+        .dialog-title {
             font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .pitch-input {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .pitch-input input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid var(--gray-light);
-            border-radius: var(--border-radius-md);
-            font-size: 16px;
-            outline: none;
-            transition: var(--transition-fast);
-        }
-
-        .pitch-input input:focus {
-            border-color: var(--primary-blue);
-        }
-
-        .pitch-input span {
-            margin-left: 10px;
-            font-size: 16px;
-            color: var(--gray-dark);
-        }
-
-        .pitch-buttons {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-        }
-
-        .pitch-button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: var(--border-radius-md);
-            font-size: 16px;
             font-weight: 500;
+            margin: 0;
+        }
+
+        .dialog-content {
+            padding: 16px;
+        }
+
+        .dialog-actions {
+            padding: 8px 16px 16px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
             cursor: pointer;
-            transition: var(--transition-fast);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 14px;
         }
 
-        .pitch-button.cancel {
-            background-color: var(--gray-light);
-            color: var(--text-dark);
+        .button:active {
+            transform: scale(0.98);
         }
 
-        .pitch-button.confirm {
-            background-color: var(--primary-blue);
+        .button-primary {
+            background-color: var(--primary-color);
             color: white;
         }
 
-        .pitch-button:active {
-            transform: scale(0.97);
+        .button-secondary {
+            background-color: transparent;
+            color: var(--primary-color);
         }
 
-        /* Map style overrides */
-        .pitch-label {
-            background-color: white;
-            border: none;
-            border-radius: var(--border-radius-md);
-            padding: 3px 8px;
-            font-weight: bold;
-            box-shadow: var(--shadow-light);
-            white-space: nowrap;
+        .form-group {
+            margin-bottom: 16px;
         }
 
-        .arrow-icon {
-            background-color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--card-color);
+            color: var(--text-color);
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
             display: flex;
-            justify-content: center;
             align-items: center;
-            box-shadow: var(--shadow-light);
+            gap: 8px;
+            pointer-events: none;
         }
 
-        .high-point-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: var(--shadow-light);
-            color: var(--primary-red);
+        .toast.visible {
+            opacity: 1;
         }
 
-        .catch-basin-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: var(--shadow-light);
-            color: var(--primary-green);
-        }
-
-        .trapped-water {
-            background-color: rgba(244, 67, 54, 0.3);
-            border: 2px solid var(--primary-red);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 0 10px var(--primary-red);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.5);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
-            }
-        }
-
-        /* Loading overlay */
+        /* Loading & Splash Screens */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.9);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -427,210 +416,136 @@
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(33, 150, 243, 0.1);
+            width: 40px;
+            height: 40px;
+            border: 4px solid #eee;
             border-radius: 50%;
-            border-top-color: var(--primary-blue);
-            animation: spinner 1s linear infinite;
-            margin-bottom: 15px;
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
         }
 
         .loading-text {
             font-size: 16px;
-            color: var(--text-dark);
+            color: var(--text-color);
         }
 
-        @keyframes spinner {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Splash screen */
         .splash-screen {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: var(--primary-blue);
+            background-color: var(--primary-color);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 4000;
+            color: white;
             transition: opacity 0.5s ease;
         }
 
         .splash-logo {
-            font-size: 50px;
-            color: white;
-            margin-bottom: 20px;
+            font-size: 48px;
+            margin-bottom: 24px;
         }
 
         .splash-title {
             font-size: 28px;
             font-weight: 700;
-            color: white;
             margin-bottom: 8px;
         }
 
         .splash-subtitle {
             font-size: 16px;
-            color: rgba(255, 255, 255, 0.8);
+            opacity: 0.9;
         }
 
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background-color: var(--bg-dark);
-            color: white;
-            padding: 12px 20px;
-            border-radius: var(--border-radius-md);
-            box-shadow: var(--shadow-dark);
-            opacity: 0;
-            transition: all 0.3s ease;
-            z-index: 2000;
-            max-width: 90%;
-            text-align: center;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        .toast.visible {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-
-        /* Guide lines for drawing */
-        .guide-line {
-            stroke-dasharray: 5, 5;
-            animation: dash 20s linear infinite;
-            stroke-width: 3;
-        }
-
-        @keyframes dash {
-            to {
-                stroke-dashoffset: 1000;
-            }
-        }
-
-        /* Help modal */
-        .help-modal {
+        /* Help Guide */
+        .help-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 3000;
             display: none;
-            justify-content: center;
-            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .help-modal.visible {
-            display: flex;
+        .help-overlay.visible {
+            display: block;
+            opacity: 1;
         }
 
-        .help-container {
+        .help-card {
+            position: absolute;
             background-color: white;
-            border-radius: var(--border-radius-lg);
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: var(--shadow-dark);
-        }
-
-        .help-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--gray-light);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            background-color: white;
-            z-index: 1;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            max-width: 280px;
+            z-index: 3001;
+            animation: bounce 0.5s ease;
         }
 
         .help-title {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .help-close {
-            background: none;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            color: var(--gray-dark);
-        }
-
-        .help-content {
-            padding: 20px;
-        }
-
-        .help-section {
-            margin-bottom: 20px;
-        }
-
-        .help-heading {
+            font-weight: 500;
+            margin-bottom: 8px;
             font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: var(--primary-blue);
         }
 
         .help-text {
             font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 10px;
+            color: var(--text-light);
+            margin-bottom: 16px;
         }
 
-        .help-list {
-            padding-left: 20px;
-            margin-bottom: 10px;
+        .help-next {
+            text-align: right;
         }
 
-        .help-list li {
-            font-size: 14px;
-            margin-bottom: 5px;
+        .help-arrow {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            transform: rotate(45deg);
         }
 
-        .feature-item {
-            display: flex;
-            margin-bottom: 15px;
-            align-items: flex-start;
+        @keyframes bounce {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
 
-        .feature-icon {
-            margin-right: 12px;
-            flex-shrink: 0;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background-color: var(--gray-light);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .feature-icon i {
-            font-size: 16px;
-        }
-
-        .feature-text {
-            flex: 1;
-            font-size: 14px;
-        }
-
-        .feature-text strong {
-            display: block;
-            margin-bottom: 3px;
+        /* Responsive Adjustments */
+        @media (max-width: 480px) {
+            .action-bar {
+                gap: 8px;
+                padding: 6px;
+            }
+            
+            .action-button {
+                width: 48px;
+                height: 48px;
+            }
+            
+            .main-action-button {
+                width: 56px;
+                height: 56px;
+            }
+            
+            .status-bar {
+                max-width: 60%;
+            }
         }
     </style>
 </head>
@@ -640,8 +555,8 @@
         <div class="splash-logo">
             <i class="fas fa-water"></i>
         </div>
-        <div class="splash-title">FlowMaster Pro 2.0</div>
-        <div class="splash-subtitle">Advanced Drainage Planning Tool</div>
+        <div class="splash-title">FlowMaster Pro</div>
+        <div class="splash-subtitle">Professional Drainage Planning Tool</div>
     </div>
 
     <!-- Main App Container -->
@@ -649,172 +564,109 @@
         <!-- Map Element -->
         <div id="map"></div>
 
-        <!-- Status Badge -->
-        <div class="status-badge">
+        <!-- Status Bar -->
+        <div class="status-bar">
             <i class="fas fa-map-marker-alt"></i>
-            <div class="status-text">Finding your location...</div>
+            <div class="status-text">Loading map...</div>
         </div>
 
-        <!-- Tools Bar -->
-        <div class="tools-bar">
-            <div class="tool-button" id="locate-btn" title="Center on my location">
-                <i class="fas fa-crosshairs"></i>
-            </div>
-            <div class="tool-button" id="clear-btn" title="Clear all">
-                <i class="fas fa-trash"></i>
-            </div>
-            <div class="tool-button" id="help-btn" title="Help">
-                <i class="fas fa-question"></i>
-            </div>
-        </div>
-
-        <!-- Action Button -->
-        <div class="action-button" id="action-btn">
-            <i class="fas fa-plus"></i>
-        </div>
-
-        <!-- Action Menu -->
-        <div class="action-menu" id="action-menu">
-            <div class="menu-item street-item" id="draw-street-btn">
+        <!-- Main Action Bar -->
+        <div class="action-bar">
+            <button class="action-button street-tool" id="street-btn">
                 <i class="fas fa-road"></i>
-                <span>Draw Street Pitch</span>
-            </div>
-            <div class="menu-item curb-item" id="draw-curb-btn">
+                <span class="action-button-label">Street Pitch</span>
+            </button>
+            <button class="action-button curb-tool" id="curb-btn">
                 <i class="fas fa-grip-lines"></i>
-                <span>Draw Curb Pitch</span>
-            </div>
-            <div class="menu-item basin-item" id="add-basin-btn">
+                <span class="action-button-label">Curb Pitch</span>
+            </button>
+            <button class="action-button main-action-button" id="locate-btn">
+                <i class="fas fa-crosshairs"></i>
+                <span class="action-button-label">My Location</span>
+            </button>
+            <button class="action-button catchbasin-tool" id="catchbasin-btn">
                 <i class="fas fa-drain"></i>
-                <span>Add Catch Basin</span>
-            </div>
-            <div class="menu-item highpoint-item" id="add-highpoint-btn">
+                <span class="action-button-label">Catch Basin</span>
+            </button>
+            <button class="action-button highpoint-tool" id="highpoint-btn">
                 <i class="fas fa-chevron-up"></i>
-                <span>Add High Point</span>
+                <span class="action-button-label">High Point</span>
+            </button>
+        </div>
+
+        <!-- Map Controls -->
+        <div class="map-controls">
+            <button class="map-control-button" id="zoom-in-btn">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="map-control-button" id="zoom-out-btn">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button class="map-control-button" id="help-btn">
+                <i class="fas fa-question"></i>
+            </button>
+            <button class="map-control-button" id="save-btn">
+                <i class="fas fa-save"></i>
+            </button>
+            <button class="map-control-button" id="clear-btn">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+
+        <!-- Pitch Input Dialog -->
+        <div class="dialog" id="pitch-dialog">
+            <div class="dialog-card">
+                <div class="dialog-header">
+                    <h3 class="dialog-title">Set Pitch Percentage</h3>
+                </div>
+                <div class="dialog-content">
+                    <div class="form-group">
+                        <label class="form-label" for="pitch-value">Pitch (%)</label>
+                        <input type="number" class="form-control" id="pitch-value" min="0.1" max="20" step="0.1" value="2.0">
+                    </div>
+                </div>
+                <div class="dialog-actions">
+                    <button class="button button-secondary" id="cancel-pitch-btn">Cancel</button>
+                    <button class="button button-primary" id="save-pitch-btn">Save</button>
+                </div>
             </div>
         </div>
 
-        <!-- Mode Indicator -->
-        <div class="mode-indicator" id="mode-indicator">
-            <i class="fas fa-pencil-alt"></i>
-            <span id="mode-text">Drawing Mode</span>
-            <div class="cancel-btn" id="cancel-mode-btn">
-                <i class="fas fa-times"></i>
-            </div>
-        </div>
-
-        <!-- Pitch Input Overlay -->
-        <div class="pitch-overlay" id="pitch-overlay">
-            <div class="pitch-container">
-                <div class="pitch-title" id="pitch-title">Set Pitch Percentage</div>
-                <div class="pitch-input">
-                    <input type="number" id="pitch-input" min="0.1" max="100" step="0.1" value="2.0">
-                    <span>%</span>
+        <!-- Confirm Clear Dialog -->
+        <div class="dialog" id="confirm-dialog">
+            <div class="dialog-card">
+                <div class="dialog-header">
+                    <h3 class="dialog-title">Confirm Action</h3>
                 </div>
-                <div class="pitch-buttons">
-                    <button class="pitch-button cancel" id="pitch-cancel">Cancel</button>
-                    <button class="pitch-button confirm" id="pitch-confirm">Confirm</button>
+                <div class="dialog-content">
+                    <p id="confirm-message">Are you sure you want to clear all items?</p>
                 </div>
-            </div>
-        </div>
-
-        <!-- Help Modal -->
-        <div class="help-modal" id="help-modal">
-            <div class="help-container">
-                <div class="help-header">
-                    <div class="help-title">FlowMaster Pro 2.0 Help</div>
-                    <button class="help-close" id="help-close">&times;</button>
-                </div>
-                <div class="help-content">
-                    <div class="help-section">
-                        <div class="help-heading">Getting Started</div>
-                        <p class="help-text">FlowMaster Pro helps you plan and visualize water drainage on construction sites:</p>
-                        <ol class="help-list">
-                            <li>Tap the blue + button to access drawing tools</li>
-                            <li>Select what you want to add: street pitch, curb pitch, catch basin or high point</li>
-                            <li>For pitches: tap once to start line, tap again to end and set %</li>
-                            <li>Areas where water might be trapped will automatically highlight in red</li>
-                        </ol>
-                    </div>
-
-                    <div class="help-section">
-                        <div class="help-heading">Key Features</div>
-                        
-                        <div class="feature-item">
-                            <div class="feature-icon" style="background-color: rgba(33, 150, 243, 0.2);">
-                                <i class="fas fa-road" style="color: var(--primary-blue);"></i>
-                            </div>
-                            <div class="feature-text">
-                                <strong>Street Pitch (Blue)</strong>
-                                Draw lines to indicate street drainage direction. Set the percentage slope and water will flow accordingly.
-                            </div>
-                        </div>
-                        
-                        <div class="feature-item">
-                            <div class="feature-icon" style="background-color: rgba(255, 193, 7, 0.2);">
-                                <i class="fas fa-grip-lines" style="color: var(--primary-yellow);"></i>
-                            </div>
-                            <div class="feature-text">
-                                <strong>Curb Pitch (Yellow)</strong>
-                                Draw lines to indicate curb drainage direction. Water flows from high points down toward catch basins.
-                            </div>
-                        </div>
-                        
-                        <div class="feature-item">
-                            <div class="feature-icon" style="background-color: rgba(76, 175, 80, 0.2);">
-                                <i class="fas fa-drain" style="color: var(--primary-green);"></i>
-                            </div>
-                            <div class="feature-text">
-                                <strong>Catch Basins</strong>
-                                Mark drainage points where water will collect. All pitches should eventually direct water to these points.
-                            </div>
-                        </div>
-                        
-                        <div class="feature-item">
-                            <div class="feature-icon" style="background-color: rgba(244, 67, 54, 0.2);">
-                                <i class="fas fa-chevron-up" style="color: var(--primary-red);"></i>
-                            </div>
-                            <div class="feature-text">
-                                <strong>High Points</strong>
-                                Mark the highest elevation points where water will flow away from.
-                            </div>
-                        </div>
-                        
-                        <div class="feature-item">
-                            <div class="feature-icon" style="background-color: rgba(244, 67, 54, 0.2);">
-                                <i class="fas fa-exclamation-triangle" style="color: var(--primary-red);"></i>
-                            </div>
-                            <div class="feature-text">
-                                <strong>Water Trap Detection</strong>
-                                The app automatically detects and highlights areas where water might be trapped (when pitch lines meet without flowing to a catch basin).
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="help-section">
-                        <div class="help-heading">Tips & Tricks</div>
-                        <ul class="help-list">
-                            <li>Use the locate button to center the map on your current position</li>
-                            <li>Switch to satellite view to better see streets and curbs</li>
-                            <li>Make sure to place catch basins at low points where water should drain</li>
-                            <li>Any red glowing areas indicate potential drainage problems that need to be fixed</li>
-                        </ul>
-                    </div>
+                <div class="dialog-actions">
+                    <button class="button button-secondary" id="cancel-confirm-btn">Cancel</button>
+                    <button class="button button-primary" id="confirm-btn">Confirm</button>
                 </div>
             </div>
         </div>
 
         <!-- Toast Notification -->
-        <div class="toast" id="toast"></div>
+        <div class="toast" id="toast">
+            <i class="fas fa-info-circle"></i>
+            <span id="toast-message">Notification message</span>
+        </div>
 
         <!-- Loading Overlay -->
         <div class="loading-overlay">
             <div class="spinner"></div>
-            <div class="loading-text">Loading FlowMaster Pro...</div>
+            <div class="loading-text">Loading map data...</div>
+        </div>
+
+        <!-- Help Overlay -->
+        <div class="help-overlay" id="help-overlay">
+            <!-- Help cards will be dynamically added here -->
         </div>
     </div>
 
     <!-- Scripts -->
-    <!-- Leaflet -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     
     <script>
@@ -824,335 +676,477 @@
                 document.querySelector('.splash-screen').style.opacity = 0;
                 setTimeout(() => {
                     document.querySelector('.splash-screen').style.display = 'none';
-                    init();
+                    initApp();
                 }, 500);
             }, 2000);
 
-            function init() {
+            function initApp() {
                 // Initialize variables
-                let map, userMarker, currentPosition;
+                let map, userMarker, userLocation;
                 let drawingMode = null;
-                let drawingType = null;
-                let startPoint = null;
-                let guideLayer = null;
-                let pitchPercent = 2.0;
-                let drawnItems = new L.FeatureGroup(); // All drawn lines
-                let catchBasins = new L.FeatureGroup(); // Catch basins
-                let highPoints = new L.FeatureGroup(); // High points
-                let auxiliaryMarkers = new L.FeatureGroup(); // Labels, arrows, etc.
-                let trappedAreas = new L.FeatureGroup(); // Areas where water is trapped
+                let streets = L.featureGroup();
+                let curbs = L.featureGroup();
+                let catchBasins = L.featureGroup();
+                let highPoints = L.featureGroup();
+                let waterTraps = L.featureGroup();
+                let drawingLine = null;
+                let drawingPoints = [];
+                let pendingLine = null;
+                let streetGuides = L.featureGroup();
+                let curbGuides = L.featureGroup();
                 
-                // Colors
-                const STREET_COLOR = '#2196F3'; // Blue
-                const CURB_COLOR = '#FFC107'; // Yellow
-                const HIGH_POINT_COLOR = '#F44336'; // Red
-                const BASIN_COLOR = '#4CAF50'; // Green
-                const TRAP_COLOR = '#F44336'; // Red
+                // State variables
+                const appState = {
+                    loading: true,
+                    currentAction: null,
+                    confirmAction: null,
+                    tempLine: null,
+                    streetColor: '#2962ff',
+                    curbColor: '#ffb300',
+                    lastPitchValue: 2.0
+                };
 
                 // Initialize the map
                 initMap();
+                
+                // Initialize all event handlers
+                initEventHandlers();
 
-                // Initialize UI interactions
-                initUIHandlers();
-
+                // Helper functions
                 function initMap() {
-                    // Create map with default view (will be updated with user location)
+                    // Create map
                     map = L.map('map', {
-                        zoomControl: false
-                    }).setView([0, 0], 2);
+                        zoomControl: false,
+                        attributionControl: false
+                    }).setView([0, 0], 19);
 
-                    // Add zoom control to bottom left
-                    L.control.zoom({
-                        position: 'bottomleft'
+                    // Add tile layer (OpenStreetMap)
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 22
                     }).addTo(map);
 
-                    // Add tile layers with layer control
-                    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                        maxZoom: 22
-                    });
+                    // Add layer groups to map
+                    streets.addTo(map);
+                    curbs.addTo(map);
+                    catchBasins.addTo(map);
+                    highPoints.addTo(map);
+                    waterTraps.addTo(map);
+                    streetGuides.addTo(map);
+                    curbGuides.addTo(map);
 
-                    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                        maxZoom: 22
-                    });
-
-                    const hybridLayer = L.layerGroup([
-                        satelliteLayer,
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                            maxZoom: 22,
-                            opacity: 0.4
-                        })
-                    ]);
-
-                    const baseMaps = {
-                        "Street": streetLayer,
-                        "Satellite": satelliteLayer,
-                        "Hybrid": hybridLayer
-                    };
-
-                    // Add hybrid layer by default (best for seeing streets and curbs)
-                    hybridLayer.addTo(map);
-
-                    // Add layer control to top right
-                    L.control.layers(baseMaps, null, {
-                        position: 'topright'
-                    }).addTo(map);
-
-                    // Add feature groups to map
-                    map.addLayer(drawnItems);
-                    map.addLayer(catchBasins);
-                    map.addLayer(highPoints);
-                    map.addLayer(auxiliaryMarkers);
-                    map.addLayer(trappedAreas);
-
-                    // Guide layer for drawing
-                    guideLayer = L.layerGroup().addTo(map);
+                    // Map events
+                    map.on('click', handleMapClick);
+                    map.on('mousemove', handleMouseMove);
 
                     // Get user location
                     getUserLocation();
+                }
 
-                    // Map click event handler
-                    map.on('click', handleMapClick);
+                function getUserLocation() {
+                    showLoading('Getting your location...');
+                    
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            function(position) {
+                                userLocation = [position.coords.latitude, position.coords.longitude];
+                                
+                                // Update map view
+                                map.setView(userLocation, 19);
+                                
+                                // Create user marker
+                                if (!userMarker) {
+                                    userMarker = L.circleMarker(userLocation, {
+                                        radius: 8,
+                                        fillColor: '#2962ff',
+                                        color: '#ffffff',
+                                        weight: 2,
+                                        opacity: 1,
+                                        fillOpacity: 0.8
+                                    }).addTo(map);
+                                } else {
+                                    userMarker.setLatLng(userLocation);
+                                }
+                                
+                                updateStatus('Location found');
+                                hideLoading();
+                                
+                                // Set up continuous location tracking
+                                navigator.geolocation.watchPosition(function(position) {
+                                    userLocation = [position.coords.latitude, position.coords.longitude];
+                                    if (userMarker) {
+                                        userMarker.setLatLng(userLocation);
+                                    }
+                                }, function(error) {
+                                    console.error('Error watching position:', error);
+                                }, {
+                                    enableHighAccuracy: true,
+                                    maximumAge: 0,
+                                    timeout: 5000
+                                });
+                                
+                                // Generate guides for streets and curbs based on map data
+                                generateGuides(userLocation);
+                                
+                            },
+                            function(error) {
+                                console.error('Error getting location:', error);
+                                updateStatus('Location access denied');
+                                hideLoading();
+                                map.setView([40.7128, -74.0060], 19);
+                            },
+                            {
+                                enableHighAccuracy: true,
+                                maximumAge: 0,
+                                timeout: 5000
+                            }
+                        );
+                    } else {
+                        updateStatus('Geolocation not supported');
+                        hideLoading();
+                        map.setView([40.7128, -74.0060], 19);
+                    }
+                }
+
+                // Generate guide lines for streets and curbs based on map data
+                function generateGuides(centerLocation) {
+                    // In a real app, this would use actual map data
+                    // For our demo, we'll create artificial guides around the user's location
+                    
+                    // Clear existing guides
+                    streetGuides.clearLayers();
+                    curbGuides.clearLayers();
+                    
+                    const gridSize = 0.001; // Roughly 100 meters
+                    const lat = centerLocation[0];
+                    const lng = centerLocation[1];
+                    
+                    // Create a grid of streets
+                    for (let i = -2; i <= 2; i++) {
+                        // Horizontal streets
+                        const hStreet = L.polyline([
+                            [lat + (i * gridSize), lng - (2 * gridSize)],
+                            [lat + (i * gridSize), lng + (2 * gridSize)]
+                        ], {
+                            color: '#2962ff',
+                            weight: 6,
+                            opacity: 0.3,
+                            dashArray: '10, 10'
+                        });
+                        
+                        // Horizontal curbs (top and bottom of street)
+                        const hCurbTop = L.polyline([
+                            [lat + (i * gridSize) + (gridSize * 0.05), lng - (2 * gridSize)],
+                            [lat + (i * gridSize) + (gridSize * 0.05), lng + (2 * gridSize)]
+                        ], {
+                            color: '#ffb300',
+                            weight: 4,
+                            opacity: 0.3,
+                            dashArray: '5, 5'
+                        });
+                        
+                        const hCurbBottom = L.polyline([
+                            [lat + (i * gridSize) - (gridSize * 0.05), lng - (2 * gridSize)],
+                            [lat + (i * gridSize) - (gridSize * 0.05), lng + (2 * gridSize)]
+                        ], {
+                            color: '#ffb300',
+                            weight: 4,
+                            opacity: 0.3,
+                            dashArray: '5, 5'
+                        });
+                        
+                        // Vertical streets
+                        const vStreet = L.polyline([
+                            [lat - (2 * gridSize), lng + (i * gridSize)],
+                            [lat + (2 * gridSize), lng + (i * gridSize)]
+                        ], {
+                            color: '#2962ff',
+                            weight: 6,
+                            opacity: 0.3,
+                            dashArray: '10, 10'
+                        });
+                        
+                        // Vertical curbs (left and right of street)
+                        const vCurbLeft = L.polyline([
+                            [lat - (2 * gridSize), lng + (i * gridSize) - (gridSize * 0.05)],
+                            [lat + (2 * gridSize), lng + (i * gridSize) - (gridSize * 0.05)]
+                        ], {
+                            color: '#ffb300',
+                            weight: 4,
+                            opacity: 0.3,
+                            dashArray: '5, 5'
+                        });
+                        
+                        const vCurbRight = L.polyline([
+                            [lat - (2 * gridSize), lng + (i * gridSize) + (gridSize * 0.05)],
+                            [lat + (2 * gridSize), lng + (i * gridSize) + (gridSize * 0.05)]
+                        ], {
+                            color: '#ffb300',
+                            weight: 4,
+                            opacity: 0.3,
+                            dashArray: '5, 5'
+                        });
+                        
+                        // Add to guides
+                        streetGuides.addLayer(hStreet);
+                        streetGuides.addLayer(vStreet);
+                        
+                        curbGuides.addLayer(hCurbTop);
+                        curbGuides.addLayer(hCurbBottom);
+                        curbGuides.addLayer(vCurbLeft);
+                        curbGuides.addLayer(vCurbRight);
+                    }
+                }
+
+                function findClosestGuide(point, mode) {
+                    // Get guides layer based on mode
+                    const guides = mode === 'street' ? streetGuides : curbGuides;
+                    
+                    // Find closest guide and point on that guide
+                    let minDistance = Infinity;
+                    let closestPoint = null;
+                    let closestGuide = null;
+                    
+                    guides.eachLayer(function(layer) {
+                        if (layer instanceof L.Polyline) {
+                            const latLngs = layer.getLatLngs();
+                            
+                            for (let i = 0; i < latLngs.length - 1; i++) {
+                                const start = latLngs[i];
+                                const end = latLngs[i+1];
+                                
+                                const projectedPoint = projectPointOnLine(point, start, end);
+                                const distance = map.distance(point, projectedPoint);
+                                
+                                if (distance < minDistance) {
+                                    minDistance = distance;
+                                    closestPoint = projectedPoint;
+                                    closestGuide = layer;
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Only snap if within 20 meters
+                    return minDistance <= 20 ? { point: closestPoint, guide: closestGuide } : null;
+                }
+
+                function projectPointOnLine(point, lineStart, lineEnd) {
+                    const x = point.lat;
+                    const y = point.lng;
+                    const x1 = lineStart.lat;
+                    const y1 = lineStart.lng;
+                    const x2 = lineEnd.lat;
+                    const y2 = lineEnd.lng;
+                    
+                    // Calculate projection
+                    const A = x - x1;
+                    const B = y - y1;
+                    const C = x2 - x1;
+                    const D = y2 - y1;
+                    
+                    const dot = A * C + B * D;
+                    const len_sq = C * C + D * D;
+                    const param = len_sq !== 0 ? dot / len_sq : -1;
+                    
+                    let xx, yy;
+                    
+                    if (param < 0) {
+                        xx = x1;
+                        yy = y1;
+                    } else if (param > 1) {
+                        xx = x2;
+                        yy = y2;
+                    } else {
+                        xx = x1 + param * C;
+                        yy = y1 + param * D;
+                    }
+                    
+                    return L.latLng(xx, yy);
                 }
 
                 function handleMapClick(e) {
-                    if (drawingMode === 'draw') {
-                        // If we don't have a start point, set it
-                        if (!startPoint) {
-                            startPoint = e.latlng;
-                            
-                            // Add start marker
-                            const color = drawingType === 'street' ? STREET_COLOR : CURB_COLOR;
-                            L.circleMarker(startPoint, {
-                                radius: 5,
-                                fillColor: color,
-                                color: '#fff',
-                                weight: 2,
-                                opacity: 1,
-                                fillOpacity: 0.8,
-                                className: 'temp-marker'
-                            }).addTo(guideLayer);
-                            
-                            // Add guide line to follow cursor
-                            const guideLine = L.polyline([startPoint, e.latlng], {
-                                color: color,
-                                opacity: 0.6,
-                                weight: 3,
-                                dashArray: '5, 5',
-                                className: 'guide-line'
-                            }).addTo(guideLayer);
-                            
-                            // Update guide line on mouse move
-                            map.on('mousemove', function(ev) {
-                                if (guideLine) {
-                                    guideLine.setLatLngs([startPoint, ev.latlng]);
+                    const clickPoint = e.latlng;
+                    
+                    if (drawingMode === 'street' || drawingMode === 'curb') {
+                        // Find closest guide for snapping
+                        const closest = findClosestGuide(clickPoint, drawingMode);
+                        
+                        if (closest) {
+                            // If we're not drawing yet, start a new line
+                            if (drawingPoints.length === 0) {
+                                drawingPoints.push(closest.point);
+                                
+                                // Show temporary line
+                                drawingLine = L.polyline([closest.point], {
+                                    color: drawingMode === 'street' ? appState.streetColor : appState.curbColor,
+                                    weight: 5,
+                                    opacity: 0.7,
+                                    dashArray: '5, 5'
+                                }).addTo(map);
+                                
+                                showToast(`Started drawing ${drawingMode} pitch line`);
+                            } else {
+                                // Add point to existing line
+                                drawingPoints.push(closest.point);
+                                drawingLine.setLatLngs(drawingPoints);
+                                
+                                // If user clicks near the first point, complete the line
+                                if (drawingPoints.length > 1 && 
+                                    map.distance(closest.point, drawingPoints[0]) < 20 && 
+                                    drawingPoints.length > 2) {
+                                    
+                                    finishDrawing();
                                 }
-                            });
-                            
-                            showToast("Tap again to complete the line");
+                            }
                         } else {
-                            // Complete the line
-                            const endPoint = e.latlng;
-                            
-                            // Remove guide layer
-                            guideLayer.clearLayers();
-                            map.off('mousemove');
-                            
-                            // Create final polyline
-                            const color = drawingType === 'street' ? STREET_COLOR : CURB_COLOR;
-                            const finalPolyline = L.polyline([startPoint, endPoint], {
-                                color: color,
-                                weight: 5,
-                                opacity: 0.8,
-                                pitchType: drawingType,
-                                endpoints: [startPoint, endPoint] // Store endpoints for later use
-                            });
-                            
-                            // Show pitch input overlay
-                            document.getElementById('pitch-title').innerText = 
-                                `Set ${drawingType === 'street' ? 'Street' : 'Curb'} Pitch Percentage`;
-                            document.getElementById('pitch-overlay').classList.add('visible');
-                            document.getElementById('pitch-input').value = pitchPercent;
-                            document.getElementById('pitch-input').focus();
-                            
-                            // Store the polyline temporarily
-                            window.tempFinalPolyline = finalPolyline;
-                            
-                            // Reset start point
-                            startPoint = null;
+                            showToast(`Please draw along ${drawingMode} guides`);
                         }
-                    } else if (drawingMode === 'catchBasin') {
-                        // Add catch basin at click location
-                        addCatchBasin(e.latlng);
-                        exitDrawingMode();
-                    } else if (drawingMode === 'highPoint') {
-                        // Add high point at click location
-                        addHighPoint(e.latlng);
-                        exitDrawingMode();
+                    } else if (drawingMode === 'catchbasin') {
+                        addCatchBasin(clickPoint);
+                    } else if (drawingMode === 'highpoint') {
+                        addHighPoint(clickPoint);
                     }
                 }
 
-                function confirmPitch() {
-                    if (window.tempFinalPolyline) {
-                        // Get the input pitch percentage
-                        pitchPercent = parseFloat(document.getElementById('pitch-input').value);
+                function handleMouseMove(e) {
+                    if (drawingLine && drawingPoints.length > 0) {
+                        // Current mouse position
+                        const mousePoint = e.latlng;
                         
-                        // Add the pitch property to the polyline
-                        window.tempFinalPolyline.options.pitchPercent = pitchPercent;
+                        // Find closest guide for snapping
+                        const closest = findClosestGuide(mousePoint, drawingMode);
                         
-                        // Add the polyline to the drawn items layer
-                        drawnItems.addLayer(window.tempFinalPolyline);
-                        
-                        // Add direction arrow
-                        addDirectionArrow(window.tempFinalPolyline);
-                        
-                        // Add pitch label
-                        addPitchLabel(window.tempFinalPolyline);
-                        
-                        // Check for trapped water areas
-                        detectTrappedWater();
-                        
-                        // Show toast notification
-                        showToast(`Added ${pitchPercent}% ${drawingType} pitch line`);
-                        
-                        // Clear the temporary final polyline
-                        window.tempFinalPolyline = null;
+                        if (closest) {
+                            // Create temporary line showing from last point to current mouse
+                            const tempPoints = [...drawingPoints, closest.point];
+                            drawingLine.setLatLngs(tempPoints);
+                        }
+                    }
+                }
+
+                function finishDrawing() {
+                    if (drawingPoints.length < 2) {
+                        cancelDrawing();
+                        return;
                     }
                     
-                    // Hide the pitch overlay
-                    document.getElementById('pitch-overlay').classList.remove('visible');
+                    // Store the points for when the dialog is confirmed
+                    pendingLine = {
+                        points: [...drawingPoints],
+                        type: drawingMode
+                    };
                     
-                    // Exit drawing mode
-                    exitDrawingMode();
+                    // Remove temporary drawing line
+                    if (drawingLine) {
+                        map.removeLayer(drawingLine);
+                        drawingLine = null;
+                    }
+                    
+                    // Show pitch input dialog
+                    showPitchDialog();
+                    
+                    // Reset drawing state
+                    drawingPoints = [];
                 }
 
-                function cancelPitch() {
-                    // Clear the temporary final polyline
-                    window.tempFinalPolyline = null;
+                function cancelDrawing() {
+                    // Clear drawing state
+                    drawingPoints = [];
                     
-                    // Hide the pitch overlay
-                    document.getElementById('pitch-overlay').classList.remove('visible');
+                    // Remove temp line
+                    if (drawingLine) {
+                        map.removeLayer(drawingLine);
+                        drawingLine = null;
+                    }
                     
-                    // Exit drawing mode
-                    exitDrawingMode();
+                    showToast('Drawing cancelled');
                 }
 
-                function addDirectionArrow(polyline) {
-                    // Get polyline coordinates
-                    const coords = polyline.getLatLngs();
-                    if (coords.length < 2) return;
+                function addPitchLine(points, pitchValue, type) {
+                    // Create final polyline
+                    const line = L.polyline(points, {
+                        color: type === 'street' ? appState.streetColor : appState.curbColor,
+                        weight: 5,
+                        opacity: 0.9,
+                        pitchValue: pitchValue,
+                        pitchType: type
+                    });
                     
-                    // Get midpoint of line
-                    const startPoint = coords[0];
-                    const endPoint = coords[coords.length - 1];
-                    const midPoint = L.latLng(
-                        (startPoint.lat + endPoint.lat) / 2,
-                        (startPoint.lng + endPoint.lng) / 2
-                    );
+                    // Add to appropriate layer
+                    if (type === 'street') {
+                        streets.addLayer(line);
+                    } else {
+                        curbs.addLayer(line);
+                    }
                     
-                    // Get direction angle - assuming water flows from startPoint to endPoint
-                    const angle = getAngle(startPoint, endPoint);
+                    // Add direction arrow
+                    addDirectionArrow(line);
                     
-                    // Create arrow marker
+                    // Add pitch label
+                    addPitchLabel(line);
+                    
+                    // Check for water traps
+                    checkWaterTraps();
+                    
+                    showToast(`Added ${pitchValue}% ${type} pitch line`);
+                }
+
+                function addDirectionArrow(line) {
+                    const points = line.getLatLngs();
+                    if (points.length < 2) return;
+                    
+                    // Get middle of line
+                    const midIndex = Math.floor(points.length / 2);
+                    const midPoint = points[midIndex];
+                    const prevPoint = points[midIndex - 1];
+                    
+                    // Calculate arrow angle
+                    const angle = getAngle(prevPoint, midPoint);
+                    
+                    // Create arrow icon
+                    const arrowClass = line.options.pitchType === 'street' ? 'street-arrow' : 'curb-arrow';
                     const arrowIcon = L.divIcon({
-                        html: `<div class="arrow-icon"><i class="fas fa-arrow-down" style="transform: rotate(${angle}deg); color: ${polyline.options.color};"></i></div>`,
-                        className: '',
+                        html: `<div class="arrow-icon"><i class="fas fa-arrow-down" style="transform: rotate(${angle}deg);"></i></div>`,
+                        className: arrowClass,
                         iconSize: [24, 24]
                     });
                     
                     // Create marker
-                    const arrowMarker = L.marker(midPoint, {
+                    const arrow = L.marker(midPoint, {
                         icon: arrowIcon,
-                        draggable: false,
-                        linkedPolylineId: L.stamp(polyline)
-                    }).addTo(auxiliaryMarkers);
+                        interactive: false
+                    }).addTo(map);
                     
-                    // Store reference to arrow marker
-                    polyline.arrowMarkerId = L.stamp(arrowMarker);
+                    // Store reference
+                    line.arrow = arrow;
                 }
 
-                function addPitchLabel(polyline) {
-                    // Get polyline coordinates
-                    const coords = polyline.getLatLngs();
-                    if (coords.length < 2) return;
+                function addPitchLabel(line) {
+                    const points = line.getLatLngs();
+                    if (points.length < 2) return;
                     
-                    // Get first point of line (high point)
-                    const point = coords[0];
+                    // Get start of line
+                    const startPoint = points[0];
                     
-                    // Create label marker
+                    // Create label icon
+                    const labelClass = line.options.pitchType === 'street' ? 'street-label' : 'curb-label';
                     const labelIcon = L.divIcon({
-                        html: `<div class="pitch-label" style="border-left: 4px solid ${polyline.options.color};">${polyline.options.pitchPercent}%</div>`,
+                        html: `<div class="pitch-label ${labelClass}">${line.options.pitchValue}%</div>`,
                         className: '',
-                        iconSize: [60, 24]
+                        iconSize: [40, 20]
                     });
                     
                     // Create marker
-                    const labelMarker = L.marker(point, {
+                    const label = L.marker(startPoint, {
                         icon: labelIcon,
-                        draggable: false,
-                        linkedPolylineId: L.stamp(polyline)
-                    }).addTo(auxiliaryMarkers);
+                        interactive: false
+                    }).addTo(map);
                     
-                    // Store reference to label marker
-                    polyline.labelMarkerId = L.stamp(labelMarker);
-                }
-
-                function addCatchBasin(latlng) {
-                    // Create catch basin icon
-                    const catchBasinIcon = L.divIcon({
-                        html: `<div class="catch-basin-icon"><i class="fas fa-drain"></i></div>`,
-                        className: '',
-                        iconSize: [30, 30]
-                    });
-                    
-                    // Create marker
-                    const marker = L.marker(latlng, {
-                        icon: catchBasinIcon,
-                        draggable: true
-                    }).addTo(catchBasins);
-                    
-                    // Add drag end event to re-check trapped water
-                    marker.on('dragend', function() {
-                        detectTrappedWater();
-                    });
-                    
-                    // Show toast notification
-                    showToast("Catch basin added");
-                    
-                    // Re-check for trapped water
-                    detectTrappedWater();
-                }
-
-                function addHighPoint(latlng) {
-                    // Create high point icon
-                    const highPointIcon = L.divIcon({
-                        html: `<div class="high-point-icon"><i class="fas fa-chevron-up"></i></div>`,
-                        className: '',
-                        iconSize: [30, 30]
-                    });
-                    
-                    // Create marker
-                    const marker = L.marker(latlng, {
-                        icon: highPointIcon,
-                        draggable: true
-                    }).addTo(highPoints);
-                    
-                    // Add drag end event to re-check trapped water
-                    marker.on('dragend', function() {
-                        detectTrappedWater();
-                    });
-                    
-                    // Show toast notification
-                    showToast("High point added");
-                    
-                    // Re-check for trapped water
-                    detectTrappedWater();
+                    // Store reference
+                    line.label = label;
                 }
 
                 function getAngle(start, end) {
-                    // Calculate angle in degrees for arrow direction
                     const lat1 = start.lat * Math.PI / 180;
                     const lat2 = end.lat * Math.PI / 180;
                     const lng1 = start.lng * Math.PI / 180;
@@ -1162,422 +1156,684 @@
                     const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lng2 - lng1);
                     
                     let angle = Math.atan2(y, x) * 180 / Math.PI;
-                    angle = (angle + 360) % 360; // Normalize to 0-360
+                    angle = (angle + 360) % 360;
                     
                     return angle;
                 }
 
-                function detectTrappedWater() {
-                    // Clear existing trapped areas
-                    trappedAreas.clearLayers();
-                    
-                    // Get all line endpoints
-                    const endpoints = [];
-                    drawnItems.eachLayer(function(layer) {
-                        if (layer instanceof L.Polyline) {
-                            // Get the coordinates (only first and last point matter for us)
-                            const points = layer.getLatLngs();
-                            const startPoint = points[0];
-                            const endPoint = points[points.length - 1];
-                            
-                            // Assuming water flows from start to end
-                            endpoints.push({
-                                point: endPoint,
-                                type: 'end', // Water flows to this point
-                                lineId: L.stamp(layer)
-                            });
-                            
-                            endpoints.push({
-                                point: startPoint,
-                                type: 'start', // Water flows from this point
-                                lineId: L.stamp(layer)
-                            });
-                        }
+                function addCatchBasin(point) {
+                    const catchBasinIcon = L.divIcon({
+                        html: `<div class="catch-basin-icon"><i class="fas fa-drain"></i></div>`,
+                        className: '',
+                        iconSize: [32, 32]
                     });
                     
-                    // Get all catch basin positions
-                    const basinPositions = [];
-                    catchBasins.eachLayer(function(layer) {
-                        basinPositions.push(layer.getLatLng());
+                    const basin = L.marker(point, {
+                        icon: catchBasinIcon,
+                        draggable: true
+                    }).addTo(catchBasins);
+                    
+                    // On drag end, check for water traps
+                    basin.on('dragend', function() {
+                        checkWaterTraps();
                     });
                     
-                    // Group endpoints that are close to each other (potential intersection points)
-                    const pointGroups = groupClosePoints(endpoints);
+                    // Check for water traps
+                    checkWaterTraps();
                     
-                    // Check each point group for trapped water
-                    pointGroups.forEach(group => {
-                        // Skip if there's only one point in the group
-                        if (group.points.length <= 1) return;
+                    showToast('Catch basin added');
+                }
+
+                function addHighPoint(point) {
+                    const highPointIcon = L.divIcon({
+                        html: `<div class="high-point-icon"><i class="fas fa-chevron-up"></i></div>`,
+                        className: '',
+                        iconSize: [32, 32]
+                    });
+                    
+                    const highPoint = L.marker(point, {
+                        icon: highPointIcon,
+                        draggable: true
+                    }).addTo(highPoints);
+                    
+                    // On drag end, check for water traps
+                    highPoint.on('dragend', function() {
+                        checkWaterTraps();
+                    });
+                    
+                    // Check for water traps
+                    checkWaterTraps();
+                    
+                    showToast('High point added');
+                }
+
+                function checkWaterTraps() {
+                    // Clear existing water traps
+                    waterTraps.clearLayers();
+                    
+                    // Get all pitch lines
+                    const allLines = [];
+                    streets.eachLayer(line => allLines.push(line));
+                    curbs.eachLayer(line => allLines.push(line));
+                    
+                    // Check for intersecting pitch lines that don't have a catch basin nearby
+                    const intersections = findIntersections(allLines);
+                    
+                    // For each intersection, check if there's a catch basin nearby
+                    intersections.forEach(intersection => {
+                        let hasCatchBasin = false;
                         
-                        // Count how many endpoints and startpoints we have
-                        let endCount = 0;
-                        
-                        group.points.forEach(point => {
-                            if (point.type === 'end') {
-                                endCount++;
+                        // Check distance to each catch basin
+                        catchBasins.eachLayer(basin => {
+                            const distance = map.distance(basin.getLatLng(), intersection.point);
+                            if (distance < 20) {
+                                hasCatchBasin = true;
                             }
                         });
                         
-                        // If we have multiple 'end' points, water might be trapped here
-                        if (endCount >= 2) {
-                            // Check if any catch basin is close to this group
-                            const hasNearbyCatchBasin = basinPositions.some(basinPos => {
-                                return isPointClose(basinPos, group.centroid, 15);
+                        // If no catch basin found and there's a water trap (flow directions meet)
+                        if (!hasCatchBasin && intersection.isWaterTrap) {
+                            // Add water trap marker
+                            const trapIcon = L.divIcon({
+                                html: `<div class="water-trap"></div>`,
+                                className: '',
+                                iconSize: [20, 20]
                             });
                             
-                            // If there's no nearby catch basin, water will be trapped
-                            if (!hasNearbyCatchBasin) {
-                                // Create trapped water marker
-                                const trappedIcon = L.divIcon({
-                                    html: `<div class="trapped-water"><i class="fas fa-exclamation-triangle" style="color: ${TRAP_COLOR};"></i></div>`,
-                                    className: '',
-                                    iconSize: [30, 30]
-                                });
-                                
-                                // Add marker at the centroid of the group
-                                const marker = L.marker(group.centroid, {
-                                    icon: trappedIcon,
-                                    draggable: false
-                                }).addTo(trappedAreas);
-                                
-                                // Show warning toast
-                                showToast("Warning: Water trap detected! Add a catch basin here.");
-                            }
+                            const trap = L.marker(intersection.point, {
+                                icon: trapIcon,
+                                interactive: false
+                            }).addTo(waterTraps);
                         }
                     });
                 }
 
-                function groupClosePoints(points) {
-                    const groups = [];
-                    const processed = new Set();
+                function findIntersections(lines) {
+                    const intersections = [];
                     
-                    // Process each point
-                    for (let i = 0; i < points.length; i++) {
-                        // Skip if already processed
-                        if (processed.has(i)) continue;
-                        
-                        // Start a new group with this point
-                        const group = {
-                            points: [points[i]],
-                            centroid: points[i].point
-                        };
-                        processed.add(i);
-                        
-                        // Find all close points
-                        for (let j = 0; j < points.length; j++) {
-                            if (i === j || processed.has(j)) continue;
+                    // Check each pair of lines
+                    for (let i = 0; i < lines.length; i++) {
+                        for (let j = i + 1; j < lines.length; j++) {
+                            const line1 = lines[i];
+                            const line2 = lines[j];
                             
-                            if (isPointClose(points[i].point, points[j].point, 10)) {
-                                // Add to group
-                                group.points.push(points[j]);
-                                processed.add(j);
-                            }
-                        }
-                        
-                        // Calculate centroid if we have multiple points
-                        if (group.points.length > 1) {
-                            const latSum = group.points.reduce((sum, p) => sum + p.point.lat, 0);
-                            const lngSum = group.points.reduce((sum, p) => sum + p.point.lng, 0);
+                            const points1 = line1.getLatLngs();
+                            const points2 = line2.getLatLngs();
                             
-                            group.centroid = L.latLng(
-                                latSum / group.points.length,
-                                lngSum / group.points.length
-                            );
-                        }
-                        
-                        // Add group
-                        groups.push(group);
-                    }
-                    
-                    return groups;
-                }
-
-                function isPointClose(point1, point2, thresholdMeters) {
-                    // Calculate distance between points in meters
-                    const distance = map.distance(point1, point2);
-                    return distance <= thresholdMeters;
-                }
-
-                function enterDrawingMode(mode, type) {
-                    // Set drawing mode
-                    drawingMode = mode;
-                    drawingType = type;
-                    
-                    // Reset start point
-                    startPoint = null;
-                    
-                    // Clear guide layer
-                    guideLayer.clearLayers();
-                    
-                    // Update mode indicator
-                    const modeIndicator = document.getElementById('mode-indicator');
-                    const modeText = document.getElementById('mode-text');
-                    
-                    if (mode === 'draw') {
-                        if (type === 'street') {
-                            modeText.innerText = 'Tap to Start Street Pitch';
-                            modeIndicator.querySelector('i').className = 'fas fa-road';
-                            modeIndicator.querySelector('i').style.color = STREET_COLOR;
-                        } else {
-                            modeText.innerText = 'Tap to Start Curb Pitch';
-                            modeIndicator.querySelector('i').className = 'fas fa-grip-lines';
-                            modeIndicator.querySelector('i').style.color = CURB_COLOR;
-                        }
-                    } else if (mode === 'catchBasin') {
-                        modeText.innerText = 'Tap to Add Catch Basin';
-                        modeIndicator.querySelector('i').className = 'fas fa-drain';
-                        modeIndicator.querySelector('i').style.color = BASIN_COLOR;
-                    } else if (mode === 'highPoint') {
-                        modeText.innerText = 'Tap to Add High Point';
-                        modeIndicator.querySelector('i').className = 'fas fa-chevron-up';
-                        modeIndicator.querySelector('i').style.color = HIGH_POINT_COLOR;
-                    }
-                    
-                    // Show mode indicator
-                    modeIndicator.classList.add('visible');
-                    
-                    // Hide action menu
-                    document.getElementById('action-menu').classList.remove('visible');
-                }
-
-                function exitDrawingMode() {
-                    // Reset drawing mode
-                    drawingMode = null;
-                    drawingType = null;
-                    startPoint = null;
-                    
-                    // Clear guide layer
-                    guideLayer.clearLayers();
-                    map.off('mousemove');
-                    
-                    // Hide mode indicator
-                    document.getElementById('mode-indicator').classList.remove('visible');
-                    
-                    // Remove any temporary markers
-                    document.querySelectorAll('.temp-marker').forEach(marker => {
-                        marker.remove();
-                    });
-                }
-
-                function getUserLocation() {
-                    // Update status
-                    updateStatus('Finding your location...');
-                    
-                    // Show loading overlay
-                    document.querySelector('.loading-overlay').style.display = 'flex';
-                    
-                    // Check if geolocation is available
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(function(position) {
-                            // Store position
-                            currentPosition = [position.coords.latitude, position.coords.longitude];
-                            
-                            // Update map center
-                            map.setView(currentPosition, 19);
-                            
-                            // Create user marker if not exists
-                            if (!userMarker) {
-                                userMarker = L.circleMarker(currentPosition, {
-                                    radius: 8,
-                                    fillColor: '#2196F3',
-                                    color: '#fff',
-                                    weight: 2,
-                                    opacity: 1,
-                                    fillOpacity: 0.8
-                                }).addTo(map);
-                            } else {
-                                userMarker.setLatLng(currentPosition);
-                            }
-                            
-                            // Update status
-                            updateStatus('Current location');
-                            
-                            // Hide loading overlay
-                            document.querySelector('.loading-overlay').style.display = 'none';
-                            
-                            // Watch position for updates
-                            navigator.geolocation.watchPosition(function(position) {
-                                // Update current position
-                                currentPosition = [position.coords.latitude, position.coords.longitude];
-                                
-                                // Update user marker
-                                if (userMarker) {
-                                    userMarker.setLatLng(currentPosition);
+                            // Check each segment against each segment
+                            for (let a = 0; a < points1.length - 1; a++) {
+                                for (let b = 0; b < points2.length - 1; b++) {
+                                    const intersection = findSegmentIntersection(
+                                        points1[a], points1[a+1], 
+                                        points2[b], points2[b+1]
+                                    );
+                                    
+                                    if (intersection) {
+                                        // Determine if this is a water trap (flow directions meet)
+                                        // Get flow directions for both lines at this point
+                                        const flow1 = getFlowDirection(line1, intersection);
+                                        const flow2 = getFlowDirection(line2, intersection);
+                                        
+                                        // If flows point toward each other, it's a water trap
+                                        const dotProduct = flow1.lat * flow2.lat + flow1.lng * flow2.lng;
+                                        const isWaterTrap = dotProduct < 0; // Negative dot product means opposite directions
+                                        
+                                        intersections.push({
+                                            point: intersection,
+                                            isWaterTrap: isWaterTrap
+                                        });
+                                    }
                                 }
-                            }, function(error) {
-                                console.error('Error watching position:', error);
-                            }, {
-                                enableHighAccuracy: true,
-                                maximumAge: 0,
-                                timeout: 5000
-                            });
-                            
-                        }, function(error) {
-                            console.error('Error getting location:', error);
-                            
-                            // Update status
-                            updateStatus('Location access denied');
-                            
-                            // Hide loading overlay
-                            document.querySelector('.loading-overlay').style.display = 'none';
-                            
-                            // Set default view
-                            map.setView([40.7128, -74.0060], 16);
-                            
-                            // Show toast notification
-                            showToast("Please enable location access for best experience");
-                        }, {
-                            enableHighAccuracy: true,
-                            maximumAge: 0,
-                            timeout: 5000
-                        });
-                    } else {
-                        // Update status
-                        updateStatus('Location not supported');
-                        
-                        // Hide loading overlay
-                        document.querySelector('.loading-overlay').style.display = 'none';
-                        
-                        // Set default view
-                        map.setView([40.7128, -74.0060], 16);
-                        
-                        // Show toast notification
-                        showToast("Your browser doesn't support geolocation");
+                            }
+                        }
                     }
+                    
+                    return intersections;
+                }
+
+                function findSegmentIntersection(p1, p2, p3, p4) {
+                    // Convert to Cartesian coordinates for simplicity
+                    const x1 = p1.lat, y1 = p1.lng;
+                    const x2 = p2.lat, y2 = p2.lng;
+                    const x3 = p3.lat, y3 = p3.lng;
+                    const x4 = p4.lat, y4 = p4.lng;
+                    
+                    // Line segment intersection formula
+                    const denominator = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+                    
+                    // Check if lines are parallel
+                    if (denominator === 0) return null;
+                    
+                    const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
+                    const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
+                    
+                    // Check if intersection is within both line segments
+                    if (ua < 0 || ua > 1 || ub < 0 || ub > 1) return null;
+                    
+                    // Calculate intersection point
+                    const x = x1 + ua * (x2 - x1);
+                    const y = y1 + ua * (y2 - y1);
+                    
+                    return L.latLng(x, y);
+                }
+
+                function getFlowDirection(line, point) {
+                    // Get line points
+                    const points = line.getLatLngs();
+                    
+                    // Find segment closest to the point
+                    let closestSegmentIndex = -1;
+                    let minDistance = Infinity;
+                    
+                    for (let i = 0; i < points.length - 1; i++) {
+                        const projectedPoint = projectPointOnLine(point, points[i], points[i+1]);
+                        const distance = map.distance(point, projectedPoint);
+                        
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestSegmentIndex = i;
+                        }
+                    }
+                    
+                    if (closestSegmentIndex === -1) return { lat: 0, lng: 0 };
+                    
+                    // Get direction vector of the segment
+                    const start = points[closestSegmentIndex];
+                    const end = points[closestSegmentIndex + 1];
+                    
+                    // Calculate direction vector
+                    const direction = {
+                        lat: end.lat - start.lat,
+                        lng: end.lng - start.lng
+                    };
+                    
+                    // Normalize
+                    const length = Math.sqrt(direction.lat * direction.lat + direction.lng * direction.lng);
+                    
+                    return {
+                        lat: direction.lat / length,
+                        lng: direction.lng / length
+                    };
+                }
+
+                function clearAll() {
+                    // Clear all layers
+                    streets.clearLayers();
+                    curbs.clearLayers();
+                    catchBasins.clearLayers();
+                    highPoints.clearLayers();
+                    waterTraps.clearLayers();
+                    
+                    // Cancel any active drawing
+                    cancelDrawing();
+                    
+                    showToast('All items cleared');
+                }
+
+                function saveProject() {
+                    // Collect all data
+                    const projectData = {
+                        center: map.getCenter(),
+                        zoom: map.getZoom(),
+                        streets: [],
+                        curbs: [],
+                        catchBasins: [],
+                        highPoints: []
+                    };
+                    
+                    // Collect street lines
+                    streets.eachLayer(function(layer) {
+                        projectData.streets.push({
+                            points: layer.getLatLngs(),
+                            pitchValue: layer.options.pitchValue
+                        });
+                    });
+                    
+                    // Collect curb lines
+                    curbs.eachLayer(function(layer) {
+                        projectData.curbs.push({
+                            points: layer.getLatLngs(),
+                            pitchValue: layer.options.pitchValue
+                        });
+                    });
+                    
+                    // Collect catch basins
+                    catchBasins.eachLayer(function(layer) {
+                        projectData.catchBasins.push({
+                            point: layer.getLatLng()
+                        });
+                    });
+                    
+                    // Collect high points
+                    highPoints.eachLayer(function(layer) {
+                        projectData.highPoints.push({
+                            point: layer.getLatLng()
+                        });
+                    });
+                    
+                    // Convert to JSON
+                    const jsonData = JSON.stringify(projectData);
+                    
+                    // Create and trigger download
+                    const blob = new Blob([jsonData], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'flowmaster-project.json';
+                    a.click();
+                    
+                    showToast('Project saved');
+                }
+
+                function loadProject() {
+                    // Create file input
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.json';
+                    
+                    // Listen for file selection
+                    input.onchange = function(e) {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            try {
+                                // Parse project data
+                                const projectData = JSON.parse(e.target.result);
+                                
+                                // Clear current data
+                                clearAll();
+                                
+                                // Set map view
+                                if (projectData.center && projectData.zoom) {
+                                    map.setView([projectData.center.lat, projectData.center.lng], projectData.zoom);
+                                }
+                                
+                                // Load street lines
+                                if (projectData.streets && Array.isArray(projectData.streets)) {
+                                    projectData.streets.forEach(item => {
+                                        addPitchLine(item.points, item.pitchValue, 'street');
+                                    });
+                                }
+                                
+                                // Load curb lines
+                                if (projectData.curbs && Array.isArray(projectData.curbs)) {
+                                    projectData.curbs.forEach(item => {
+                                        addPitchLine(item.points, item.pitchValue, 'curb');
+                                    });
+                                }
+                                
+                                // Load catch basins
+                                if (projectData.catchBasins && Array.isArray(projectData.catchBasins)) {
+                                    projectData.catchBasins.forEach(item => {
+                                        addCatchBasin(L.latLng(item.point.lat, item.point.lng));
+                                    });
+                                }
+                                
+                                // Load high points
+                                if (projectData.highPoints && Array.isArray(projectData.highPoints)) {
+                                    projectData.highPoints.forEach(item => {
+                                        addHighPoint(L.latLng(item.point.lat, item.point.lng));
+                                    });
+                                }
+                                
+                                // Check for water traps
+                                checkWaterTraps();
+                                
+                                showToast('Project loaded successfully');
+                                
+                            } catch (error) {
+                                console.error('Error loading project:', error);
+                                showToast('Error loading project file');
+                            }
+                        };
+                        reader.readAsText(file);
+                    };
+                    
+                    // Trigger file selection
+                    input.click();
+                }
+
+                function showPitchDialog() {
+                    // Set initial value
+                    document.getElementById('pitch-value').value = appState.lastPitchValue;
+                    
+                    // Show dialog
+                    document.getElementById('pitch-dialog').style.display = 'flex';
+                }
+
+                function showConfirmDialog(message, callback) {
+                    // Set message
+                    document.getElementById('confirm-message').textContent = message;
+                    
+                    // Set callback
+                    appState.confirmAction = callback;
+                    
+                    // Show dialog
+                    document.getElementById('confirm-dialog').style.display = 'flex';
+                }
+
+                function showToast(message) {
+                    const toast = document.getElementById('toast');
+                    document.getElementById('toast-message').textContent = message;
+                    
+                    // Show toast
+                    toast.classList.add('visible');
+                    
+                    // Hide after 3 seconds
+                    setTimeout(() => {
+                        toast.classList.remove('visible');
+                    }, 3000);
+                }
+
+                function showLoading(message) {
+                    document.querySelector('.loading-text').textContent = message;
+                    document.querySelector('.loading-overlay').style.display = 'flex';
+                    appState.loading = true;
+                }
+
+                function hideLoading() {
+                    document.querySelector('.loading-overlay').style.display = 'none';
+                    appState.loading = false;
                 }
 
                 function updateStatus(message) {
                     document.querySelector('.status-text').textContent = message;
                 }
 
-                function showToast(message) {
-                    const toast = document.getElementById('toast');
-                    toast.textContent = message;
-                    toast.classList.add('visible');
-                    
-                    setTimeout(() => {
-                        toast.classList.remove('visible');
-                    }, 3000);
-                }
-
-                function clearAll() {
-                    // Clear all layers
-                    drawnItems.clearLayers();
-                    catchBasins.clearLayers();
-                    highPoints.clearLayers();
-                    auxiliaryMarkers.clearLayers();
-                    trappedAreas.clearLayers();
-                    guideLayer.clearLayers();
-                    
-                    // Exit drawing mode
-                    exitDrawingMode();
-                    
-                    // Show toast notification
-                    showToast("All items cleared");
-                }
-
-                function initUIHandlers() {
-                    // Action button click handler
-                    document.getElementById('action-btn').addEventListener('click', function() {
-                        document.getElementById('action-menu').classList.toggle('visible');
-                    });
-                    
-                    // Draw street button click handler
-                    document.getElementById('draw-street-btn').addEventListener('click', function() {
-                        enterDrawingMode('draw', 'street');
-                    });
-                    
-                    // Draw curb button click handler
-                    document.getElementById('draw-curb-btn').addEventListener('click', function() {
-                        enterDrawingMode('draw', 'curb');
-                    });
-                    
-                    // Add catch basin button click handler
-                    document.getElementById('add-basin-btn').addEventListener('click', function() {
-                        enterDrawingMode('catchBasin');
-                    });
-                    
-                    // Add high point button click handler
-                    document.getElementById('add-highpoint-btn').addEventListener('click', function() {
-                        enterDrawingMode('highPoint');
-                    });
-                    
-                    // Cancel mode button click handler
-                    document.getElementById('cancel-mode-btn').addEventListener('click', function() {
-                        exitDrawingMode();
-                    });
-                    
-                    // Pitch confirm button click handler
-                    document.getElementById('pitch-confirm').addEventListener('click', function() {
-                        confirmPitch();
-                    });
-                    
-                    // Pitch cancel button click handler
-                    document.getElementById('pitch-cancel').addEventListener('click', function() {
-                        cancelPitch();
-                    });
-                    
-                    // Handle Enter key in pitch input
-                    document.getElementById('pitch-input').addEventListener('keyup', function(e) {
-                        if (e.key === 'Enter') {
-                            confirmPitch();
+                function showHelp() {
+                    const helpSteps = [
+                        {
+                            target: document.getElementById('street-btn'),
+                            title: 'Draw Street Pitch Lines',
+                            text: 'Tap to draw blue pitch lines for streets. The water flows along the direction of the arrow.',
+                            position: 'top'
+                        },
+                        {
+                            target: document.getElementById('curb-btn'),
+                            title: 'Draw Curb Pitch Lines',
+                            text: 'Tap to draw yellow pitch lines for curbs. These typically run along the sides of streets.',
+                            position: 'top'
+                        },
+                        {
+                            target: document.getElementById('locate-btn'),
+                            title: 'Center on Your Location',
+                            text: 'Tap to go to your current GPS location on the site.',
+                            position: 'top'
+                        },
+                        {
+                            target: document.getElementById('catchbasin-btn'),
+                            title: 'Add Catch Basins',
+                            text: 'Tap to place catch basins where water should drain.',
+                            position: 'top'
+                        },
+                        {
+                            target: document.getElementById('highpoint-btn'),
+                            title: 'Add High Points',
+                            text: 'Tap to mark high points where water will flow away from.',
+                            position: 'top'
+                        },
+                        {
+                            target: document.getElementById('clear-btn'),
+                            title: 'Clear All Items',
+                            text: 'Tap to clear everything from the map and start fresh.',
+                            position: 'left'
+                        },
+                        {
+                            target: document.getElementById('save-btn'),
+                            title: 'Save Project',
+                            text: 'Tap to save your current drainage plan for later use.',
+                            position: 'left'
                         }
+                    ];
+                    
+                    const helpOverlay = document.getElementById('help-overlay');
+                    helpOverlay.innerHTML = '';
+                    helpOverlay.classList.add('visible');
+                    
+                    // Create first help card
+                    createHelpCard(helpSteps, 0);
+                }
+
+                function createHelpCard(steps, index) {
+                    if (index >= steps.length) {
+                        document.getElementById('help-overlay').classList.remove('visible');
+                        return;
+                    }
+                    
+                    const step = steps[index];
+                    const target = step.target;
+                    const targetRect = target.getBoundingClientRect();
+                    
+                    // Create card
+                    const card = document.createElement('div');
+                    card.className = 'help-card';
+                    
+                    // Position card based on target position
+                    let cardLeft, cardTop, arrowLeft, arrowTop, arrowStyle;
+                    
+                    if (step.position === 'top') {
+                        cardLeft = targetRect.left + (targetRect.width / 2) - 140;
+                        cardTop = targetRect.top - 150;
+                        arrowLeft = 140;
+                        arrowTop = 145;
+                        arrowStyle = 'bottom: -10px; left: 140px;';
+                    } else if (step.position === 'bottom') {
+                        cardLeft = targetRect.left + (targetRect.width / 2) - 140;
+                        cardTop = targetRect.bottom + 20;
+                        arrowLeft = 140;
+                        arrowTop = -10;
+                        arrowStyle = 'top: -10px; left: 140px;';
+                    } else if (step.position === 'left') {
+                        cardLeft = targetRect.left - 300;
+                        cardTop = targetRect.top + (targetRect.height / 2) - 75;
+                        arrowLeft = 290;
+                        arrowTop = 75;
+                        arrowStyle = 'right: -10px; top: 75px;';
+                    } else {
+                        cardLeft = targetRect.right + 20;
+                        cardTop = targetRect.top + (targetRect.height / 2) - 75;
+                        arrowLeft = -10;
+                        arrowTop = 75;
+                        arrowStyle = 'left: -10px; top: 75px;';
+                    }
+                    
+                    // Adjust position if card would go off screen
+                    if (cardLeft < 10) cardLeft = 10;
+                    if (cardLeft + 280 > window.innerWidth) cardLeft = window.innerWidth - 290;
+                    if (cardTop < 10) cardTop = 10;
+                    if (cardTop + 150 > window.innerHeight) cardTop = window.innerHeight - 160;
+                    
+                    card.style.left = `${cardLeft}px`;
+                    card.style.top = `${cardTop}px`;
+                    
+                    // Card content
+                    card.innerHTML = `
+                        <div class="help-arrow" style="${arrowStyle}"></div>
+                        <div class="help-title">${step.title}</div>
+                        <div class="help-text">${step.text}</div>
+                        <div class="help-next">
+                            <button class="button button-primary" id="help-next-btn">
+                                ${index < steps.length - 1 ? 'Next' : 'Done'}
+                            </button>
+                        </div>
+                    `;
+                    
+                    document.getElementById('help-overlay').appendChild(card);
+                    
+                    // Next button event
+                    document.getElementById('help-next-btn').addEventListener('click', function() {
+                        createHelpCard(steps, index + 1);
+                    });
+                }
+
+                function initEventHandlers() {
+                    // Action buttons
+                    document.getElementById('street-btn').addEventListener('click', function() {
+                        setDrawingMode('street');
                     });
                     
-                    // Locate button click handler
+                    document.getElementById('curb-btn').addEventListener('click', function() {
+                        setDrawingMode('curb');
+                    });
+                    
                     document.getElementById('locate-btn').addEventListener('click', function() {
-                        if (currentPosition) {
-                            map.setView(currentPosition, 19);
-                            showToast("Centered on current location");
+                        if (userLocation) {
+                            map.setView(userLocation, 19);
+                            showToast('Centered on your location');
                         } else {
                             getUserLocation();
                         }
                     });
                     
-                    // Clear button click handler
+                    document.getElementById('catchbasin-btn').addEventListener('click', function() {
+                        setDrawingMode('catchbasin');
+                    });
+                    
+                    document.getElementById('highpoint-btn').addEventListener('click', function() {
+                        setDrawingMode('highpoint');
+                    });
+                    
+                    // Map control buttons
+                    document.getElementById('zoom-in-btn').addEventListener('click', function() {
+                        map.zoomIn();
+                    });
+                    
+                    document.getElementById('zoom-out-btn').addEventListener('click', function() {
+                        map.zoomOut();
+                    });
+                    
+                    document.getElementById('help-btn').addEventListener('click', function() {
+                        showHelp();
+                    });
+                    
+                    document.getElementById('save-btn').addEventListener('click', function() {
+                        saveProject();
+                    });
+                    
                     document.getElementById('clear-btn').addEventListener('click', function() {
-                        // Ask for confirmation
-                        if (confirm('Are you sure you want to clear all items?')) {
-                            clearAll();
+                        showConfirmDialog('Are you sure you want to clear all items?', clearAll);
+                    });
+                    
+                    // Dialog buttons
+                    document.getElementById('save-pitch-btn').addEventListener('click', function() {
+                        const pitchValue = parseFloat(document.getElementById('pitch-value').value);
+                        
+                        if (isNaN(pitchValue) || pitchValue <= 0 || pitchValue > 20) {
+                            showToast('Please enter a valid pitch percentage (0.1-20%)');
+                            return;
+                        }
+                        
+                        // Save for future use
+                        appState.lastPitchValue = pitchValue;
+                        
+                        // Hide dialog
+                        document.getElementById('pitch-dialog').style.display = 'none';
+                        
+                        // Add line with pitch value
+                        if (pendingLine) {
+                            addPitchLine(pendingLine.points, pitchValue, pendingLine.type);
+                            pendingLine = null;
                         }
                     });
                     
-                    // Help button click handler
-                    document.getElementById('help-btn').addEventListener('click', function() {
-                        document.getElementById('help-modal').classList.add('visible');
+                    document.getElementById('cancel-pitch-btn').addEventListener('click', function() {
+                        // Hide dialog
+                        document.getElementById('pitch-dialog').style.display = 'none';
+                        
+                        // Cancel line
+                        pendingLine = null;
+                        showToast('Line cancelled');
                     });
                     
-                    // Help close button click handler
-                    document.getElementById('help-close').addEventListener('click', function() {
-                        document.getElementById('help-modal').classList.remove('visible');
+                    document.getElementById('confirm-btn').addEventListener('click', function() {
+                        // Hide dialog
+                        document.getElementById('confirm-dialog').style.display = 'none';
+                        
+                        // Execute callback
+                        if (typeof appState.confirmAction === 'function') {
+                            appState.confirmAction();
+                            appState.confirmAction = null;
+                        }
                     });
                     
-                    // Close help modal when clicking outside
-                    document.getElementById('help-modal').addEventListener('click', function(e) {
+                    document.getElementById('cancel-confirm-btn').addEventListener('click', function() {
+                        // Hide dialog
+                        document.getElementById('confirm-dialog').style.display = 'none';
+                        
+                        // Clear callback
+                        appState.confirmAction = null;
+                    });
+                    
+                    // Close dialogs when clicking outside
+                    document.getElementById('pitch-dialog').addEventListener('click', function(e) {
+                        if (e.target === this) {
+                            this.style.display = 'none';
+                            pendingLine = null;
+                        }
+                    });
+                    
+                    document.getElementById('confirm-dialog').addEventListener('click', function(e) {
+                        if (e.target === this) {
+                            this.style.display = 'none';
+                            appState.confirmAction = null;
+                        }
+                    });
+                    
+                    // Help overlay click
+                    document.getElementById('help-overlay').addEventListener('click', function(e) {
                         if (e.target === this) {
                             this.classList.remove('visible');
                         }
                     });
                     
-                    // Close pitch overlay when clicking outside
-                    document.getElementById('pitch-overlay').addEventListener('click', function(e) {
-                        if (e.target === this) {
-                            cancelPitch();
+                    // Key events
+                    document.addEventListener('keydown', function(e) {
+                        // Escape key
+                        if (e.key === 'Escape') {
+                            // Cancel drawing
+                            if (drawingLine) {
+                                cancelDrawing();
+                            }
+                            
+                            // Hide dialogs
+                            document.getElementById('pitch-dialog').style.display = 'none';
+                            document.getElementById('confirm-dialog').style.display = 'none';
+                            document.getElementById('help-overlay').classList.remove('visible');
+                            
+                            pendingLine = null;
+                            appState.confirmAction = null;
                         }
+                    });
+                }
+
+                function setDrawingMode(mode) {
+                    // Reset active state on all buttons
+                    document.querySelectorAll('.action-button').forEach(button => {
+                        button.classList.remove('active');
                     });
                     
-                    // Click away from menu to close it
-                    document.addEventListener('click', function(e) {
-                        const actionMenu = document.getElementById('action-menu');
-                        const actionBtn = document.getElementById('action-btn');
-                        
-                        if (actionMenu.classList.contains('visible') && 
-                            !actionMenu.contains(e.target) && 
-                            e.target !== actionBtn && 
-                            !actionBtn.contains(e.target)) {
-                            actionMenu.classList.remove('visible');
-                        }
-                    });
+                    // Cancel any current drawing
+                    cancelDrawing();
+                    
+                    // Set mode
+                    drawingMode = mode;
+                    
+                    // Update UI
+                    if (mode === 'street') {
+                        document.getElementById('street-btn').classList.add('active');
+                        showToast('Drawing street pitch - tap along street guides');
+                    } else if (mode === 'curb') {
+                        document.getElementById('curb-btn').classList.add('active');
+                        showToast('Drawing curb pitch - tap along curb guides');
+                    } else if (mode === 'catchbasin') {
+                        document.getElementById('catchbasin-btn').classList.add('active');
+                        showToast('Adding catch basins - tap to place');
+                    } else if (mode === 'highpoint') {
+                        document.getElementById('highpoint-btn').classList.add('active');
+                        showToast('Adding high points - tap to place');
+                    }
                 }
             }
         });
