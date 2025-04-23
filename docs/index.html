@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FlowMaster Pro</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <!-- Leaflet Draw CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <!-- Material Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/4.0.0/font/MaterialIcons-Regular.min.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2962ff;
+            --secondary-color: #0039cb;
+            --accent-color: #768fff;
+            --success-color: #4caf50;
+            --danger-color: #f44336;
+            --warning-color: #ff9800;
+            --light-color: #f5f5f5;
+            --dark-color: #263238;
+            --text-color: #212121;
+            --gray-color: #757575;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: var(--text-color);
+            background-color: #f5f5f5;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .app-container {
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .toolbar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toolbar-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--dark-color);
+        }
+
+        .toolbar-button:hover, .toolbar-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .toolbar-button i {
+            font-size: 24px;
+        }
+
+        .bottom-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            z-index: 1000;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            max-height: 60vh;
+            overflow-y: auto;
+            transform: translateY(calc(100% - 60px));
+        }
+
+        .bottom-panel.expanded {
+            transform: translateY(0);
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-handle {
+            width: 40px;
+            height: 5px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            margin: 10px auto;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .panel-content {
+            padding: 20px;
+        }
+
+        .status-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 8px 15px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            z-index: 1000;
+            max-width: 70%;
+        }
+
+        .status-bar i {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+
+        .status-text {
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tool-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option-group {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .option-title {
+            font-weight: 500;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-title i {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+
+        .option-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .control-button {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: none;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .control-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .control-button i {
+            margin-right: 5px;
+            font-size: 16px;
+        }
+
+        .control-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            outline: none;
+        }
+
+        .control-input input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .control-input span {
+            font-size: 14px;
+            color: var(--gray-color);
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .color-option.active {
+            border-color: var(--primary-color);
+            transform: scale(1.1);
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 2000;
+            pointer-events: none;
+        }
+
+        .pitch-label {
+            background: white;
+            border: none;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 2px 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .arrow-icon {
+            background-color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .high-point-icon, .catch-basin-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .high-point-icon {
+            color: var(--warning-color);
+        }
+
+        .catch-basin-icon {
+            color: var(--primary-color);
+        }
+
+        /* Loading spinner */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--light-color);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Splash screen */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            flex-direction: column;
+            color: white;
+            transition: opacity 0.5s ease;
+        }
+
+        .splash-logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .splash-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .splash-subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        /* Help modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            max-width: 90%;
+            max-height: 80%;
+            width: 500px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .help-section {
+            margin-bottom: 20px;
+        }
+
+        .help-heading {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .help-text {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .help-steps {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .help-steps li {
+            margin-bottom: 5px;
+        }
+
+        .feature-item {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: flex-start;
+        }
+
+        .feature-icon {
+            margin-right: 10px;
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+
+        .feature-text {
+            flex: 1;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: var(--dark-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .notification.visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .notification i {
+            margin-right: 10px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .toolbar {
+                top: auto;
+                bottom: 70px;
+                right: 10px;
+            }
+            
+            .toolbar-button {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .status-bar {
+                max-width: 60%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div class="splash-screen">
+        <div class="splash-logo">
+            <i class="fas fa-water"></i>
+        </div>
+        <div class="splash-title">FlowMaster Pro</div>
+        <div class="splash-subtitle">Professional Drainage Planning Tool</div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Map Element -->
+        <div id="map"></div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <i class="fas fa-map-marker-alt"></i>
+            <div class="status-text">Initializing location...</div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button class="toolbar-button" id="locate-btn" title="Center on my location">
+                <i class="fas fa-crosshairs"></i>
+            </button>
+            <button class="toolbar-button" id="draw-pitch-btn" title="Draw pitch line">
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+            <button class="toolbar-button" id="high-point-btn" title="Add high point">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+            <button class="toolbar-button" id="catch-basin-btn" title="Add catch basin">
+                <i class="fas fa-drain"></i>
+            </button>
+            <button class="toolbar-button" id="clear-btn" title="Clear all">
+                <i class="fas fa-trash"></i>
+            </button>
+            <button class="toolbar-button" id="help-btn" title="Help">
+                <i class="fas fa-question"></i>
+            </button>
+        </div>
+
+        <!-- Bottom Panel -->
+        <div class="bottom-panel">
+            <div class="panel-handle"></div>
+            <div class="panel-header">
+                <div class="panel-title">Drawing Options</div>
+                <button class="toolbar-button" id="close-panel-btn" style="width: 30px; height: 30px;">
+                    <i class="fas fa-times" style="font-size: 16px;"></i>
+                </button>
+            </div>
+            <div class="panel-content">
+                <div class="tool-options">
+                    <div class="option-group" id="pitch-options">
+                        <div class="option-title">
+                            <i class="fas fa-pencil-alt"></i>
+                            <span>Pitch Line Settings</span>
+                        </div>
+                        <div class="option-controls">
+                            <div class="control-input">
+                                <input type="number" id="pitch-percent" min="0.1" max="100" step="0.1" value="2.0">
+                                <span>% Slope</span>
+                            </div>
+                        </div>
+                        <div class="option-controls" style="margin-top: 10px;">
+                            <div class="control-button" id="pitch-curb-btn">
+                                <i class="fas fa-grip-lines"></i>
+                                <span>Curb</span>
+                            </div>
+                            <div class="control-button" id="pitch-street-btn">
+                                <i class="fas fa-road"></i>
+                                <span>Street</span>
+                            </div>
+                        </div>
+                        <div class="option-title" style="margin-top: 15px;">
+                            <i class="fas fa-palette"></i>
+                            <span>Line Color</span>
+                        </div>
+                        <div class="color-picker">
+                            <div class="color-option active" style="background-color: #2962ff;" data-color="#2962ff"></div>
+                            <div class="color-option" style="background-color: #f44336;" data-color="#f44336"></div>
+                            <div class="color-option" style="background-color: #4caf50;" data-color="#4caf50"></div>
+                            <div class="color-option" style="background-color: #ff9800;" data-color="#ff9800"></div>
+                            <div class="color-option" style="background-color: #9c27b0;" data-color="#9c27b0"></div>
+                            <div class="color-option" style="background-color: #607d8b;" data-color="#607d8b"></div>
+                        </div>
+                    </div>
+
+                    <div class="option-group" id="marker-options">
+                        <div class="option-title">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Marker Settings</span>
+                        </div>
+                        <div class="option-controls">
+                            <div class="control-button" id="edit-markers-btn">
+                                <i class="fas fa-edit"></i>
+                                <span>Edit Markers</span>
+                            </div>
+                            <div class="control-button" id="delete-selected-btn">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Delete Selected</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="option-group">
+                        <div class="option-title">
+                            <i class="fas fa-save"></i>
+                            <span>Project Options</span>
+                        </div>
+                        <div class="option-controls">
+                            <div class="control-button" id="save-project-btn">
+                                <i class="fas fa-save"></i>
+                                <span>Save Project</span>
+                            </div>
+                            <div class="control-button" id="load-project-btn">
+                                <i class="fas fa-folder-open"></i>
+                                <span>Load Project</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div class="modal" id="help-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">FlowMaster Pro Help</div>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="help-section">
+                        <div class="help-heading">Getting Started</div>
+                        <p class="help-text">FlowMaster Pro helps you plan and visualize water drainage on construction sites. Here's how to use the app:</p>
+                        <ol class="help-steps">
+                            <li>Your current location will automatically display on the map</li>
+                            <li>Use the toolbar buttons on the right to add elements to the map</li>
+                            <li>Set properties for each element using the bottom panel</li>
+                            <li>Save your project when finished</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-section">
+                        <div class="help-heading">Key Features</div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-pencil-alt"></i>
+                            </div>
+                            <div class="feature-text">
+                                <strong>Pitch Lines</strong> - Draw slope lines to indicate drainage direction. Set the percentage slope and choose between curb or street type.
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-chevron-up"></i>
+                            </div>
+                            <div class="feature-text">
+                                <strong>High Points</strong> - Mark the highest elevation points where water will flow away from.
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-drain"></i>
+                            </div>
+                            <div class="feature-text">
+                                <strong>Catch Basins</strong> - Mark drainage points where water will collect.
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-crosshairs"></i>
+                            </div>
+                            <div class="feature-text">
+                                <strong>Location Tracking</strong> - The app uses GPS to show your current position, making it easy to mark features while on-site.
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-save"></i>
+                            </div>
+                            <div class="feature-text">
+                                <strong>Save Projects</strong> - Save your work to revisit later or share with team members.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <div class="help-heading">Tips & Tricks</div>
+                        <ul class="help-steps">
+                            <li>Tap and hold on any element to edit or delete it</li>
+                            <li>Swipe up on the bottom panel to access more options</li>
+                            <li>Use different colors to indicate different drainage systems</li>
+                            <li>For best accuracy, calibrate your device's compass before use</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Notification -->
+        <div class="notification">
+            <i class="fas fa-info-circle"></i>
+            <span id="notification-text">Notification message</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Leaflet and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for splash screen
+            setTimeout(() => {
+                document.querySelector('.splash-screen').style.opacity = 0;
+                setTimeout(() => {
+                    document.querySelector('.splash-screen').style.display = 'none';
+                    init();
+                }, 500);
+            }, 2000);
+
+            function init() {
+                // Initialize variables
+                let map, userMarker, currentPosition;
+                let drawingMode = null;
+                let currentColor = '#2962ff';
+                let pitchPercent = 2.0;
+                let pitchType = 'curb';
+                let drawControl;
+                let drawnItems = new L.FeatureGroup();
+                let markers = new L.FeatureGroup();
+                let highPoints = new L.FeatureGroup();
+                let catchBasins = new L.FeatureGroup();
+                let editMode = false;
+                let selectedMarker = null;
+
+                // Initialize the map
+                initMap();
+
+                // Initialize UI interactions
+                initUIHandlers();
+
+                function initMap() {
+                    // Create map with default view (will be updated with user location)
+                    map = L.map('map', {
+                        zoomControl: false
+                    }).setView([0, 0], 2);
+
+                    // Add zoom control to bottom left
+                    L.control.zoom({
+                        position: 'bottomleft'
+                    }).addTo(map);
+
+                    // Add tile layer (OpenStreetMap)
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                        maxZoom: 22
+                    }).addTo(map);
+
+                    // Add feature groups to map
+                    map.addLayer(drawnItems);
+                    map.addLayer(markers);
+                    map.addLayer(highPoints);
+                    map.addLayer(catchBasins);
+
+                    // Initialize draw control
+                    initializeDrawControl();
+
+                    // Get user location
+                    getUserLocation();
+
+                    // Map interaction events
+                    map.on('click', handleMapClick);
+                }
+
+                function initializeDrawControl() {
+                    // Initialize draw control options
+                    const drawOptions = {
+                        position: 'topright',
+                        draw: {
+                            polyline: {
+                                shapeOptions: {
+                                    color: currentColor,
+                                    weight: 5,
+                                    opacity: 0.8
+                                }
+                            },
+                            polygon: false,
+                            circle: false,
+                            rectangle: false,
+                            marker: false,
+                            circlemarker: false
+                        },
+                        edit: {
+                            featureGroup: drawnItems,
+                            edit: true,
+                            remove: true
+                        }
+                    };
+
+                    // Create draw control but don't add to map yet
+                    drawControl = new L.Control.Draw(drawOptions);
+
+                    // Add drawn items event
+                    map.on(L.Draw.Event.CREATED, function(event) {
+                        const layer = event.layer;
+                        
+                        // Set custom properties
+                        layer.options.pitchPercent = pitchPercent;
+                        layer.options.pitchType = pitchType;
+                        layer.options.color = currentColor;
+                        
+                        if (event.layerType === 'polyline') {
+                            // Add direction arrow
+                            addDirectionArrow(layer);
+                            
+                            // Add pitch label
+                            addPitchLabel(layer);
+                        }
+                        
+                        // Add to drawn items layer
+                        drawnItems.addLayer(layer);
+                        
+                        // Show notification
+                        showNotification(`Added ${pitchPercent}% ${pitchType} pitch line`);
+                        
+                        // Update edit handlers
+                        updateEditHandlers();
+                    });
+
+                    // Edit completed event
+                    map.on(L.Draw.Event.EDITED, function(event) {
+                        const layers = event.layers;
+                        layers.eachLayer(function(layer) {
+                            if (layer.options.pitchPercent) {
+                                // Update arrows and labels for edited lines
+                                updateDirectionArrow(layer);
+                                updatePitchLabel(layer);
+                            }
+                        });
+                        
+                        // Show notification
+                        showNotification('Edited items updated');
+                    });
+
+                    // Delete completed event
+                    map.on(L.Draw.Event.DELETED, function(event) {
+                        // Show notification
+                        showNotification('Items deleted');
+                    });
+                }
+
+                function addDirectionArrow(polyline) {
+                    // Get polyline coordinates
+                    const coords = polyline.getLatLngs();
+                    if (coords.length < 2) return;
+                    
+                    // Get midpoint of line
+                    const midIndex = Math.floor(coords.length / 2);
+                    const midPoint = coords[midIndex];
+                    
+                    // Get direction angle
+                    const prevPoint = coords[midIndex - 1];
+                    const angle = getAngle(prevPoint, midPoint);
+                    
+                    // Create arrow marker
+                    const arrowIcon = L.divIcon({
+                        html: `<div class="arrow-icon"><i class="fas fa-arrow-down" style="transform: rotate(${angle}deg); color: ${currentColor};"></i></div>`,
+                        className: '',
+                        iconSize: [24, 24]
+                    });
+                    
+                    // Create marker and store reference
+                    const arrowMarker = L.marker(midPoint, {
+                        icon: arrowIcon,
+                        draggable: false,
+                        linkedPolyline: polyline
+                    }).addTo(markers);
+                    
+                    // Store reference to arrow marker
+                    polyline.arrowMarker = arrowMarker;
+                }
+
+                function updateDirectionArrow(polyline) {
+                    // Remove old arrow
+                    if (polyline.arrowMarker) {
+                        markers.removeLayer(polyline.arrowMarker);
+                    }
+                    
+                    // Add new arrow
+                    addDirectionArrow(polyline);
+                }
+
+                function addPitchLabel(polyline) {
+                    // Get polyline coordinates
+                    const coords = polyline.getLatLngs();
+                    if (coords.length < 2) return;
+                    
+                    // Get first point of line
+                    const point = coords[0];
+                    
+                    // Create label marker
+                    const labelIcon = L.divIcon({
+                        html: `<div class="pitch-label" style="border-left: 4px solid ${currentColor};">${pitchPercent}% ${pitchType}</div>`,
+                        className: '',
+                        iconSize: [60, 24]
+                    });
+                    
+                    // Create marker and store reference
+                    const labelMarker = L.marker(point, {
+                        icon: labelIcon,
+                        draggable: false,
+                        linkedPolyline: polyline
+                    }).addTo(markers);
+                    
+                    // Store reference to label marker
+                    polyline.labelMarker = labelMarker;
+                }
+
+                function updatePitchLabel(polyline) {
+                    // Remove old label
+                    if (polyline.labelMarker) {
+                        markers.removeLayer(polyline.labelMarker);
+                    }
+                    
+                    // Add new label
+                    addPitchLabel(polyline);
+                }
+
+                function getAngle(start, end) {
+                    // Calculate angle in degrees
+                    const lat1 = start.lat * Math.PI / 180;
+                    const lat2 = end.lat * Math.PI / 180;
+                    const lng1 = start.lng * Math.PI / 180;
+                    const lng2 = end.lng * Math.PI / 180;
+                    
+                    const y = Math.sin(lng2 - lng1) * Math.cos(lat2);
+                    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lng2 - lng1);
+                    
+                    let angle = Math.atan2(y, x) * 180 / Math.PI;
+                    angle = (angle + 360) % 360; // Normalize to 0-360
+                    
+                    return angle;
+                }
+
+                function addHighPoint(latlng) {
+                    const highPointIcon = L.divIcon({
+                        html: `<div class="high-point-icon"><i class="fas fa-chevron-up"></i></div>`,
+                        className: '',
+                        iconSize: [32, 32]
+                    });
+                    
+                    const marker = L.marker(latlng, {
+                        icon: highPointIcon,
+                        draggable: true
+                    }).addTo(highPoints);
+                    
+                    // Add event listeners
+                    marker.on('click', function() {
+                        if (editMode) {
+                            if (selectedMarker === marker) {
+                                deselectMarker();
+                            } else {
+                                selectMarker(marker);
+                            }
+                        }
+                    });
+                    
+                    showNotification('High point added');
+                }
+
+                function addCatchBasin(latlng) {
+                    const catchBasinIcon = L.divIcon({
+                        html: `<div class="catch-basin-icon"><i class="fas fa-drain"></i></div>`,
+                        className: '',
+                        iconSize: [32, 32]
+                    });
+                    
+                    const marker = L.marker(latlng, {
+                        icon: catchBasinIcon,
+                        draggable: true
+                    }).addTo(catchBasins);
+                    
+                    // Add event listeners
+                    marker.on('click', function() {
+                        if (editMode) {
+                            if (selectedMarker === marker) {
+                                deselectMarker();
+                            } else {
+                                selectMarker(marker);
+                            }
+                        }
+                    });
+                    
+                    showNotification('Catch basin added');
+                }
+
+                function selectMarker(marker) {
+                    // Deselect previous marker if any
+                    deselectMarker();
+                    
+                    // Select new marker
+                    selectedMarker = marker;
+                    
+                    // Visual indication of selection
+                    const icon = marker.getIcon();
+                    const htmlElement = icon.options.html;
+                    const newHtml = htmlElement.replace('<div class="', '<div style="border: 2px solid #2962ff;" class="');
+                    
+                    marker.setIcon(L.divIcon({
+                        html: newHtml,
+                        className: icon.options.className,
+                        iconSize: icon.options.iconSize
+                    }));
+                    
+                    // Enable delete button
+                    document.getElementById('delete-selected-btn').classList.add('active');
+                }
+
+                function deselectMarker() {
+                    if (selectedMarker) {
+                        // Reset icon
+                        const icon = selectedMarker.getIcon();
+                        const htmlElement = icon.options.html;
+                        const newHtml = htmlElement.replace('style="border: 2px solid #2962ff;"', '');
+                        
+                        selectedMarker.setIcon(L.divIcon({
+                            html: newHtml,
+                            className: icon.options.className,
+                            iconSize: icon.options.iconSize
+                        }));
+                        
+                        selectedMarker = null;
+                        
+                        // Disable delete button
+                        document.getElementById('delete-selected-btn').classList.remove('active');
+                    }
+                }
+
+                function deleteSelectedMarker() {
+                    if (selectedMarker) {
+                        if (highPoints.hasLayer(selectedMarker)) {
+                            highPoints.removeLayer(selectedMarker);
+                            showNotification('High point deleted');
+                        } else if (catchBasins.hasLayer(selectedMarker)) {
+                            catchBasins.removeLayer(selectedMarker);
+                            showNotification('Catch basin deleted');
+                        }
+                        
+                        selectedMarker = null;
+                        document.getElementById('delete-selected-btn').classList.remove('active');
+                    }
+                }
+
+                function handleMapClick(e) {
+                    if (drawingMode === 'highPoint') {
+                        addHighPoint(e.latlng);
+                    } else if (drawingMode === 'catchBasin') {
+                        addCatchBasin(e.latlng);
+                    }
+                }
+
+                function getUserLocation() {
+                    // Update status
+                    updateStatus('Finding your location...');
+                    
+                    // Show loading overlay
+                    document.querySelector('.loading-overlay').style.display = 'flex';
+                    
+                    // Check if geolocation is available
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            // Store position
+                            currentPosition = [position.coords.latitude, position.coords.longitude];
+                            
+                            // Update map center
+                            map.setView(currentPosition, 19);
+                            
+                            // Create user marker if not exists
+                            if (!userMarker) {
+                                userMarker = L.circleMarker(currentPosition, {
+                                    radius: 8,
+                                    fillColor: '#2962ff',
+                                    color: '#fff',
+                                    weight: 2,
+                                    opacity: 1,
+                                    fillOpacity: 0.8
+                                }).addTo(map);
+                            } else {
+                                userMarker.setLatLng(currentPosition);
+                            }
+                            
+                            // Update status
+                            updateStatus('Location found');
+                            
+                            // Hide loading overlay
+                            document.querySelector('.loading-overlay').style.display = 'none';
+                            
+                            // Watch position for updates
+                            navigator.geolocation.watchPosition(function(position) {
+                                // Update current position
+                                currentPosition = [position.coords.latitude, position.coords.longitude];
+                                
+                                // Update user marker
+                                if (userMarker) {
+                                    userMarker.setLatLng(currentPosition);
+                                }
+                            }, function(error) {
+                                console.error('Error watching position:', error);
+                            }, {
+                                enableHighAccuracy: true,
+                                maximumAge: 0,
+                                timeout: 5000
+                            });
+                            
+                        }, function(error) {
+                            console.error('Error getting location:', error);
+                            
+                            // Update status
+                            updateStatus('Location access denied. Please enable GPS.');
+                            
+                            // Hide loading overlay
+                            document.querySelector('.loading-overlay').style.display = 'none';
+                            
+                            // Set default view
+                            map.setView([40.7128, -74.0060], 14);
+                        }, {
+                            enableHighAccuracy: true,
+                            maximumAge: 0,
+                            timeout: 5000
+                        });
+                    } else {
+                        // Update status
+                        updateStatus('Geolocation not supported in this browser');
+                        
+                        // Hide loading overlay
+                        document.querySelector('.loading-overlay').style.display = 'none';
+                        
+                        // Set default view
+                        map.setView([40.7128, -74.0060], 14);
+                    }
+                }
+
+                function updateStatus(message) {
+                    document.querySelector('.status-text').textContent = message;
+                }
+
+                function showNotification(message) {
+                    const notification = document.querySelector('.notification');
+                    document.getElementById('notification-text').textContent = message;
+                    
+                    notification.classList.add('visible');
+                    
+                    setTimeout(() => {
+                        notification.classList.remove('visible');
+                    }, 3000);
+                }
+
+                function setDrawingMode(mode) {
+                    // Reset all buttons
+                    document.querySelectorAll('.toolbar-button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Reset edit mode
+                    if (editMode) {
+                        editMode = false;
+                        deselectMarker();
+                        document.getElementById('edit-markers-btn').classList.remove('active');
+                    }
+                    
+                    // Set new mode
+                    drawingMode = mode;
+                    
+                    // Update UI based on mode
+                    if (mode === 'draw') {
+                        document.getElementById('draw-pitch-btn').classList.add('active');
+                        document.getElementById('pitch-options').style.display = 'block';
+                        document.getElementById('marker-options').style.display = 'none';
+                        
+                        // Start drawing mode
+                        new L.Draw.Polyline(map, drawControl.options.draw.polyline).enable();
+                        
+                    } else if (mode === 'highPoint') {
+                        document.getElementById('high-point-btn').classList.add('active');
+                        document.getElementById('pitch-options').style.display = 'none';
+                        document.getElementById('marker-options').style.display = 'block';
+                        
+                    } else if (mode === 'catchBasin') {
+                        document.getElementById('catch-basin-btn').classList.add('active');
+                        document.getElementById('pitch-options').style.display = 'none';
+                        document.getElementById('marker-options').style.display = 'block';
+                        
+                    } else {
+                        document.getElementById('pitch-options').style.display = 'none';
+                        document.getElementById('marker-options').style.display = 'block';
+                    }
+                    
+                    // Show/expand bottom panel
+                    document.querySelector('.bottom-panel').classList.add('expanded');
+                }
+
+                function updateEditHandlers() {
+                    // Refresh edit handlers on all polylines
+                    drawnItems.eachLayer(function(layer) {
+                        if (layer instanceof L.Polyline) {
+                            // Update arrow and label when line is edited
+                            layer.on('edit', function() {
+                                updateDirectionArrow(layer);
+                                updatePitchLabel(layer);
+                            });
+                        }
+                    });
+                }
+
+                function toggleEditMode() {
+                    editMode = !editMode;
+                    
+                    if (editMode) {
+                        // Enable edit mode
+                        document.getElementById('edit-markers-btn').classList.add('active');
+                        showNotification('Marker edit mode enabled. Tap a marker to select it.');
+                    } else {
+                        // Disable edit mode
+                        document.getElementById('edit-markers-btn').classList.remove('active');
+                        deselectMarker();
+                        showNotification('Marker edit mode disabled');
+                    }
+                }
+
+                function clearAll() {
+                    // Clear all layers
+                    drawnItems.clearLayers();
+                    markers.clearLayers();
+                    highPoints.clearLayers();
+                    catchBasins.clearLayers();
+                    
+                    // Reset selection
+                    selectedMarker = null;
+                    
+                    // Update UI
+                    document.getElementById('delete-selected-btn').classList.remove('active');
+                    
+                    // Show notification
+                    showNotification('All items cleared');
+                }
+
+                function saveProject() {
+                    // Collect all data
+                    const projectData = {
+                        center: map.getCenter(),
+                        zoom: map.getZoom(),
+                        drawnItems: [],
+                        highPoints: [],
+                        catchBasins: []
+                    };
+                    
+                    // Collect polylines
+                    drawnItems.eachLayer(function(layer) {
+                        if (layer instanceof L.Polyline) {
+                            projectData.drawnItems.push({
+                                type: 'polyline',
+                                latlngs: layer.getLatLngs(),
+                                options: {
+                                    color: layer.options.color,
+                                    pitchPercent: layer.options.pitchPercent,
+                                    pitchType: layer.options.pitchType
+                                }
+                            });
+                        }
+                    });
+                    
+                    // Collect high points
+                    highPoints.eachLayer(function(layer) {
+                        projectData.highPoints.push({
+                            latlng: layer.getLatLng()
+                        });
+                    });
+                    
+                    // Collect catch basins
+                    catchBasins.eachLayer(function(layer) {
+                        projectData.catchBasins.push({
+                            latlng: layer.getLatLng()
+                        });
+                    });
+                    
+                    // Convert to JSON
+                    const jsonData = JSON.stringify(projectData);
+                    
+                    // Create and trigger download
+                    const blob = new Blob([jsonData], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'flowmaster-project.json';
+                    a.click();
+                    
+                    // Show notification
+                    showNotification('Project saved');
+                }
+
+                function loadProject() {
+                    // Create file input
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.json';
+                    
+                    // Listen for file selection
+                    input.onchange = function(e) {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            try {
+                                // Parse project data
+                                const projectData = JSON.parse(e.target.result);
+                                
+                                // Clear current data
+                                clearAll();
+                                
+                                // Set map view
+                                if (projectData.center && projectData.zoom) {
+                                    map.setView(projectData.center, projectData.zoom);
+                                }
+                                
+                                // Load polylines
+                                if (projectData.drawnItems && Array.isArray(projectData.drawnItems)) {
+                                    projectData.drawnItems.forEach(item => {
+                                        if (item.type === 'polyline') {
+                                            // Create polyline
+                                            const polyline = L.polyline(item.latlngs, {
+                                                color: item.options.color,
+                                                weight: 5,
+                                                opacity: 0.8,
+                                                pitchPercent: item.options.pitchPercent,
+                                                pitchType: item.options.pitchType
+                                            });
+                                            
+                                            // Add to layer
+                                            drawnItems.addLayer(polyline);
+                                            
+                                            // Set current properties for correct display
+                                            currentColor = item.options.color;
+                                            pitchPercent = item.options.pitchPercent;
+                                            pitchType = item.options.pitchType;
+                                            
+                                            // Add arrow and label
+                                            addDirectionArrow(polyline);
+                                            addPitchLabel(polyline);
+                                        }
+                                    });
+                                }
+                                
+                                // Load high points
+                                if (projectData.highPoints && Array.isArray(projectData.highPoints)) {
+                                    projectData.highPoints.forEach(item => {
+                                        addHighPoint(item.latlng);
+                                    });
+                                }
+                                
+                                // Load catch basins
+                                if (projectData.catchBasins && Array.isArray(projectData.catchBasins)) {
+                                    projectData.catchBasins.forEach(item => {
+                                        addCatchBasin(item.latlng);
+                                    });
+                                }
+                                
+                                // Update edit handlers
+                                updateEditHandlers();
+                                
+                                // Show notification
+                                showNotification('Project loaded successfully');
+                                
+                            } catch (error) {
+                                console.error('Error loading project:', error);
+                                showNotification('Error loading project file');
+                            }
+                        };
+                        reader.readAsText(file);
+                    };
+                    
+                    // Trigger file selection
+                    input.click();
+                }
+
+                function initUIHandlers() {
+                    // Toolbar button handlers
+                    document.getElementById('locate-btn').addEventListener('click', function() {
+                        if (currentPosition) {
+                            map.setView(currentPosition, 19);
+                            showNotification('Centered on current location');
+                        } else {
+                            getUserLocation();
+                        }
+                    });
+                    
+                    document.getElementById('draw-pitch-btn').addEventListener('click', function() {
+                        setDrawingMode('draw');
+                    });
+                    
+                    document.getElementById('high-point-btn').addEventListener('click', function() {
+                        setDrawingMode('highPoint');
+                    });
+                    
+                    document.getElementById('catch-basin-btn').addEventListener('click', function() {
+                        setDrawingMode('catchBasin');
+                    });
+                    
+                    document.getElementById('clear-btn').addEventListener('click', function() {
+                        // Confirm before clearing
+                        if (confirm('Are you sure you want to clear all items?')) {
+                            clearAll();
+                        }
+                    });
+                    
+                    document.getElementById('help-btn').addEventListener('click', function() {
+                        document.getElementById('help-modal').style.display = 'flex';
+                    });
+                    
+                    // Bottom panel handlers
+                    document.querySelector('.panel-handle').addEventListener('click', function() {
+                        document.querySelector('.bottom-panel').classList.toggle('expanded');
+                    });
+                    
+                    document.getElementById('close-panel-btn').addEventListener('click', function() {
+                        document.querySelector('.bottom-panel').classList.remove('expanded');
+                    });
+                    
+                    // Pitch options handlers
+                    document.getElementById('pitch-percent').addEventListener('input', function() {
+                        pitchPercent = parseFloat(this.value);
+                    });
+                    
+                    document.getElementById('pitch-curb-btn').addEventListener('click', function() {
+                        pitchType = 'curb';
+                        this.classList.add('active');
+                        document.getElementById('pitch-street-btn').classList.remove('active');
+                    });
+                    
+                    document.getElementById('pitch-street-btn').addEventListener('click', function() {
+                        pitchType = 'street';
+                        this.classList.add('active');
+                        document.getElementById('pitch-curb-btn').classList.remove('active');
+                    });
+                    
+                    // Set curb as default
+                    document.getElementById('pitch-curb-btn').classList.add('active');
+                    
+                    // Color picker handlers
+                    document.querySelectorAll('.color-option').forEach(function(option) {
+                        option.addEventListener('click', function() {
+                            // Remove active class from all
+                            document.querySelectorAll('.color-option').forEach(opt => {
+                                opt.classList.remove('active');
+                            });
+                            
+                            // Add active class to selected
+                            this.classList.add('active');
+                            
+                            // Update current color
+                            currentColor = this.getAttribute('data-color');
+                            
+                            // Update draw options
+                            drawControl.options.draw.polyline.shapeOptions.color = currentColor;
+                        });
+                    });
+                    
+                    // Marker options handlers
+                    document.getElementById('edit-markers-btn').addEventListener('click', toggleEditMode);
+                    
+                    document.getElementById('delete-selected-btn').addEventListener('click', deleteSelectedMarker);
+                    
+                    // Project options handlers
+                    document.getElementById('save-project-btn').addEventListener('click', saveProject);
+                    
+                    document.getElementById('load-project-btn').addEventListener('click', loadProject);
+                    
+                    // Modal close handler
+                    document.querySelector('.modal-close').addEventListener('click', function() {
+                        document.getElementById('help-modal').style.display = 'none';
+                    });
+                    
+                    // Close modal when clicking outside
+                    document.getElementById('help-modal').addEventListener('click', function(e) {
+                        if (e.target === this) {
+                            this.style.display = 'none';
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
