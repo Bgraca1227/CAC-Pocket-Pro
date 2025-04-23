@@ -1,39 +1,35 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FlowMaster Pro</title>
+    <title>FlowMaster Pro 2.0</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <!-- Font Awesome -->
+    <!-- Material Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <!-- Material Design Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/4.0.0/font/MaterialIcons-Regular.min.css" />
-    <!-- Google Fonts -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
     <style>
         :root {
-            --primary-color: #2962ff;
-            --street-color: #2962ff;
-            --curb-color: #ffb300;
-            --marker-color: #7c4dff;
-            --error-color: #f44336;
-            --success-color: #4caf50;
-            --warning-color: #ff9800;
-            --background-color: #f5f5f5;
-            --card-color: #ffffff;
+            --primary-color: #0075ff;
+            --secondary-color: #ffcc00;
+            --accent-color: #ff3e30;
+            --success-color: #00c853;
+            --dark-color: #263238;
+            --light-color: #f5f5f5;
             --text-color: #212121;
-            --text-light: #757575;
-            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --gray-color: #757575;
+            --panel-bg: rgba(255, 255, 255, 0.97);
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --rounded: 12px;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -42,14 +38,7 @@
             width: 100vw;
             overflow: hidden;
             color: var(--text-color);
-            background-color: var(--background-color);
-        }
-
-        /* Map */
-        #map {
-            height: 100%;
-            width: 100%;
-            z-index: 1;
+            background-color: var(--light-color);
         }
 
         .app-container {
@@ -58,232 +47,249 @@
             width: 100vw;
         }
 
-        /* Action Bar */
+        #map {
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+
+        /* Top Action Bar */
         .action-bar {
             position: absolute;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 12px;
+            left: 10px;
+            right: 10px;
             z-index: 1000;
             display: flex;
-            background-color: var(--card-color);
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            padding: 8px;
-            gap: 12px;
-            max-width: 95%;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
+            pointer-events: none;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
         }
 
         .action-button {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
+            background-color: var(--panel-bg);
+            box-shadow: var(--shadow);
+            border: none;
+            cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: var(--card-color);
-            color: var(--text-color);
-            border: none;
-            cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: none;
-            position: relative;
+            color: var(--dark-color);
+        }
+
+        .action-button i {
+            font-size: 20px;
         }
 
         .action-button:active {
             transform: scale(0.95);
         }
 
-        .action-button:focus {
-            outline: none;
-        }
-
         .action-button.active {
-            background-color: var(--primary-color);
-            color: #ffffff;
-        }
-
-        .action-button.street-tool {
-            background-color: var(--street-color);
-            color: #ffffff;
-        }
-
-        .action-button.curb-tool {
-            background-color: var(--curb-color);
-            color: #212121;
-        }
-
-        .action-button.catchbasin-tool {
-            background-color: var(--marker-color);
-            color: #ffffff;
-        }
-
-        .action-button.highpoint-tool {
-            background-color: var(--warning-color);
-            color: #212121;
-        }
-
-        .action-button i {
-            font-size: 24px;
-        }
-
-        .action-button-label {
-            position: absolute;
-            bottom: -24px;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-color);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 2px 8px;
-            border-radius: 10px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            pointer-events: none;
-        }
-
-        .action-button:hover .action-button-label {
-            opacity: 1;
-        }
-
-        .main-action-button {
-            width: 64px;
-            height: 64px;
-            transform: translateY(-10px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             background-color: var(--primary-color);
             color: white;
         }
 
-        /* Location & Zoom Controls */
-        .map-controls {
+        /* Drawing Toolbar */
+        .drawing-toolbar {
             position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 1000;
             display: flex;
-            flex-direction: column;
             gap: 12px;
+            background-color: var(--panel-bg);
+            border-radius: 24px;
+            padding: 6px;
+            box-shadow: var(--shadow);
         }
 
-        .map-control-button {
-            width: 40px;
-            height: 40px;
+        .tool-button {
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
-            background-color: var(--card-color);
+            background-color: var(--panel-bg);
+            border: 2px solid transparent;
+            cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: var(--shadow);
-            border: none;
-            cursor: pointer;
             transition: all 0.2s ease;
-            color: var(--text-color);
+            color: var(--dark-color);
         }
 
-        .map-control-button:active {
+        .tool-button i {
+            font-size: 24px;
+        }
+
+        .tool-button:active {
             transform: scale(0.95);
         }
 
-        /* Status Bar */
-        .status-bar {
+        .tool-button.street-tool.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: white;
+        }
+
+        .tool-button.curb-tool.active {
+            background-color: var(--secondary-color);
+            color: var(--dark-color);
+            border-color: white;
+        }
+
+        .tool-button.high-point-tool.active {
+            background-color: #ff9800;
+            color: white;
+            border-color: white;
+        }
+
+        .tool-button.catch-basin-tool.active {
+            background-color: #2196f3;
+            color: white;
+            border-color: white;
+        }
+
+        /* Layer Toggle Panel */
+        .layer-panel {
             position: absolute;
-            top: 16px;
-            left: 16px;
-            background-color: var(--card-color);
-            padding: 8px 16px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
+            top: 12px;
+            right: 10px;
             z-index: 1000;
-            max-width: 70%;
+            background-color: var(--panel-bg);
+            border-radius: var(--rounded);
+            padding: 12px;
+            box-shadow: var(--shadow);
+            min-width: 200px;
+            transform: translateX(220px);
+            transition: transform 0.3s ease;
         }
 
-        .status-bar i {
-            margin-right: 8px;
-            color: var(--primary-color);
+        .layer-panel.visible {
+            transform: translateX(0);
         }
 
-        .status-text {
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .layer-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
         }
 
-        /* Map Overlays */
-        .pitch-label {
-            background-color: var(--card-color);
+        .layer-panel-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .layer-panel-close {
+            background: none;
             border: none;
-            font-weight: bold;
-            border-radius: 8px;
-            padding: 4px 8px;
-            box-shadow: var(--shadow);
-            white-space: nowrap;
-            color: var(--text-color);
-            font-size: 12px;
+            cursor: pointer;
+            color: var(--dark-color);
+            font-size: 18px;
         }
 
-        .street-label {
-            border-left: 4px solid var(--street-color);
+        .layer-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
         }
 
-        .curb-label {
-            border-left: 4px solid var(--curb-color);
+        .layer-toggle:last-child {
+            margin-bottom: 0;
         }
 
-        .arrow-icon {
-            background-color: var(--card-color);
-            border-radius: 50%;
-            width: 24px;
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
             height: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: var(--shadow);
         }
 
-        .street-arrow {
-            color: var(--street-color);
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
-        .curb-arrow {
-            color: var(--curb-color);
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 34px;
         }
 
-        .high-point-icon, .catch-basin-icon {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
             border-radius: 50%;
-            background-color: var(--card-color);
-            box-shadow: var(--shadow);
         }
 
-        .high-point-icon {
-            color: var(--warning-color);
+        input:checked + .toggle-slider {
+            background-color: var(--primary-color);
         }
 
-        .catch-basin-icon {
-            color: var(--marker-color);
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
         }
 
-        .water-trap {
-            background-color: rgba(244, 67, 54, 0.6);
-            border: 2px solid var(--error-color);
+        .toggle-indicator {
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
         }
 
-        /* Dialogs and Modals */
-        .dialog {
+        .street-indicator {
+            background-color: var(--primary-color);
+        }
+
+        .curb-indicator {
+            background-color: var(--secondary-color);
+        }
+
+        .basin-indicator {
+            color: #2196f3;
+            font-size: 14px;
+        }
+
+        .highpoint-indicator {
+            color: #ff9800;
+            font-size: 14px;
+        }
+
+        /* Pitch Input Modal */
+        .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -294,142 +300,276 @@
             display: none;
             justify-content: center;
             align-items: center;
-            padding: 16px;
         }
 
-        .dialog-card {
-            background-color: var(--card-color);
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            width: 100%;
+        .modal-container {
+            background-color: var(--panel-bg);
+            border-radius: var(--rounded);
+            padding: 20px;
+            width: 90%;
             max-width: 320px;
-            overflow: hidden;
+            box-shadow: var(--shadow);
         }
 
-        .dialog-header {
-            padding: 16px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .dialog-title {
+        .modal-header {
             font-size: 18px;
-            font-weight: 500;
-            margin: 0;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
-        .dialog-content {
-            padding: 16px;
-        }
-
-        .dialog-actions {
-            padding: 8px 16px 16px;
+        .modal-content {
             display: flex;
-            justify-content: flex-end;
-            gap: 8px;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .button {
-            padding: 8px 16px;
-            border-radius: 8px;
+        .pitch-input-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pitch-adjust-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--light-color);
             border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
             cursor: pointer;
-            font-weight: 500;
+        }
+
+        .pitch-value {
+            font-size: 24px;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: var(--rounded);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
             transition: all 0.2s ease;
-            font-size: 14px;
         }
 
-        .button:active {
-            transform: scale(0.98);
+        .cancel-btn {
+            background-color: var(--light-color);
+            color: var(--dark-color);
         }
 
-        .button-primary {
+        .confirm-btn {
             background-color: var(--primary-color);
             color: white;
         }
 
-        .button-secondary {
-            background-color: transparent;
-            color: var(--primary-color);
+        .modal-btn:active {
+            transform: scale(0.98);
         }
 
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: var(--text-light);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 16px;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        /* Toast Notifications */
-        .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--card-color);
-            color: var(--text-color);
-            padding: 12px 24px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            pointer-events: none;
-        }
-
-        .toast.visible {
-            opacity: 1;
-        }
-
-        /* Loading & Splash Screens */
-        .loading-overlay {
+        /* Help Modal */
+        .help-modal {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(255, 255, 255, 0.9);
-            display: flex;
-            flex-direction: column;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: none;
             justify-content: center;
             align-items: center;
-            z-index: 3000;
+            padding: 20px;
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #eee;
-            border-radius: 50%;
-            border-top-color: var(--primary-color);
-            animation: spin 1s linear infinite;
+        .help-container {
+            background-color: var(--panel-bg);
+            border-radius: var(--rounded);
+            width: 90%;
+            max-width: 480px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+
+        .help-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .help-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .help-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .help-content {
+            padding: 20px;
+        }
+
+        .help-section {
+            margin-bottom: 24px;
+        }
+
+        .help-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .help-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+        }
+
+        .help-text {
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-item {
+            display: flex;
             margin-bottom: 16px;
+            align-items: flex-start;
         }
 
-        .loading-text {
-            font-size: 16px;
-            color: var(--text-color);
+        .feature-icon {
+            flex-shrink: 0;
+            width: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            color: var(--primary-color);
         }
 
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background-color: var(--dark-color);
+            color: white;
+            border-radius: var(--rounded);
+            padding: 12px 20px;
+            z-index: 2000;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .notification.visible {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Map Styling */
+        .pitch-arrow {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pitch-arrow svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .street-arrow path {
+            fill: var(--primary-color);
+        }
+
+        .curb-arrow path {
+            fill: var(--secondary-color);
+        }
+
+        .street-line {
+            stroke: var(--primary-color);
+            stroke-width: 5;
+            stroke-dasharray: none;
+        }
+
+        .curb-line {
+            stroke: var(--secondary-color);
+            stroke-width: 5;
+            stroke-dasharray: none;
+        }
+
+        .catch-basin-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: white;
+            background-color: #2196f3;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border: 2px solid white;
+        }
+
+        .high-point-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: var(--dark-color);
+            background-color: #ff9800;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border: 2px solid white;
+        }
+
+        .trapped-water-area {
+            fill: rgba(255, 0, 0, 0.3);
+            stroke: #ff0000;
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 0.9; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Splash Screen */
         .splash-screen {
             position: fixed;
             top: 0;
@@ -438,114 +578,166 @@
             bottom: 0;
             background-color: var(--primary-color);
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 4000;
+            z-index: 3000;
+            flex-direction: column;
             color: white;
             transition: opacity 0.5s ease;
         }
 
         .splash-logo {
             font-size: 48px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .splash-title {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .splash-subtitle {
             font-size: 16px;
-            opacity: 0.9;
+            opacity: 0.8;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--light-color);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* Help Guide */
-        .help-overlay {
-            position: fixed;
+        /* Context Menu */
+        .context-menu {
+            position: absolute;
+            background-color: var(--panel-bg);
+            border-radius: var(--rounded);
+            box-shadow: var(--shadow);
+            padding: 8px 0;
+            z-index: 1500;
+            min-width: 160px;
+            display: none;
+        }
+
+        .context-menu-item {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .context-menu-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .context-menu-item i {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Style adjustments for smaller screens */
+        @media (max-width: 480px) {
+            .drawing-toolbar {
+                padding: 4px;
+                gap: 8px;
+            }
+
+            .tool-button {
+                width: 48px;
+                height: 48px;
+            }
+
+            .tool-button i {
+                font-size: 20px;
+            }
+
+            .action-button {
+                width: 42px;
+                height: 42px;
+            }
+
+            .action-button i {
+                font-size: 18px;
+            }
+        }
+
+        /* Road Network Overlay */
+        .road-overlay {
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 3000;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 500;
         }
 
-        .help-overlay.visible {
-            display: block;
-            opacity: 1;
-        }
-
-        .help-card {
+        .road-layer {
+            width: 100%;
+            height: 100%;
             position: absolute;
-            background-color: white;
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-            max-width: 280px;
-            z-index: 3001;
-            animation: bounce 0.5s ease;
         }
 
-        .help-title {
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: 16px;
+        .road-path {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
-        .help-text {
+        .street-path {
+            stroke: rgba(0, 117, 255, 0.2);
+            stroke-width: 24;
+        }
+
+        .curb-path {
+            stroke: rgba(255, 204, 0, 0.2);
+            stroke-width: 6;
+        }
+
+        /* Status bar */
+        .status-bar {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--panel-bg);
+            padding: 8px 16px;
+            border-radius: 20px;
             font-size: 14px;
-            color: var(--text-light);
-            margin-bottom: 16px;
+            z-index: 999;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .help-next {
-            text-align: right;
-        }
-
-        .help-arrow {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background-color: white;
-            transform: rotate(45deg);
-        }
-
-        @keyframes bounce {
-            0% { transform: scale(0.8); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 480px) {
-            .action-bar {
-                gap: 8px;
-                padding: 6px;
-            }
-            
-            .action-button {
-                width: 48px;
-                height: 48px;
-            }
-            
-            .main-action-button {
-                width: 56px;
-                height: 56px;
-            }
-            
-            .status-bar {
-                max-width: 60%;
-            }
+        .status-bar i {
+            color: var(--primary-color);
         }
     </style>
 </head>
@@ -564,105 +756,263 @@
         <!-- Map Element -->
         <div id="map"></div>
 
-        <!-- Status Bar -->
-        <div class="status-bar">
-            <i class="fas fa-map-marker-alt"></i>
-            <div class="status-text">Loading map...</div>
+        <!-- Road Network Overlay -->
+        <div class="road-overlay" id="road-overlay">
+            <svg class="road-layer" id="road-layer" preserveAspectRatio="xMidYMid meet">
+                <!-- Will be populated with paths for streets and curbs -->
+            </svg>
         </div>
 
-        <!-- Main Action Bar -->
+        <!-- Top Action Bar -->
         <div class="action-bar">
-            <button class="action-button street-tool" id="street-btn">
-                <i class="fas fa-road"></i>
-                <span class="action-button-label">Street Pitch</span>
-            </button>
-            <button class="action-button curb-tool" id="curb-btn">
-                <i class="fas fa-grip-lines"></i>
-                <span class="action-button-label">Curb Pitch</span>
-            </button>
-            <button class="action-button main-action-button" id="locate-btn">
-                <i class="fas fa-crosshairs"></i>
-                <span class="action-button-label">My Location</span>
-            </button>
-            <button class="action-button catchbasin-tool" id="catchbasin-btn">
-                <i class="fas fa-drain"></i>
-                <span class="action-button-label">Catch Basin</span>
-            </button>
-            <button class="action-button highpoint-tool" id="highpoint-btn">
-                <i class="fas fa-chevron-up"></i>
-                <span class="action-button-label">High Point</span>
-            </button>
+            <div class="action-group">
+                <button class="action-button" id="locate-btn" title="My Location">
+                    <i class="fas fa-crosshairs"></i>
+                </button>
+                <button class="action-button" id="undo-btn" title="Undo">
+                    <i class="fas fa-undo"></i>
+                </button>
+            </div>
+            <div class="action-group">
+                <button class="action-button" id="layers-btn" title="Toggle Layers">
+                    <i class="fas fa-layer-group"></i>
+                </button>
+                <button class="action-button" id="help-btn" title="Help">
+                    <i class="fas fa-question"></i>
+                </button>
+            </div>
         </div>
 
-        <!-- Map Controls -->
-        <div class="map-controls">
-            <button class="map-control-button" id="zoom-in-btn">
-                <i class="fas fa-plus"></i>
+        <!-- Layer Toggle Panel -->
+        <div class="layer-panel" id="layer-panel">
+            <div class="layer-panel-header">
+                <div class="layer-panel-title">Visibility Layers</div>
+                <button class="layer-panel-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="layer-toggle">
+                <div class="toggle-label">
+                    <div class="toggle-indicator street-indicator"></div>
+                    Street Pitches
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="street-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="layer-toggle">
+                <div class="toggle-label">
+                    <div class="toggle-indicator curb-indicator"></div>
+                    Curb Pitches
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="curb-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="layer-toggle">
+                <div class="toggle-label">
+                    <i class="fas fa-chevron-up toggle-indicator highpoint-indicator"></i>
+                    High Points
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="highpoint-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="layer-toggle">
+                <div class="toggle-label">
+                    <i class="fas fa-drain toggle-indicator basin-indicator"></i>
+                    Catch Basins
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="basin-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="layer-toggle">
+                <div class="toggle-label">
+                    <i class="fas fa-exclamation-triangle toggle-indicator" style="color: var(--accent-color);"></i>
+                    Trapped Water
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="trapped-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Drawing Toolbar -->
+        <div class="drawing-toolbar">
+            <button class="tool-button street-tool" id="street-tool" title="Draw Street Pitch">
+                <i class="fas fa-road"></i>
             </button>
-            <button class="map-control-button" id="zoom-out-btn">
-                <i class="fas fa-minus"></i>
+            <button class="tool-button curb-tool" id="curb-tool" title="Draw Curb Pitch">
+                <i class="fas fa-grip-lines"></i>
             </button>
-            <button class="map-control-button" id="help-btn">
-                <i class="fas fa-question"></i>
+            <button class="tool-button high-point-tool" id="high-point-tool" title="Add High Point">
+                <i class="fas fa-chevron-up"></i>
             </button>
-            <button class="map-control-button" id="save-btn">
-                <i class="fas fa-save"></i>
+            <button class="tool-button catch-basin-tool" id="catch-basin-tool" title="Add Catch Basin">
+                <i class="fas fa-drain"></i>
             </button>
-            <button class="map-control-button" id="clear-btn">
+            <button class="tool-button" id="clear-tool" title="Clear All">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
 
-        <!-- Pitch Input Dialog -->
-        <div class="dialog" id="pitch-dialog">
-            <div class="dialog-card">
-                <div class="dialog-header">
-                    <h3 class="dialog-title">Set Pitch Percentage</h3>
-                </div>
-                <div class="dialog-content">
-                    <div class="form-group">
-                        <label class="form-label" for="pitch-value">Pitch (%)</label>
-                        <input type="number" class="form-control" id="pitch-value" min="0.1" max="20" step="0.1" value="2.0">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <i class="fas fa-info-circle"></i>
+            <span id="status-text">Select a tool to begin</span>
+        </div>
+
+        <!-- Pitch Input Modal -->
+        <div class="modal-overlay" id="pitch-modal">
+            <div class="modal-container">
+                <div class="modal-header" id="pitch-modal-title">Set Pitch Percentage</div>
+                <div class="modal-content">
+                    <div class="pitch-input-container">
+                        <button class="pitch-adjust-btn" id="decrease-pitch">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <div class="pitch-value" id="pitch-value">2.0%</div>
+                        <button class="pitch-adjust-btn" id="increase-pitch">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn cancel-btn" id="cancel-pitch">Cancel</button>
+                        <button class="modal-btn confirm-btn" id="confirm-pitch">Confirm</button>
                     </div>
                 </div>
-                <div class="dialog-actions">
-                    <button class="button button-secondary" id="cancel-pitch-btn">Cancel</button>
-                    <button class="button button-primary" id="save-pitch-btn">Save</button>
+            </div>
+        </div>
+
+        <!-- Context Menu -->
+        <div class="context-menu" id="context-menu">
+            <div class="context-menu-item" id="reverse-direction">
+                <i class="fas fa-exchange-alt"></i>
+                <span>Reverse Direction</span>
+            </div>
+            <div class="context-menu-item" id="delete-item">
+                <i class="fas fa-trash"></i>
+                <span>Delete</span>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div class="help-modal" id="help-modal">
+            <div class="help-container">
+                <div class="help-header">
+                    <div class="help-title">FlowMaster Pro Help</div>
+                    <button class="help-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="help-content">
+                    <div class="help-section">
+                        <div class="help-section-title">Getting Started</div>
+                        <p class="help-text">FlowMaster Pro helps you plan water drainage on construction sites. The app displays streets and curbs, allowing you to mark pitches and drainage points accurately.</p>
+                    </div>
+
+                    <div class="help-section">
+                        <div class="help-section-title">Drawing Tools</div>
+                        <ul class="feature-list">
+                            <li class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-road"></i>
+                                </div>
+                                <div>
+                                    <strong>Street Pitch</strong> - Draw blue slope lines on streets to indicate drainage direction.
+                                </div>
+                            </li>
+                            <li class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-grip-lines"></i>
+                                </div>
+                                <div>
+                                    <strong>Curb Pitch</strong> - Draw yellow slope lines on curbs to indicate drainage direction.
+                                </div>
+                            </li>
+                            <li class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-chevron-up"></i>
+                                </div>
+                                <div>
+                                    <strong>High Points</strong> - Mark the highest elevation points where water flows away from.
+                                </div>
+                            </li>
+                            <li class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-drain"></i>
+                                </div>
+                                <div>
+                                    <strong>Catch Basins</strong> - Mark drainage points where water will collect.
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="help-section">
+                        <div class="help-section-title">Special Features</div>
+                        <ul class="feature-list">
+                            <li class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </div>
+                                <div>
+                                    <strong>Reverse Direction</strong> - Right-click or long-press on a pitch line to reverse its flow direction.
+                                </div>
+                            </li>
+                            <li class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div>
+                                    <strong>Trapped Water Detection</strong> - The app automatically highlights areas where water will be trapped (when pitches flow toward each other).
+                                </div>
+                            </li>
+                            <li class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                                <div>
+                                    <strong>Layer Visibility</strong> - Toggle visibility of different elements (streets, curbs, catch basins) from the layers panel.
+                                </div>
+                            </li>
+                            <li class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-undo"></i>
+                                </div>
+                                <div>
+                                    <strong>Undo</strong> - Easily undo your last action with the undo button.
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="help-section">
+                        <div class="help-section-title">Tips</div>
+                        <p class="help-text">• You can only draw street pitches on streets and curb pitches on curbs<br>
+                        • Right-click or long-press any element to access more options<br>
+                        • Use the center button to return to your current location<br>
+                        • Red highlighted areas indicate where water will be trapped</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Confirm Clear Dialog -->
-        <div class="dialog" id="confirm-dialog">
-            <div class="dialog-card">
-                <div class="dialog-header">
-                    <h3 class="dialog-title">Confirm Action</h3>
-                </div>
-                <div class="dialog-content">
-                    <p id="confirm-message">Are you sure you want to clear all items?</p>
-                </div>
-                <div class="dialog-actions">
-                    <button class="button button-secondary" id="cancel-confirm-btn">Cancel</button>
-                    <button class="button button-primary" id="confirm-btn">Confirm</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Toast Notification -->
-        <div class="toast" id="toast">
+        <!-- Notification -->
+        <div class="notification" id="notification">
             <i class="fas fa-info-circle"></i>
-            <span id="toast-message">Notification message</span>
+            <span id="notification-text">Notification message</span>
         </div>
 
         <!-- Loading Overlay -->
         <div class="loading-overlay">
             <div class="spinner"></div>
-            <div class="loading-text">Loading map data...</div>
-        </div>
-
-        <!-- Help Overlay -->
-        <div class="help-overlay" id="help-overlay">
-            <!-- Help cards will be dynamically added here -->
         </div>
     </div>
 
@@ -682,401 +1032,481 @@
 
             function initApp() {
                 // Initialize variables
-                let map, userMarker, userLocation;
-                let drawingMode = null;
-                let streets = L.featureGroup();
-                let curbs = L.featureGroup();
-                let catchBasins = L.featureGroup();
-                let highPoints = L.featureGroup();
-                let waterTraps = L.featureGroup();
-                let drawingLine = null;
+                let map, userMarker, currentPosition;
+                let activeDrawingMode = null;
+                let pitchPercent = 2.0;
+                let currentDrawingType = null;
+                let tempLine = null;
                 let drawingPoints = [];
-                let pendingLine = null;
-                let streetGuides = L.featureGroup();
-                let curbGuides = L.featureGroup();
+                let isDrawing = false;
+                let undoStack = [];
+                let selectedElement = null;
                 
-                // State variables
-                const appState = {
-                    loading: true,
-                    currentAction: null,
-                    confirmAction: null,
-                    tempLine: null,
-                    streetColor: '#2962ff',
-                    curbColor: '#ffb300',
-                    lastPitchValue: 2.0
-                };
-
-                // Initialize the map
+                // Feature layers
+                let streetPitchesLayer = L.layerGroup();
+                let curbPitchesLayer = L.layerGroup();
+                let highPointsLayer = L.layerGroup();
+                let catchBasinsLayer = L.layerGroup();
+                let trappedWaterLayer = L.layerGroup();
+                
+                // Street and curb paths (simulated for demo)
+                let streetPaths = [];
+                let curbPaths = [];
+                
+                // Initialize map
                 initMap();
                 
-                // Initialize all event handlers
-                initEventHandlers();
-
-                // Helper functions
+                // Initialize UI interactions
+                initUIHandlers();
+                
+                // Generate road network
+                generateRoadNetwork();
+                
                 function initMap() {
-                    // Create map
+                    // Create map with default view (will be updated with user location)
                     map = L.map('map', {
                         zoomControl: false,
                         attributionControl: false
-                    }).setView([0, 0], 19);
-
+                    }).setView([0, 0], 2);
+                    
+                    // Add zoom control to bottom left
+                    L.control.zoom({
+                        position: 'bottomleft'
+                    }).addTo(map);
+                    
                     // Add tile layer (OpenStreetMap)
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         maxZoom: 22
                     }).addTo(map);
-
-                    // Add layer groups to map
-                    streets.addTo(map);
-                    curbs.addTo(map);
-                    catchBasins.addTo(map);
-                    highPoints.addTo(map);
-                    waterTraps.addTo(map);
-                    streetGuides.addTo(map);
-                    curbGuides.addTo(map);
-
-                    // Map events
-                    map.on('click', handleMapClick);
-                    map.on('mousemove', handleMouseMove);
-
+                    
+                    // Add feature layers to map
+                    streetPitchesLayer.addTo(map);
+                    curbPitchesLayer.addTo(map);
+                    highPointsLayer.addTo(map);
+                    catchBasinsLayer.addTo(map);
+                    trappedWaterLayer.addTo(map);
+                    
                     // Get user location
                     getUserLocation();
-                }
-
-                function getUserLocation() {
-                    showLoading('Getting your location...');
                     
+                    // Map event listeners
+                    map.on('click', handleMapClick);
+                    map.on('mousemove', handleMouseMove);
+                    map.on('contextmenu', handleContextMenu);
+                    
+                    // Hide context menu on map move
+                    map.on('movestart', hideContextMenu);
+                }
+                
+                function getUserLocation() {
+                    // Update status
+                    updateStatus('Finding your location...');
+                    
+                    // Show loading overlay
+                    document.querySelector('.loading-overlay').style.display = 'flex';
+                    
+                    // Check if geolocation is available
                     if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                            function(position) {
-                                userLocation = [position.coords.latitude, position.coords.longitude];
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            // Store position
+                            currentPosition = [position.coords.latitude, position.coords.longitude];
+                            
+                            // Update map center
+                            map.setView(currentPosition, 19);
+                            
+                            // Create user marker if not exists
+                            if (!userMarker) {
+                                userMarker = L.circleMarker(currentPosition, {
+                                    radius: 8,
+                                    fillColor: '#2962ff',
+                                    color: '#fff',
+                                    weight: 2,
+                                    opacity: 1,
+                                    fillOpacity: 0.8
+                                }).addTo(map);
+                            } else {
+                                userMarker.setLatLng(currentPosition);
+                            }
+                            
+                            // Update status
+                            updateStatus('Select a tool to begin');
+                            
+                            // Hide loading overlay
+                            document.querySelector('.loading-overlay').style.display = 'none';
+                            
+                            // Watch position for updates
+                            navigator.geolocation.watchPosition(function(position) {
+                                // Update current position
+                                currentPosition = [position.coords.latitude, position.coords.longitude];
                                 
-                                // Update map view
-                                map.setView(userLocation, 19);
-                                
-                                // Create user marker
-                                if (!userMarker) {
-                                    userMarker = L.circleMarker(userLocation, {
-                                        radius: 8,
-                                        fillColor: '#2962ff',
-                                        color: '#ffffff',
-                                        weight: 2,
-                                        opacity: 1,
-                                        fillOpacity: 0.8
-                                    }).addTo(map);
-                                } else {
-                                    userMarker.setLatLng(userLocation);
+                                // Update user marker
+                                if (userMarker) {
+                                    userMarker.setLatLng(currentPosition);
                                 }
-                                
-                                updateStatus('Location found');
-                                hideLoading();
-                                
-                                // Set up continuous location tracking
-                                navigator.geolocation.watchPosition(function(position) {
-                                    userLocation = [position.coords.latitude, position.coords.longitude];
-                                    if (userMarker) {
-                                        userMarker.setLatLng(userLocation);
-                                    }
-                                }, function(error) {
-                                    console.error('Error watching position:', error);
-                                }, {
-                                    enableHighAccuracy: true,
-                                    maximumAge: 0,
-                                    timeout: 5000
-                                });
-                                
-                                // Generate guides for streets and curbs based on map data
-                                generateGuides(userLocation);
-                                
-                            },
-                            function(error) {
-                                console.error('Error getting location:', error);
-                                updateStatus('Location access denied');
-                                hideLoading();
-                                map.setView([40.7128, -74.0060], 19);
-                            },
-                            {
+                            }, function(error) {
+                                console.error('Error watching position:', error);
+                            }, {
                                 enableHighAccuracy: true,
                                 maximumAge: 0,
                                 timeout: 5000
-                            }
-                        );
-                    } else {
-                        updateStatus('Geolocation not supported');
-                        hideLoading();
-                        map.setView([40.7128, -74.0060], 19);
-                    }
-                }
-
-                // Generate guide lines for streets and curbs based on map data
-                function generateGuides(centerLocation) {
-                    // In a real app, this would use actual map data
-                    // For our demo, we'll create artificial guides around the user's location
-                    
-                    // Clear existing guides
-                    streetGuides.clearLayers();
-                    curbGuides.clearLayers();
-                    
-                    const gridSize = 0.001; // Roughly 100 meters
-                    const lat = centerLocation[0];
-                    const lng = centerLocation[1];
-                    
-                    // Create a grid of streets
-                    for (let i = -2; i <= 2; i++) {
-                        // Horizontal streets
-                        const hStreet = L.polyline([
-                            [lat + (i * gridSize), lng - (2 * gridSize)],
-                            [lat + (i * gridSize), lng + (2 * gridSize)]
-                        ], {
-                            color: '#2962ff',
-                            weight: 6,
-                            opacity: 0.3,
-                            dashArray: '10, 10'
-                        });
-                        
-                        // Horizontal curbs (top and bottom of street)
-                        const hCurbTop = L.polyline([
-                            [lat + (i * gridSize) + (gridSize * 0.05), lng - (2 * gridSize)],
-                            [lat + (i * gridSize) + (gridSize * 0.05), lng + (2 * gridSize)]
-                        ], {
-                            color: '#ffb300',
-                            weight: 4,
-                            opacity: 0.3,
-                            dashArray: '5, 5'
-                        });
-                        
-                        const hCurbBottom = L.polyline([
-                            [lat + (i * gridSize) - (gridSize * 0.05), lng - (2 * gridSize)],
-                            [lat + (i * gridSize) - (gridSize * 0.05), lng + (2 * gridSize)]
-                        ], {
-                            color: '#ffb300',
-                            weight: 4,
-                            opacity: 0.3,
-                            dashArray: '5, 5'
-                        });
-                        
-                        // Vertical streets
-                        const vStreet = L.polyline([
-                            [lat - (2 * gridSize), lng + (i * gridSize)],
-                            [lat + (2 * gridSize), lng + (i * gridSize)]
-                        ], {
-                            color: '#2962ff',
-                            weight: 6,
-                            opacity: 0.3,
-                            dashArray: '10, 10'
-                        });
-                        
-                        // Vertical curbs (left and right of street)
-                        const vCurbLeft = L.polyline([
-                            [lat - (2 * gridSize), lng + (i * gridSize) - (gridSize * 0.05)],
-                            [lat + (2 * gridSize), lng + (i * gridSize) - (gridSize * 0.05)]
-                        ], {
-                            color: '#ffb300',
-                            weight: 4,
-                            opacity: 0.3,
-                            dashArray: '5, 5'
-                        });
-                        
-                        const vCurbRight = L.polyline([
-                            [lat - (2 * gridSize), lng + (i * gridSize) + (gridSize * 0.05)],
-                            [lat + (2 * gridSize), lng + (i * gridSize) + (gridSize * 0.05)]
-                        ], {
-                            color: '#ffb300',
-                            weight: 4,
-                            opacity: 0.3,
-                            dashArray: '5, 5'
-                        });
-                        
-                        // Add to guides
-                        streetGuides.addLayer(hStreet);
-                        streetGuides.addLayer(vStreet);
-                        
-                        curbGuides.addLayer(hCurbTop);
-                        curbGuides.addLayer(hCurbBottom);
-                        curbGuides.addLayer(vCurbLeft);
-                        curbGuides.addLayer(vCurbRight);
-                    }
-                }
-
-                function findClosestGuide(point, mode) {
-                    // Get guides layer based on mode
-                    const guides = mode === 'street' ? streetGuides : curbGuides;
-                    
-                    // Find closest guide and point on that guide
-                    let minDistance = Infinity;
-                    let closestPoint = null;
-                    let closestGuide = null;
-                    
-                    guides.eachLayer(function(layer) {
-                        if (layer instanceof L.Polyline) {
-                            const latLngs = layer.getLatLngs();
+                            });
                             
-                            for (let i = 0; i < latLngs.length - 1; i++) {
-                                const start = latLngs[i];
-                                const end = latLngs[i+1];
-                                
-                                const projectedPoint = projectPointOnLine(point, start, end);
-                                const distance = map.distance(point, projectedPoint);
-                                
-                                if (distance < minDistance) {
-                                    minDistance = distance;
-                                    closestPoint = projectedPoint;
-                                    closestGuide = layer;
-                                }
-                            }
+                        }, function(error) {
+                            console.error('Error getting location:', error);
+                            
+                            // Update status
+                            updateStatus('Location access denied. Please enable GPS.');
+                            
+                            // Hide loading overlay
+                            document.querySelector('.loading-overlay').style.display = 'none';
+                            
+                            // Set default view
+                            map.setView([40.7128, -74.0060], 14);
+                        }, {
+                            enableHighAccuracy: true,
+                            maximumAge: 0,
+                            timeout: 5000
+                        });
+                    } else {
+                        // Update status
+                        updateStatus('Geolocation not supported in this browser');
+                        
+                        // Hide loading overlay
+                        document.querySelector('.loading-overlay').style.display = 'none';
+                        
+                        // Set default view
+                        map.setView([40.7128, -74.0060], 14);
+                    }
+                }
+                
+                function generateRoadNetwork() {
+                    // This function generates a simulated road network for demonstration
+                    // In a real application, this would use actual road data
+                    
+                    const svg = document.getElementById('road-layer');
+                    
+                    // Get map bounds to center our simulated roads
+                    let center = map.getCenter();
+                    let zoom = map.getZoom();
+                    
+                    // We'll wait until the map has a proper center before generating roads
+                    let checkInterval = setInterval(() => {
+                        center = map.getCenter();
+                        zoom = map.getZoom();
+                        
+                        if (center.lat !== 0 && center.lng !== 0 && zoom > 10) {
+                            clearInterval(checkInterval);
+                            
+                            // Generate sample streets and curbs
+                            createSampleRoadNetwork(center);
                         }
+                    }, 1000);
+                }
+                
+                function createSampleRoadNetwork(center) {
+                    // Create a grid of streets and curbs around the center point
+                    
+                    const svg = document.getElementById('road-layer');
+                    
+                    // Clear any existing paths
+                    svg.innerHTML = '';
+                    streetPaths = [];
+                    curbPaths = [];
+                    
+                    // Get bounds and convert to pixel coordinates
+                    const bounds = map.getBounds();
+                    const ne = map.latLngToLayerPoint(bounds.getNorthEast());
+                    const sw = map.latLngToLayerPoint(bounds.getSouthWest());
+                    const width = ne.x - sw.x;
+                    const height = ne.y - sw.y;
+                    
+                    // Set SVG viewBox
+                    svg.setAttribute('viewBox', `${sw.x} ${sw.y} ${width} ${height}`);
+                    
+                    // Create main horizontal street
+                    const mainStreet = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const centerPoint = map.latLngToLayerPoint(center);
+                    
+                    // Street starting 100px west of the left edge and going 100px east of the right edge
+                    const mainStreetPath = `M ${sw.x - 100} ${centerPoint.y} L ${ne.x + 100} ${centerPoint.y}`;
+                    mainStreet.setAttribute('d', mainStreetPath);
+                    mainStreet.setAttribute('class', 'road-path street-path');
+                    mainStreet.setAttribute('id', 'main-street');
+                    svg.appendChild(mainStreet);
+                    
+                    // Store street path for collision detection
+                    streetPaths.push({
+                        id: 'main-street',
+                        path: mainStreetPath,
+                        element: mainStreet
                     });
                     
-                    // Only snap if within 20 meters
-                    return minDistance <= 20 ? { point: closestPoint, guide: closestGuide } : null;
+                    // Add north curb for main street
+                    const northCurb = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const northCurbPath = `M ${sw.x - 100} ${centerPoint.y - 12} L ${ne.x + 100} ${centerPoint.y - 12}`;
+                    northCurb.setAttribute('d', northCurbPath);
+                    northCurb.setAttribute('class', 'road-path curb-path');
+                    northCurb.setAttribute('id', 'north-curb');
+                    svg.appendChild(northCurb);
+                    
+                    // Store curb path
+                    curbPaths.push({
+                        id: 'north-curb',
+                        path: northCurbPath,
+                        element: northCurb
+                    });
+                    
+                    // Add south curb for main street
+                    const southCurb = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const southCurbPath = `M ${sw.x - 100} ${centerPoint.y + 12} L ${ne.x + 100} ${centerPoint.y + 12}`;
+                    southCurb.setAttribute('d', southCurbPath);
+                    southCurb.setAttribute('class', 'road-path curb-path');
+                    southCurb.setAttribute('id', 'south-curb');
+                    svg.appendChild(southCurb);
+                    
+                    // Store curb path
+                    curbPaths.push({
+                        id: 'south-curb',
+                        path: southCurbPath,
+                        element: southCurb
+                    });
+                    
+                    // Create a vertical crossing street
+                    const crossStreet = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const crossStreetX = centerPoint.x + width / 4; // Offset to the right
+                    const crossStreetPath = `M ${crossStreetX} ${sw.y - 100} L ${crossStreetX} ${ne.y + 100}`;
+                    crossStreet.setAttribute('d', crossStreetPath);
+                    crossStreet.setAttribute('class', 'road-path street-path');
+                    crossStreet.setAttribute('id', 'cross-street');
+                    svg.appendChild(crossStreet);
+                    
+                    // Store street path
+                    streetPaths.push({
+                        id: 'cross-street',
+                        path: crossStreetPath,
+                        element: crossStreet
+                    });
+                    
+                    // Add west curb for cross street
+                    const westCurb = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const westCurbPath = `M ${crossStreetX - 12} ${sw.y - 100} L ${crossStreetX - 12} ${ne.y + 100}`;
+                    westCurb.setAttribute('d', westCurbPath);
+                    westCurb.setAttribute('class', 'road-path curb-path');
+                    westCurb.setAttribute('id', 'west-curb');
+                    svg.appendChild(westCurb);
+                    
+                    // Store curb path
+                    curbPaths.push({
+                        id: 'west-curb',
+                        path: westCurbPath,
+                        element: westCurb
+                    });
+                    
+                    // Add east curb for cross street
+                    const eastCurb = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const eastCurbPath = `M ${crossStreetX + 12} ${sw.y - 100} L ${crossStreetX + 12} ${ne.y + 100}`;
+                    eastCurb.setAttribute('d', eastCurbPath);
+                    eastCurb.setAttribute('class', 'road-path curb-path');
+                    eastCurb.setAttribute('id', 'east-curb');
+                    svg.appendChild(eastCurb);
+                    
+                    // Store curb path
+                    curbPaths.push({
+                        id: 'east-curb',
+                        path: eastCurbPath,
+                        element: eastCurb
+                    });
+                    
+                    // Add event listener for map zoom and pan to update SVG viewBox
+                    map.on('moveend', updateRoadNetworkView);
                 }
-
-                function projectPointOnLine(point, lineStart, lineEnd) {
-                    const x = point.lat;
-                    const y = point.lng;
-                    const x1 = lineStart.lat;
-                    const y1 = lineStart.lng;
-                    const x2 = lineEnd.lat;
-                    const y2 = lineEnd.lng;
+                
+                function updateRoadNetworkView() {
+                    const svg = document.getElementById('road-layer');
                     
-                    // Calculate projection
-                    const A = x - x1;
-                    const B = y - y1;
-                    const C = x2 - x1;
-                    const D = y2 - y1;
+                    // Get bounds and convert to pixel coordinates
+                    const bounds = map.getBounds();
+                    const ne = map.latLngToLayerPoint(bounds.getNorthEast());
+                    const sw = map.latLngToLayerPoint(bounds.getSouthWest());
+                    const width = ne.x - sw.x;
+                    const height = ne.y - sw.y;
                     
-                    const dot = A * C + B * D;
-                    const len_sq = C * C + D * D;
-                    const param = len_sq !== 0 ? dot / len_sq : -1;
-                    
-                    let xx, yy;
-                    
-                    if (param < 0) {
-                        xx = x1;
-                        yy = y1;
-                    } else if (param > 1) {
-                        xx = x2;
-                        yy = y2;
-                    } else {
-                        xx = x1 + param * C;
-                        yy = y1 + param * D;
-                    }
-                    
-                    return L.latLng(xx, yy);
+                    // Update SVG viewBox
+                    svg.setAttribute('viewBox', `${sw.x} ${sw.y} ${width} ${height}`);
                 }
-
-                function handleMapClick(e) {
-                    const clickPoint = e.latlng;
+                
+                function isPointNearStreet(point, tolerance = 12) {
+                    // Convert Leaflet latLng to pixel coordinates
+                    const pixelPoint = map.latLngToLayerPoint(point);
                     
-                    if (drawingMode === 'street' || drawingMode === 'curb') {
-                        // Find closest guide for snapping
-                        const closest = findClosestGuide(clickPoint, drawingMode);
+                    // Check each street path
+                    for (const street of streetPaths) {
+                        // For this demo, we'll use a simplified approach with straight lines
+                        // A real implementation would use proper path geometry calculations
                         
-                        if (closest) {
-                            // If we're not drawing yet, start a new line
-                            if (drawingPoints.length === 0) {
-                                drawingPoints.push(closest.point);
-                                
-                                // Show temporary line
-                                drawingLine = L.polyline([closest.point], {
-                                    color: drawingMode === 'street' ? appState.streetColor : appState.curbColor,
-                                    weight: 5,
-                                    opacity: 0.7,
-                                    dashArray: '5, 5'
-                                }).addTo(map);
-                                
-                                showToast(`Started drawing ${drawingMode} pitch line`);
-                            } else {
-                                // Add point to existing line
-                                drawingPoints.push(closest.point);
-                                drawingLine.setLatLngs(drawingPoints);
-                                
-                                // If user clicks near the first point, complete the line
-                                if (drawingPoints.length > 1 && 
-                                    map.distance(closest.point, drawingPoints[0]) < 20 && 
-                                    drawingPoints.length > 2) {
-                                    
-                                    finishDrawing();
-                                }
+                        if (street.id === 'main-street') {
+                            // Horizontal street - check if point is within tolerance of the y-coordinate
+                            const streetY = map.latLngToLayerPoint(map.getCenter()).y;
+                            if (Math.abs(pixelPoint.y - streetY) <= tolerance) {
+                                return true;
                             }
-                        } else {
-                            showToast(`Please draw along ${drawingMode} guides`);
+                        } else if (street.id === 'cross-street') {
+                            // Vertical street - check if point is within tolerance of the x-coordinate
+                            const crossStreetX = map.latLngToLayerPoint(map.getCenter()).x + 
+                                                (map.getBounds().getNorthEast().lng - map.getBounds().getSouthWest().lng) * 
+                                                map.getSize().x / 4;
+                            if (Math.abs(pixelPoint.x - crossStreetX) <= tolerance) {
+                                return true;
+                            }
                         }
-                    } else if (drawingMode === 'catchbasin') {
-                        addCatchBasin(clickPoint);
-                    } else if (drawingMode === 'highpoint') {
-                        addHighPoint(clickPoint);
+                    }
+                    
+                    return false;
+                }
+                
+                function isPointNearCurb(point, tolerance = 6) {
+                    // Convert Leaflet latLng to pixel coordinates
+                    const pixelPoint = map.latLngToLayerPoint(point);
+                    
+                    // Check each curb path
+                    for (const curb of curbPaths) {
+                        // For this demo, we'll use a simplified approach with straight lines
+                        
+                        if (curb.id === 'north-curb' || curb.id === 'south-curb') {
+                            // Horizontal curbs - check if point is within tolerance of the y-coordinate
+                            const centerY = map.latLngToLayerPoint(map.getCenter()).y;
+                            const curbY = curb.id === 'north-curb' ? centerY - 12 : centerY + 12;
+                            
+                            if (Math.abs(pixelPoint.y - curbY) <= tolerance) {
+                                return true;
+                            }
+                        } else if (curb.id === 'west-curb' || curb.id === 'east-curb') {
+                            // Vertical curbs - check if point is within tolerance of the x-coordinate
+                            const crossStreetX = map.latLngToLayerPoint(map.getCenter()).x + 
+                                               (map.getBounds().getNorthEast().lng - map.getBounds().getSouthWest().lng) * 
+                                               map.getSize().x / 4;
+                            const curbX = curb.id === 'west-curb' ? crossStreetX - 12 : crossStreetX + 12;
+                            
+                            if (Math.abs(pixelPoint.x - curbX) <= tolerance) {
+                                return true;
+                            }
+                        }
+                    }
+                    
+                    return false;
+                }
+                
+                function handleMapClick(e) {
+                    // Hide context menu if open
+                    hideContextMenu();
+                    
+                    // Handle click based on active drawing mode
+                    if (activeDrawingMode === 'street-tool' || activeDrawingMode === 'curb-tool') {
+                        // Check if click is on appropriate surface
+                        const isStreetTool = activeDrawingMode === 'street-tool';
+                        const isOnValidSurface = isStreetTool ? 
+                                               isPointNearStreet(e.latlng) : 
+                                               isPointNearCurb(e.latlng);
+                        
+                        if (!isOnValidSurface) {
+                            showNotification(`Can only draw ${isStreetTool ? 'street' : 'curb'} pitches on ${isStreetTool ? 'streets' : 'curbs'}`);
+                            return;
+                        }
+                        
+                        // Handle line drawing
+                        if (!isDrawing) {
+                            // Start new line
+                            isDrawing = true;
+                            drawingPoints = [e.latlng];
+                            currentDrawingType = activeDrawingMode;
+                            
+                            // Create temporary line
+                            tempLine = L.polyline([e.latlng, e.latlng], {
+                                color: currentDrawingType === 'street-tool' ? '#0075ff' : '#ffcc00',
+                                weight: 5,
+                                opacity: 0.7,
+                                dashArray: '5,5'
+                            }).addTo(map);
+                            
+                            updateStatus('Click to complete the line or click more points to create a multi-segment line');
+                        } else if (isDrawing && currentDrawingType === activeDrawingMode) {
+                            // Add point to existing line
+                            drawingPoints.push(e.latlng);
+                            
+                            // Complete line if we click near the first point and have at least 2 points
+                            if (drawingPoints.length > 1 && isCloseToFirstPoint(e.latlng)) {
+                                completeLine();
+                            } else {
+                                // Update temporary line
+                                tempLine.setLatLngs(drawingPoints);
+                            }
+                        }
+                    } else if (activeDrawingMode === 'high-point-tool') {
+                        addHighPoint(e.latlng);
+                    } else if (activeDrawingMode === 'catch-basin-tool') {
+                        addCatchBasin(e.latlng);
                     }
                 }
-
+                
                 function handleMouseMove(e) {
-                    if (drawingLine && drawingPoints.length > 0) {
-                        // Current mouse position
-                        const mousePoint = e.latlng;
-                        
-                        // Find closest guide for snapping
-                        const closest = findClosestGuide(mousePoint, drawingMode);
-                        
-                        if (closest) {
-                            // Create temporary line showing from last point to current mouse
-                            const tempPoints = [...drawingPoints, closest.point];
-                            drawingLine.setLatLngs(tempPoints);
-                        }
+                    // Update temporary line during drawing
+                    if (isDrawing && tempLine) {
+                        const points = [...drawingPoints, e.latlng];
+                        tempLine.setLatLngs(points);
                     }
                 }
-
-                function finishDrawing() {
+                
+                function isCloseToFirstPoint(latlng, threshold = 10) {
+                    if (drawingPoints.length < 1) return false;
+                    
+                    const firstPoint = map.latLngToLayerPoint(drawingPoints[0]);
+                    const currentPoint = map.latLngToLayerPoint(latlng);
+                    
+                    const distance = Math.sqrt(
+                        Math.pow(firstPoint.x - currentPoint.x, 2) +
+                        Math.pow(firstPoint.y - currentPoint.y, 2)
+                    );
+                    
+                    return distance < threshold;
+                }
+                
+                function completeLine() {
+                    // Remove temporary drawing line
+                    if (tempLine) {
+                        map.removeLayer(tempLine);
+                        tempLine = null;
+                    }
+                    
+                    // Reset drawing state
+                    isDrawing = false;
+                    
+                    // Need at least 2 points for a valid line
                     if (drawingPoints.length < 2) {
-                        cancelDrawing();
+                        drawingPoints = [];
                         return;
                     }
                     
-                    // Store the points for when the dialog is confirmed
-                    pendingLine = {
-                        points: [...drawingPoints],
-                        type: drawingMode
-                    };
-                    
-                    // Remove temporary drawing line
-                    if (drawingLine) {
-                        map.removeLayer(drawingLine);
-                        drawingLine = null;
-                    }
-                    
-                    // Show pitch input dialog
-                    showPitchDialog();
-                    
-                    // Reset drawing state
-                    drawingPoints = [];
+                    // Show pitch input modal
+                    showPitchModal();
                 }
-
-                function cancelDrawing() {
-                    // Clear drawing state
-                    drawingPoints = [];
-                    
-                    // Remove temp line
-                    if (drawingLine) {
-                        map.removeLayer(drawingLine);
-                        drawingLine = null;
-                    }
-                    
-                    showToast('Drawing cancelled');
-                }
-
-                function addPitchLine(points, pitchValue, type) {
+                
+                function finalizeLineWithPitch(percent) {
                     // Create final polyline
-                    const line = L.polyline(points, {
-                        color: type === 'street' ? appState.streetColor : appState.curbColor,
+                    const lineType = currentDrawingType === 'street-tool' ? 'street' : 'curb';
+                    const line = L.polyline(drawingPoints, {
+                        color: lineType === 'street' ? '#0075ff' : '#ffcc00',
                         weight: 5,
-                        opacity: 0.9,
-                        pitchValue: pitchValue,
-                        pitchType: type
+                        opacity: 1,
+                        className: `${lineType}-line`,
+                        pitchPercent: percent,
+                        lineType: lineType
                     });
                     
-                    // Add to appropriate layer
-                    if (type === 'street') {
-                        streets.addLayer(line);
+                    // Save to appropriate layer
+                    if (lineType === 'street') {
+                        line.addTo(streetPitchesLayer);
                     } else {
-                        curbs.addLayer(line);
+                        line.addTo(curbPitchesLayer);
                     }
                     
                     // Add direction arrow
@@ -1085,755 +1515,764 @@
                     // Add pitch label
                     addPitchLabel(line);
                     
-                    // Check for water traps
-                    checkWaterTraps();
-                    
-                    showToast(`Added ${pitchValue}% ${type} pitch line`);
-                }
-
-                function addDirectionArrow(line) {
-                    const points = line.getLatLngs();
-                    if (points.length < 2) return;
-                    
-                    // Get middle of line
-                    const midIndex = Math.floor(points.length / 2);
-                    const midPoint = points[midIndex];
-                    const prevPoint = points[midIndex - 1];
-                    
-                    // Calculate arrow angle
-                    const angle = getAngle(prevPoint, midPoint);
-                    
-                    // Create arrow icon
-                    const arrowClass = line.options.pitchType === 'street' ? 'street-arrow' : 'curb-arrow';
-                    const arrowIcon = L.divIcon({
-                        html: `<div class="arrow-icon"><i class="fas fa-arrow-down" style="transform: rotate(${angle}deg);"></i></div>`,
-                        className: arrowClass,
-                        iconSize: [24, 24]
+                    // Add to undo stack
+                    addToUndoStack({
+                        type: 'line',
+                        lineType: lineType,
+                        layer: lineType === 'street' ? streetPitchesLayer : curbPitchesLayer,
+                        element: line
                     });
                     
-                    // Create marker
-                    const arrow = L.marker(midPoint, {
+                    // Reset drawing points
+                    drawingPoints = [];
+                    
+                    // Check for trapped water
+                    detectTrappedWater();
+                    
+                    // Update status
+                    updateStatus(`${lineType.charAt(0).toUpperCase() + lineType.slice(1)} pitch added at ${percent}%`);
+                }
+                
+                function addDirectionArrow(line) {
+                    // Get line midpoint
+                    const latlngs = line.getLatLngs();
+                    const midIndex = Math.floor(latlngs.length / 2);
+                    const point1 = latlngs[midIndex - 1];
+                    const point2 = latlngs[midIndex];
+                    
+                    // Calculate angle
+                    const p1 = map.latLngToLayerPoint(point1);
+                    const p2 = map.latLngToLayerPoint(point2);
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                    
+                    // Create SVG arrow icon
+                    const arrowSvg = `
+                        <div class="pitch-arrow">
+                            <svg viewBox="0 0 24 24" class="${line.options.lineType}-arrow">
+                                <path d="M12,2L4,12h5v8h6v-8h5L12,2z" style="transform: rotate(${angle}deg); transform-origin: center;"/>
+                            </svg>
+                        </div>
+                    `;
+                    
+                    const arrowIcon = L.divIcon({
+                        html: arrowSvg,
+                        className: '',
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    });
+                    
+                    // Create marker and associate with line
+                    const arrowMarker = L.marker(point2, {
                         icon: arrowIcon,
                         interactive: false
-                    }).addTo(map);
+                    });
+                    
+                    // Add to appropriate layer
+                    if (line.options.lineType === 'street') {
+                        arrowMarker.addTo(streetPitchesLayer);
+                    } else {
+                        arrowMarker.addTo(curbPitchesLayer);
+                    }
                     
                     // Store reference
-                    line.arrow = arrow;
+                    line.arrowMarker = arrowMarker;
                 }
-
+                
                 function addPitchLabel(line) {
-                    const points = line.getLatLngs();
-                    if (points.length < 2) return;
-                    
-                    // Get start of line
-                    const startPoint = points[0];
+                    // Get first point of line
+                    const latlngs = line.getLatLngs();
+                    const point = latlngs[0];
                     
                     // Create label icon
-                    const labelClass = line.options.pitchType === 'street' ? 'street-label' : 'curb-label';
+                    const labelHtml = `
+                        <div class="pitch-label" style="border-left: 4px solid ${line.options.lineType === 'street' ? '#0075ff' : '#ffcc00'};">
+                            ${line.options.pitchPercent}%
+                        </div>
+                    `;
+                    
                     const labelIcon = L.divIcon({
-                        html: `<div class="pitch-label ${labelClass}">${line.options.pitchValue}%</div>`,
+                        html: labelHtml,
                         className: '',
-                        iconSize: [40, 20]
+                        iconSize: [40, 24],
+                        iconAnchor: [0, 12]
+                    });
+                    
+                    // Create marker and associate with line
+                    const labelMarker = L.marker(point, {
+                        icon: labelIcon,
+                        interactive: false
+                    });
+                    
+                    // Add to appropriate layer
+                    if (line.options.lineType === 'street') {
+                        labelMarker.addTo(streetPitchesLayer);
+                    } else {
+                        labelMarker.addTo(curbPitchesLayer);
+                    }
+                    
+                    // Store reference
+                    line.labelMarker = labelMarker;
+                }
+                
+                function addHighPoint(latlng) {
+                    // Create high point icon
+                    const highPointIcon = L.divIcon({
+                        html: '<div class="high-point-icon"><i class="fas fa-chevron-up"></i></div>',
+                        className: '',
+                        iconSize: [36, 36],
+                        iconAnchor: [18, 18]
                     });
                     
                     // Create marker
-                    const label = L.marker(startPoint, {
-                        icon: labelIcon,
-                        interactive: false
-                    }).addTo(map);
-                    
-                    // Store reference
-                    line.label = label;
-                }
-
-                function getAngle(start, end) {
-                    const lat1 = start.lat * Math.PI / 180;
-                    const lat2 = end.lat * Math.PI / 180;
-                    const lng1 = start.lng * Math.PI / 180;
-                    const lng2 = end.lng * Math.PI / 180;
-                    
-                    const y = Math.sin(lng2 - lng1) * Math.cos(lat2);
-                    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lng2 - lng1);
-                    
-                    let angle = Math.atan2(y, x) * 180 / Math.PI;
-                    angle = (angle + 360) % 360;
-                    
-                    return angle;
-                }
-
-                function addCatchBasin(point) {
-                    const catchBasinIcon = L.divIcon({
-                        html: `<div class="catch-basin-icon"><i class="fas fa-drain"></i></div>`,
-                        className: '',
-                        iconSize: [32, 32]
-                    });
-                    
-                    const basin = L.marker(point, {
-                        icon: catchBasinIcon,
-                        draggable: true
-                    }).addTo(catchBasins);
-                    
-                    // On drag end, check for water traps
-                    basin.on('dragend', function() {
-                        checkWaterTraps();
-                    });
-                    
-                    // Check for water traps
-                    checkWaterTraps();
-                    
-                    showToast('Catch basin added');
-                }
-
-                function addHighPoint(point) {
-                    const highPointIcon = L.divIcon({
-                        html: `<div class="high-point-icon"><i class="fas fa-chevron-up"></i></div>`,
-                        className: '',
-                        iconSize: [32, 32]
-                    });
-                    
-                    const highPoint = L.marker(point, {
+                    const marker = L.marker(latlng, {
                         icon: highPointIcon,
                         draggable: true
-                    }).addTo(highPoints);
+                    }).addTo(highPointsLayer);
                     
-                    // On drag end, check for water traps
-                    highPoint.on('dragend', function() {
-                        checkWaterTraps();
+                    // Add to undo stack
+                    addToUndoStack({
+                        type: 'marker',
+                        markerType: 'highPoint',
+                        layer: highPointsLayer,
+                        element: marker
                     });
                     
-                    // Check for water traps
-                    checkWaterTraps();
+                    // Setup context menu for marker
+                    marker.on('contextmenu', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        showContextMenu(e, marker, 'highPoint');
+                    });
                     
-                    showToast('High point added');
+                    // Handle long press for mobile
+                    let pressTimer;
+                    marker.on('mousedown', function(e) {
+                        pressTimer = setTimeout(function() {
+                            L.DomEvent.stopPropagation(e);
+                            showContextMenu(e, marker, 'highPoint');
+                        }, 500);
+                    });
+                    
+                    marker.on('mouseup', function() {
+                        clearTimeout(pressTimer);
+                    });
+                    
+                    // Update status
+                    updateStatus('High point added');
+                    
+                    // Check for trapped water after adding high point
+                    detectTrappedWater();
                 }
-
-                function checkWaterTraps() {
-                    // Clear existing water traps
-                    waterTraps.clearLayers();
+                
+                function addCatchBasin(latlng) {
+                    // Create catch basin icon
+                    const catchBasinIcon = L.divIcon({
+                        html: '<div class="catch-basin-icon"><i class="fas fa-drain"></i></div>',
+                        className: '',
+                        iconSize: [36, 36],
+                        iconAnchor: [18, 18]
+                    });
                     
-                    // Get all pitch lines
-                    const allLines = [];
-                    streets.eachLayer(line => allLines.push(line));
-                    curbs.eachLayer(line => allLines.push(line));
+                    // Create marker
+                    const marker = L.marker(latlng, {
+                        icon: catchBasinIcon,
+                        draggable: true
+                    }).addTo(catchBasinsLayer);
                     
-                    // Check for intersecting pitch lines that don't have a catch basin nearby
-                    const intersections = findIntersections(allLines);
+                    // Add to undo stack
+                    addToUndoStack({
+                        type: 'marker',
+                        markerType: 'catchBasin',
+                        layer: catchBasinsLayer,
+                        element: marker
+                    });
                     
-                    // For each intersection, check if there's a catch basin nearby
-                    intersections.forEach(intersection => {
-                        let hasCatchBasin = false;
-                        
-                        // Check distance to each catch basin
-                        catchBasins.eachLayer(basin => {
-                            const distance = map.distance(basin.getLatLng(), intersection.point);
-                            if (distance < 20) {
-                                hasCatchBasin = true;
-                            }
-                        });
-                        
-                        // If no catch basin found and there's a water trap (flow directions meet)
-                        if (!hasCatchBasin && intersection.isWaterTrap) {
-                            // Add water trap marker
-                            const trapIcon = L.divIcon({
-                                html: `<div class="water-trap"></div>`,
-                                className: '',
-                                iconSize: [20, 20]
-                            });
-                            
-                            const trap = L.marker(intersection.point, {
-                                icon: trapIcon,
-                                interactive: false
-                            }).addTo(waterTraps);
+                    // Setup context menu for marker
+                    marker.on('contextmenu', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        showContextMenu(e, marker, 'catchBasin');
+                    });
+                    
+                    // Handle long press for mobile
+                    let pressTimer;
+                    marker.on('mousedown', function(e) {
+                        pressTimer = setTimeout(function() {
+                            L.DomEvent.stopPropagation(e);
+                            showContextMenu(e, marker, 'catchBasin');
+                        }, 500);
+                    });
+                    
+                    marker.on('mouseup', function() {
+                        clearTimeout(pressTimer);
+                    });
+                    
+                    // Update status
+                    updateStatus('Catch basin added');
+                    
+                    // Check for trapped water after adding catch basin
+                    detectTrappedWater();
+                }
+                
+                function handleContextMenu(e) {
+                    // Get clicked element if any
+                    let clickedElement = null;
+                    let elementType = null;
+                    
+                    // Check all layers for clicked elements
+                    streetPitchesLayer.eachLayer(function(layer) {
+                        if (layer instanceof L.Polyline && layer.getBounds().contains(e.latlng)) {
+                            clickedElement = layer;
+                            elementType = 'street';
                         }
                     });
-                }
-
-                function findIntersections(lines) {
-                    const intersections = [];
                     
-                    // Check each pair of lines
+                    if (!clickedElement) {
+                        curbPitchesLayer.eachLayer(function(layer) {
+                            if (layer instanceof L.Polyline && layer.getBounds().contains(e.latlng)) {
+                                clickedElement = layer;
+                                elementType = 'curb';
+                            }
+                        });
+                    }
+                    
+                    // If no element was clicked, return
+                    if (!clickedElement) return;
+                    
+                    // Show context menu
+                    showContextMenu(e, clickedElement, elementType);
+                }
+                
+                function showContextMenu(e, element, elementType) {
+                    // Set selected element
+                    selectedElement = {
+                        element: element,
+                        type: elementType
+                    };
+                    
+                    // Position the context menu
+                    const contextMenu = document.getElementById('context-menu');
+                    const containerPoint = map.latLngToContainerPoint(e.latlng);
+                    
+                    contextMenu.style.left = `${containerPoint.x}px`;
+                    contextMenu.style.top = `${containerPoint.y}px`;
+                    contextMenu.style.display = 'block';
+                    
+                    // Adjust visibility of context menu items based on element type
+                    const reverseItem = document.getElementById('reverse-direction');
+                    if (elementType === 'street' || elementType === 'curb') {
+                        reverseItem.style.display = 'flex';
+                    } else {
+                        reverseItem.style.display = 'none';
+                    }
+                }
+                
+                function hideContextMenu() {
+                    document.getElementById('context-menu').style.display = 'none';
+                    selectedElement = null;
+                }
+                
+                function reversePitchDirection() {
+                    if (!selectedElement || (selectedElement.type !== 'street' && selectedElement.type !== 'curb')) {
+                        return;
+                    }
+                    
+                    // Get the line
+                    const line = selectedElement.element;
+                    
+                    // Reverse points
+                    const latlngs = line.getLatLngs();
+                    line.setLatLngs(latlngs.reverse());
+                    
+                    // Remove old markers
+                    if (line.arrowMarker) {
+                        if (selectedElement.type === 'street') {
+                            streetPitchesLayer.removeLayer(line.arrowMarker);
+                        } else {
+                            curbPitchesLayer.removeLayer(line.arrowMarker);
+                        }
+                    }
+                    
+                    if (line.labelMarker) {
+                        if (selectedElement.type === 'street') {
+                            streetPitchesLayer.removeLayer(line.labelMarker);
+                        } else {
+                            curbPitchesLayer.removeLayer(line.labelMarker);
+                        }
+                    }
+                    
+                    // Add new arrow and label
+                    addDirectionArrow(line);
+                    addPitchLabel(line);
+                    
+                    // Hide context menu
+                    hideContextMenu();
+                    
+                    // Check for trapped water
+                    detectTrappedWater();
+                    
+                    // Update status
+                    updateStatus('Pitch direction reversed');
+                }
+                
+                function deleteElement() {
+                    if (!selectedElement) return;
+                    
+                    // Delete based on element type
+                    if (selectedElement.type === 'street') {
+                        // Remove arrow and label markers
+                        if (selectedElement.element.arrowMarker) {
+                            streetPitchesLayer.removeLayer(selectedElement.element.arrowMarker);
+                        }
+                        if (selectedElement.element.labelMarker) {
+                            streetPitchesLayer.removeLayer(selectedElement.element.labelMarker);
+                        }
+                        
+                        // Remove line
+                        streetPitchesLayer.removeLayer(selectedElement.element);
+                        
+                    } else if (selectedElement.type === 'curb') {
+                        // Remove arrow and label markers
+                        if (selectedElement.element.arrowMarker) {
+                            curbPitchesLayer.removeLayer(selectedElement.element.arrowMarker);
+                        }
+                        if (selectedElement.element.labelMarker) {
+                            curbPitchesLayer.removeLayer(selectedElement.element.labelMarker);
+                        }
+                        
+                        // Remove line
+                        curbPitchesLayer.removeLayer(selectedElement.element);
+                        
+                    } else if (selectedElement.type === 'highPoint') {
+                        highPointsLayer.removeLayer(selectedElement.element);
+                        
+                    } else if (selectedElement.type === 'catchBasin') {
+                        catchBasinsLayer.removeLayer(selectedElement.element);
+                    }
+                    
+                    // Hide context menu
+                    hideContextMenu();
+                    
+                    // Check for trapped water
+                    detectTrappedWater();
+                    
+                    // Update status
+                    updateStatus('Element deleted');
+                }
+                
+                function detectTrappedWater() {
+                    // Clear existing trapped water areas
+                    trappedWaterLayer.clearLayers();
+                    
+                    // Get all pitch lines
+                    const streetLines = [];
+                    const curbLines = [];
+                    
+                    streetPitchesLayer.eachLayer(function(layer) {
+                        if (layer instanceof L.Polyline && !layer.arrowMarker && !layer.labelMarker) {
+                            streetLines.push(layer);
+                        }
+                    });
+                    
+                    curbPitchesLayer.eachLayer(function(layer) {
+                        if (layer instanceof L.Polyline && !layer.arrowMarker && !layer.labelMarker) {
+                            curbLines.push(layer);
+                        }
+                    });
+                    
+                    // For this demo, we'll use a simplified approach to detect water traps:
+                    // 1. Find intersections between lines
+                    // 2. Check if the flow directions at these intersections create traps
+                    
+                    // Check street line intersections
+                    checkLinesForTraps(streetLines);
+                    
+                    // Check curb line intersections
+                    checkLinesForTraps(curbLines);
+                }
+                
+                function checkLinesForTraps(lines) {
                     for (let i = 0; i < lines.length; i++) {
                         for (let j = i + 1; j < lines.length; j++) {
-                            const line1 = lines[i];
-                            const line2 = lines[j];
+                            // Find intersection point (simplified approach)
+                            const intersection = findIntersection(lines[i], lines[j]);
                             
-                            const points1 = line1.getLatLngs();
-                            const points2 = line2.getLatLngs();
-                            
-                            // Check each segment against each segment
-                            for (let a = 0; a < points1.length - 1; a++) {
-                                for (let b = 0; b < points2.length - 1; b++) {
-                                    const intersection = findSegmentIntersection(
-                                        points1[a], points1[a+1], 
-                                        points2[b], points2[b+1]
-                                    );
+                            if (intersection) {
+                                // Check flow directions
+                                const flowsToIntersection1 = flowsTowardsPoint(lines[i], intersection);
+                                const flowsToIntersection2 = flowsTowardsPoint(lines[j], intersection);
+                                
+                                // If both lines flow towards the intersection, it's a potential trap
+                                if (flowsToIntersection1 && flowsToIntersection2) {
+                                    // Check for catch basins near the intersection
+                                    const hasCatchBasin = checkForCatchBasinNear(intersection, 30);
                                     
-                                    if (intersection) {
-                                        // Determine if this is a water trap (flow directions meet)
-                                        // Get flow directions for both lines at this point
-                                        const flow1 = getFlowDirection(line1, intersection);
-                                        const flow2 = getFlowDirection(line2, intersection);
-                                        
-                                        // If flows point toward each other, it's a water trap
-                                        const dotProduct = flow1.lat * flow2.lat + flow1.lng * flow2.lng;
-                                        const isWaterTrap = dotProduct < 0; // Negative dot product means opposite directions
-                                        
-                                        intersections.push({
-                                            point: intersection,
-                                            isWaterTrap: isWaterTrap
-                                        });
+                                    if (!hasCatchBasin) {
+                                        // Create water trap indicator
+                                        addTrappedWaterIndicator(intersection);
                                     }
                                 }
                             }
                         }
                     }
-                    
-                    return intersections;
                 }
-
-                function findSegmentIntersection(p1, p2, p3, p4) {
-                    // Convert to Cartesian coordinates for simplicity
-                    const x1 = p1.lat, y1 = p1.lng;
-                    const x2 = p2.lat, y2 = p2.lng;
-                    const x3 = p3.lat, y3 = p3.lng;
-                    const x4 = p4.lat, y4 = p4.lng;
+                
+                function findIntersection(line1, line2) {
+                    // This is a simplified approach for demonstration purposes
+                    // A real implementation would use proper line intersection algorithms
                     
-                    // Line segment intersection formula
-                    const denominator = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-                    
-                    // Check if lines are parallel
-                    if (denominator === 0) return null;
-                    
-                    const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
-                    const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
-                    
-                    // Check if intersection is within both line segments
-                    if (ua < 0 || ua > 1 || ub < 0 || ub > 1) return null;
-                    
-                    // Calculate intersection point
-                    const x = x1 + ua * (x2 - x1);
-                    const y = y1 + ua * (y2 - y1);
-                    
-                    return L.latLng(x, y);
-                }
-
-                function getFlowDirection(line, point) {
                     // Get line points
-                    const points = line.getLatLngs();
+                    const line1Points = line1.getLatLngs();
+                    const line2Points = line2.getLatLngs();
                     
-                    // Find segment closest to the point
-                    let closestSegmentIndex = -1;
-                    let minDistance = Infinity;
-                    
-                    for (let i = 0; i < points.length - 1; i++) {
-                        const projectedPoint = projectPointOnLine(point, points[i], points[i+1]);
-                        const distance = map.distance(point, projectedPoint);
-                        
-                        if (distance < minDistance) {
-                            minDistance = distance;
-                            closestSegmentIndex = i;
+                    // Check each segment
+                    for (let i = 0; i < line1Points.length - 1; i++) {
+                        for (let j = 0; j < line2Points.length - 1; j++) {
+                            // Convert to pixel coordinates for easier calculation
+                            const a = map.latLngToLayerPoint(line1Points[i]);
+                            const b = map.latLngToLayerPoint(line1Points[i + 1]);
+                            const c = map.latLngToLayerPoint(line2Points[j]);
+                            const d = map.latLngToLayerPoint(line2Points[j + 1]);
+                            
+                            // Basic line segment intersection check
+                            // This is an approximation
+                            const denominator = ((b.y - a.y) * (d.x - c.x) - (b.x - a.x) * (d.y - c.y));
+                            
+                            if (denominator === 0) continue; // Lines are parallel
+                            
+                            const ua = ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) / denominator;
+                            const ub = ((d.x - c.x) * (c.y - a.y) - (d.y - c.y) * (c.x - a.x)) / denominator;
+                            
+                            if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1) {
+                                // Lines intersect
+                                const intersectionX = a.x + ub * (b.x - a.x);
+                                const intersectionY = a.y + ub * (b.y - a.y);
+                                
+                                // Convert back to LatLng
+                                return map.layerPointToLatLng(L.point(intersectionX, intersectionY));
+                            }
                         }
                     }
                     
-                    if (closestSegmentIndex === -1) return { lat: 0, lng: 0 };
-                    
-                    // Get direction vector of the segment
-                    const start = points[closestSegmentIndex];
-                    const end = points[closestSegmentIndex + 1];
-                    
-                    // Calculate direction vector
-                    const direction = {
-                        lat: end.lat - start.lat,
-                        lng: end.lng - start.lng
-                    };
-                    
-                    // Normalize
-                    const length = Math.sqrt(direction.lat * direction.lat + direction.lng * direction.lng);
-                    
-                    return {
-                        lat: direction.lat / length,
-                        lng: direction.lng / length
-                    };
+                    return null; // No intersection
                 }
-
-                function clearAll() {
-                    // Clear all layers
-                    streets.clearLayers();
-                    curbs.clearLayers();
-                    catchBasins.clearLayers();
-                    highPoints.clearLayers();
-                    waterTraps.clearLayers();
+                
+                function flowsTowardsPoint(line, point) {
+                    // Simplified approach: check if the last point of the line is closer to the point than the first
+                    const latlngs = line.getLatLngs();
+                    const first = latlngs[0];
+                    const last = latlngs[latlngs.length - 1];
                     
-                    // Cancel any active drawing
-                    cancelDrawing();
+                    const distFirst = map.distance(first, point);
+                    const distLast = map.distance(last, point);
                     
-                    showToast('All items cleared');
+                    return distLast < distFirst;
                 }
-
-                function saveProject() {
-                    // Collect all data
-                    const projectData = {
-                        center: map.getCenter(),
-                        zoom: map.getZoom(),
-                        streets: [],
-                        curbs: [],
-                        catchBasins: [],
-                        highPoints: []
-                    };
+                
+                function checkForCatchBasinNear(point, radius) {
+                    let found = false;
                     
-                    // Collect street lines
-                    streets.eachLayer(function(layer) {
-                        projectData.streets.push({
-                            points: layer.getLatLngs(),
-                            pitchValue: layer.options.pitchValue
-                        });
+                    catchBasinsLayer.eachLayer(function(layer) {
+                        if (map.distance(layer.getLatLng(), point) <= radius) {
+                            found = true;
+                        }
                     });
                     
-                    // Collect curb lines
-                    curbs.eachLayer(function(layer) {
-                        projectData.curbs.push({
-                            points: layer.getLatLngs(),
-                            pitchValue: layer.options.pitchValue
-                        });
-                    });
-                    
-                    // Collect catch basins
-                    catchBasins.eachLayer(function(layer) {
-                        projectData.catchBasins.push({
-                            point: layer.getLatLng()
-                        });
-                    });
-                    
-                    // Collect high points
-                    highPoints.eachLayer(function(layer) {
-                        projectData.highPoints.push({
-                            point: layer.getLatLng()
-                        });
-                    });
-                    
-                    // Convert to JSON
-                    const jsonData = JSON.stringify(projectData);
-                    
-                    // Create and trigger download
-                    const blob = new Blob([jsonData], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'flowmaster-project.json';
-                    a.click();
-                    
-                    showToast('Project saved');
+                    return found;
                 }
-
-                function loadProject() {
-                    // Create file input
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.json';
-                    
-                    // Listen for file selection
-                    input.onchange = function(e) {
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            try {
-                                // Parse project data
-                                const projectData = JSON.parse(e.target.result);
-                                
-                                // Clear current data
-                                clearAll();
-                                
-                                // Set map view
-                                if (projectData.center && projectData.zoom) {
-                                    map.setView([projectData.center.lat, projectData.center.lng], projectData.zoom);
-                                }
-                                
-                                // Load street lines
-                                if (projectData.streets && Array.isArray(projectData.streets)) {
-                                    projectData.streets.forEach(item => {
-                                        addPitchLine(item.points, item.pitchValue, 'street');
-                                    });
-                                }
-                                
-                                // Load curb lines
-                                if (projectData.curbs && Array.isArray(projectData.curbs)) {
-                                    projectData.curbs.forEach(item => {
-                                        addPitchLine(item.points, item.pitchValue, 'curb');
-                                    });
-                                }
-                                
-                                // Load catch basins
-                                if (projectData.catchBasins && Array.isArray(projectData.catchBasins)) {
-                                    projectData.catchBasins.forEach(item => {
-                                        addCatchBasin(L.latLng(item.point.lat, item.point.lng));
-                                    });
-                                }
-                                
-                                // Load high points
-                                if (projectData.highPoints && Array.isArray(projectData.highPoints)) {
-                                    projectData.highPoints.forEach(item => {
-                                        addHighPoint(L.latLng(item.point.lat, item.point.lng));
-                                    });
-                                }
-                                
-                                // Check for water traps
-                                checkWaterTraps();
-                                
-                                showToast('Project loaded successfully');
-                                
-                            } catch (error) {
-                                console.error('Error loading project:', error);
-                                showToast('Error loading project file');
-                            }
-                        };
-                        reader.readAsText(file);
-                    };
-                    
-                    // Trigger file selection
-                    input.click();
+                
+                function addTrappedWaterIndicator(center) {
+                    // Create a circle to represent trapped water
+                    const circle = L.circle(center, {
+                        radius: 5,
+                        fillColor: 'red',
+                        fillOpacity: 0.6,
+                        color: 'red',
+                        weight: 2,
+                        className: 'trapped-water-area'
+                    }).addTo(trappedWaterLayer);
                 }
-
-                function showPitchDialog() {
-                    // Set initial value
-                    document.getElementById('pitch-value').value = appState.lastPitchValue;
-                    
-                    // Show dialog
-                    document.getElementById('pitch-dialog').style.display = 'flex';
+                
+                function showPitchModal() {
+                    document.getElementById('pitch-modal').style.display = 'flex';
+                    document.getElementById('pitch-value').textContent = pitchPercent.toFixed(1) + '%';
+                    document.getElementById('pitch-modal-title').textContent = 
+                        `Set ${currentDrawingType === 'street-tool' ? 'Street' : 'Curb'} Pitch Percentage`;
                 }
-
-                function showConfirmDialog(message, callback) {
-                    // Set message
-                    document.getElementById('confirm-message').textContent = message;
+                
+                function showNotification(message) {
+                    const notification = document.getElementById('notification');
+                    document.getElementById('notification-text').textContent = message;
+                    notification.classList.add('visible');
                     
-                    // Set callback
-                    appState.confirmAction = callback;
-                    
-                    // Show dialog
-                    document.getElementById('confirm-dialog').style.display = 'flex';
-                }
-
-                function showToast(message) {
-                    const toast = document.getElementById('toast');
-                    document.getElementById('toast-message').textContent = message;
-                    
-                    // Show toast
-                    toast.classList.add('visible');
-                    
-                    // Hide after 3 seconds
                     setTimeout(() => {
-                        toast.classList.remove('visible');
+                        notification.classList.remove('visible');
                     }, 3000);
                 }
-
-                function showLoading(message) {
-                    document.querySelector('.loading-text').textContent = message;
-                    document.querySelector('.loading-overlay').style.display = 'flex';
-                    appState.loading = true;
-                }
-
-                function hideLoading() {
-                    document.querySelector('.loading-overlay').style.display = 'none';
-                    appState.loading = false;
-                }
-
+                
                 function updateStatus(message) {
-                    document.querySelector('.status-text').textContent = message;
+                    document.getElementById('status-text').textContent = message;
                 }
-
-                function showHelp() {
-                    const helpSteps = [
-                        {
-                            target: document.getElementById('street-btn'),
-                            title: 'Draw Street Pitch Lines',
-                            text: 'Tap to draw blue pitch lines for streets. The water flows along the direction of the arrow.',
-                            position: 'top'
-                        },
-                        {
-                            target: document.getElementById('curb-btn'),
-                            title: 'Draw Curb Pitch Lines',
-                            text: 'Tap to draw yellow pitch lines for curbs. These typically run along the sides of streets.',
-                            position: 'top'
-                        },
-                        {
-                            target: document.getElementById('locate-btn'),
-                            title: 'Center on Your Location',
-                            text: 'Tap to go to your current GPS location on the site.',
-                            position: 'top'
-                        },
-                        {
-                            target: document.getElementById('catchbasin-btn'),
-                            title: 'Add Catch Basins',
-                            text: 'Tap to place catch basins where water should drain.',
-                            position: 'top'
-                        },
-                        {
-                            target: document.getElementById('highpoint-btn'),
-                            title: 'Add High Points',
-                            text: 'Tap to mark high points where water will flow away from.',
-                            position: 'top'
-                        },
-                        {
-                            target: document.getElementById('clear-btn'),
-                            title: 'Clear All Items',
-                            text: 'Tap to clear everything from the map and start fresh.',
-                            position: 'left'
-                        },
-                        {
-                            target: document.getElementById('save-btn'),
-                            title: 'Save Project',
-                            text: 'Tap to save your current drainage plan for later use.',
-                            position: 'left'
+                
+                function addToUndoStack(action) {
+                    undoStack.push(action);
+                    updateUndoButtonState();
+                }
+                
+                function undoLastAction() {
+                    if (undoStack.length === 0) return;
+                    
+                    const action = undoStack.pop();
+                    
+                    if (action.type === 'line') {
+                        // Remove arrow and label markers
+                        if (action.element.arrowMarker) {
+                            action.layer.removeLayer(action.element.arrowMarker);
                         }
-                    ];
-                    
-                    const helpOverlay = document.getElementById('help-overlay');
-                    helpOverlay.innerHTML = '';
-                    helpOverlay.classList.add('visible');
-                    
-                    // Create first help card
-                    createHelpCard(helpSteps, 0);
-                }
-
-                function createHelpCard(steps, index) {
-                    if (index >= steps.length) {
-                        document.getElementById('help-overlay').classList.remove('visible');
-                        return;
+                        if (action.element.labelMarker) {
+                            action.layer.removeLayer(action.element.labelMarker);
+                        }
+                        
+                        // Remove line
+                        action.layer.removeLayer(action.element);
+                        
+                    } else if (action.type === 'marker') {
+                        action.layer.removeLayer(action.element);
                     }
                     
-                    const step = steps[index];
-                    const target = step.target;
-                    const targetRect = target.getBoundingClientRect();
+                    // Check for trapped water
+                    detectTrappedWater();
                     
-                    // Create card
-                    const card = document.createElement('div');
-                    card.className = 'help-card';
+                    // Update button state
+                    updateUndoButtonState();
                     
-                    // Position card based on target position
-                    let cardLeft, cardTop, arrowLeft, arrowTop, arrowStyle;
+                    // Update status
+                    updateStatus('Last action undone');
+                }
+                
+                function updateUndoButtonState() {
+                    const undoButton = document.getElementById('undo-btn');
                     
-                    if (step.position === 'top') {
-                        cardLeft = targetRect.left + (targetRect.width / 2) - 140;
-                        cardTop = targetRect.top - 150;
-                        arrowLeft = 140;
-                        arrowTop = 145;
-                        arrowStyle = 'bottom: -10px; left: 140px;';
-                    } else if (step.position === 'bottom') {
-                        cardLeft = targetRect.left + (targetRect.width / 2) - 140;
-                        cardTop = targetRect.bottom + 20;
-                        arrowLeft = 140;
-                        arrowTop = -10;
-                        arrowStyle = 'top: -10px; left: 140px;';
-                    } else if (step.position === 'left') {
-                        cardLeft = targetRect.left - 300;
-                        cardTop = targetRect.top + (targetRect.height / 2) - 75;
-                        arrowLeft = 290;
-                        arrowTop = 75;
-                        arrowStyle = 'right: -10px; top: 75px;';
+                    if (undoStack.length > 0) {
+                        undoButton.style.opacity = '1';
+                        undoButton.disabled = false;
                     } else {
-                        cardLeft = targetRect.right + 20;
-                        cardTop = targetRect.top + (targetRect.height / 2) - 75;
-                        arrowLeft = -10;
-                        arrowTop = 75;
-                        arrowStyle = 'left: -10px; top: 75px;';
+                        undoButton.style.opacity = '0.5';
+                        undoButton.disabled = true;
+                    }
+                }
+                
+                function clearAll() {
+                    // Clear all layers
+                    streetPitchesLayer.clearLayers();
+                    curbPitchesLayer.clearLayers();
+                    highPointsLayer.clearLayers();
+                    catchBasinsLayer.clearLayers();
+                    trappedWaterLayer.clearLayers();
+                    
+                    // Clear undo stack
+                    undoStack = [];
+                    updateUndoButtonState();
+                    
+                    // Update status
+                    updateStatus('All elements cleared');
+                    showNotification('All elements cleared');
+                }
+                
+                function toggleLayerVisibility(layerName, visible) {
+                    if (layerName === 'street') {
+                        if (visible) {
+                            if (!map.hasLayer(streetPitchesLayer)) {
+                                map.addLayer(streetPitchesLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(streetPitchesLayer)) {
+                                map.removeLayer(streetPitchesLayer);
+                            }
+                        }
+                    } else if (layerName === 'curb') {
+                        if (visible) {
+                            if (!map.hasLayer(curbPitchesLayer)) {
+                                map.addLayer(curbPitchesLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(curbPitchesLayer)) {
+                                map.removeLayer(curbPitchesLayer);
+                            }
+                        }
+                    } else if (layerName === 'highpoint') {
+                        if (visible) {
+                            if (!map.hasLayer(highPointsLayer)) {
+                                map.addLayer(highPointsLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(highPointsLayer)) {
+                                map.removeLayer(highPointsLayer);
+                            }
+                        }
+                    } else if (layerName === 'basin') {
+                        if (visible) {
+                            if (!map.hasLayer(catchBasinsLayer)) {
+                                map.addLayer(catchBasinsLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(catchBasinsLayer)) {
+                                map.removeLayer(catchBasinsLayer);
+                            }
+                        }
+                    } else if (layerName === 'trapped') {
+                        if (visible) {
+                            if (!map.hasLayer(trappedWaterLayer)) {
+                                map.addLayer(trappedWaterLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(trappedWaterLayer)) {
+                                map.removeLayer(trappedWaterLayer);
+                            }
+                        }
+                    }
+                }
+                
+                function setActiveDrawingMode(mode) {
+                    // Reset drawing state
+                    if (isDrawing && tempLine) {
+                        map.removeLayer(tempLine);
+                        tempLine = null;
                     }
                     
-                    // Adjust position if card would go off screen
-                    if (cardLeft < 10) cardLeft = 10;
-                    if (cardLeft + 280 > window.innerWidth) cardLeft = window.innerWidth - 290;
-                    if (cardTop < 10) cardTop = 10;
-                    if (cardTop + 150 > window.innerHeight) cardTop = window.innerHeight - 160;
+                    isDrawing = false;
+                    drawingPoints = [];
                     
-                    card.style.left = `${cardLeft}px`;
-                    card.style.top = `${cardTop}px`;
-                    
-                    // Card content
-                    card.innerHTML = `
-                        <div class="help-arrow" style="${arrowStyle}"></div>
-                        <div class="help-title">${step.title}</div>
-                        <div class="help-text">${step.text}</div>
-                        <div class="help-next">
-                            <button class="button button-primary" id="help-next-btn">
-                                ${index < steps.length - 1 ? 'Next' : 'Done'}
-                            </button>
-                        </div>
-                    `;
-                    
-                    document.getElementById('help-overlay').appendChild(card);
-                    
-                    // Next button event
-                    document.getElementById('help-next-btn').addEventListener('click', function() {
-                        createHelpCard(steps, index + 1);
+                    // Remove active class from all tools
+                    document.querySelectorAll('.tool-button').forEach(btn => {
+                        btn.classList.remove('active');
                     });
+                    
+                    // Set new active mode
+                    if (mode) {
+                        document.getElementById(mode).classList.add('active');
+                        activeDrawingMode = mode;
+                        
+                        // Update status based on tool
+                        if (mode === 'street-tool') {
+                            updateStatus('Click on a street to start drawing a pitch line');
+                        } else if (mode === 'curb-tool') {
+                            updateStatus('Click on a curb to start drawing a pitch line');
+                        } else if (mode === 'high-point-tool') {
+                            updateStatus('Click to place a high point');
+                        } else if (mode === 'catch-basin-tool') {
+                            updateStatus('Click to place a catch basin');
+                        }
+                    } else {
+                        activeDrawingMode = null;
+                        updateStatus('Select a tool to begin');
+                    }
                 }
-
-                function initEventHandlers() {
+                
+                function initUIHandlers() {
+                    // Tool button clicks
+                    document.getElementById('street-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('street-tool');
+                    });
+                    
+                    document.getElementById('curb-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('curb-tool');
+                    });
+                    
+                    document.getElementById('high-point-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('high-point-tool');
+                    });
+                    
+                    document.getElementById('catch-basin-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('catch-basin-tool');
+                    });
+                    
+                    document.getElementById('clear-tool').addEventListener('click', function() {
+                        if (confirm('Are you sure you want to clear all elements?')) {
+                            clearAll();
+                        }
+                    });
+                    
                     // Action buttons
-                    document.getElementById('street-btn').addEventListener('click', function() {
-                        setDrawingMode('street');
-                    });
-                    
-                    document.getElementById('curb-btn').addEventListener('click', function() {
-                        setDrawingMode('curb');
-                    });
-                    
                     document.getElementById('locate-btn').addEventListener('click', function() {
-                        if (userLocation) {
-                            map.setView(userLocation, 19);
-                            showToast('Centered on your location');
+                        if (currentPosition) {
+                            map.setView(currentPosition, 19);
                         } else {
                             getUserLocation();
                         }
                     });
                     
-                    document.getElementById('catchbasin-btn').addEventListener('click', function() {
-                        setDrawingMode('catchbasin');
-                    });
+                    document.getElementById('undo-btn').addEventListener('click', undoLastAction);
                     
-                    document.getElementById('highpoint-btn').addEventListener('click', function() {
-                        setDrawingMode('highpoint');
-                    });
-                    
-                    // Map control buttons
-                    document.getElementById('zoom-in-btn').addEventListener('click', function() {
-                        map.zoomIn();
-                    });
-                    
-                    document.getElementById('zoom-out-btn').addEventListener('click', function() {
-                        map.zoomOut();
+                    document.getElementById('layers-btn').addEventListener('click', function() {
+                        document.getElementById('layer-panel').classList.toggle('visible');
                     });
                     
                     document.getElementById('help-btn').addEventListener('click', function() {
-                        showHelp();
+                        document.getElementById('help-modal').style.display = 'flex';
                     });
                     
-                    document.getElementById('save-btn').addEventListener('click', function() {
-                        saveProject();
+                    // Layer toggle handlers
+                    document.getElementById('street-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('street', this.checked);
                     });
                     
-                    document.getElementById('clear-btn').addEventListener('click', function() {
-                        showConfirmDialog('Are you sure you want to clear all items?', clearAll);
+                    document.getElementById('curb-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('curb', this.checked);
                     });
                     
-                    // Dialog buttons
-                    document.getElementById('save-pitch-btn').addEventListener('click', function() {
-                        const pitchValue = parseFloat(document.getElementById('pitch-value').value);
-                        
-                        if (isNaN(pitchValue) || pitchValue <= 0 || pitchValue > 20) {
-                            showToast('Please enter a valid pitch percentage (0.1-20%)');
-                            return;
-                        }
-                        
-                        // Save for future use
-                        appState.lastPitchValue = pitchValue;
-                        
-                        // Hide dialog
-                        document.getElementById('pitch-dialog').style.display = 'none';
-                        
-                        // Add line with pitch value
-                        if (pendingLine) {
-                            addPitchLine(pendingLine.points, pitchValue, pendingLine.type);
-                            pendingLine = null;
-                        }
+                    document.getElementById('highpoint-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('highpoint', this.checked);
                     });
                     
-                    document.getElementById('cancel-pitch-btn').addEventListener('click', function() {
-                        // Hide dialog
-                        document.getElementById('pitch-dialog').style.display = 'none';
-                        
-                        // Cancel line
-                        pendingLine = null;
-                        showToast('Line cancelled');
+                    document.getElementById('basin-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('basin', this.checked);
                     });
                     
-                    document.getElementById('confirm-btn').addEventListener('click', function() {
-                        // Hide dialog
-                        document.getElementById('confirm-dialog').style.display = 'none';
-                        
-                        // Execute callback
-                        if (typeof appState.confirmAction === 'function') {
-                            appState.confirmAction();
-                            appState.confirmAction = null;
-                        }
+                    document.getElementById('trapped-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('trapped', this.checked);
                     });
                     
-                    document.getElementById('cancel-confirm-btn').addEventListener('click', function() {
-                        // Hide dialog
-                        document.getElementById('confirm-dialog').style.display = 'none';
-                        
-                        // Clear callback
-                        appState.confirmAction = null;
+                    // Layer panel close
+                    document.querySelector('.layer-panel-close').addEventListener('click', function() {
+                        document.getElementById('layer-panel').classList.remove('visible');
                     });
                     
-                    // Close dialogs when clicking outside
-                    document.getElementById('pitch-dialog').addEventListener('click', function(e) {
-                        if (e.target === this) {
-                            this.style.display = 'none';
-                            pendingLine = null;
-                        }
+                    // Pitch modal handlers
+                    document.getElementById('increase-pitch').addEventListener('click', function() {
+                        pitchPercent = Math.min(10, pitchPercent + 0.1);
+                        document.getElementById('pitch-value').textContent = pitchPercent.toFixed(1) + '%';
                     });
                     
-                    document.getElementById('confirm-dialog').addEventListener('click', function(e) {
-                        if (e.target === this) {
-                            this.style.display = 'none';
-                            appState.confirmAction = null;
-                        }
+                    document.getElementById('decrease-pitch').addEventListener('click', function() {
+                        pitchPercent = Math.max(0.1, pitchPercent - 0.1);
+                        document.getElementById('pitch-value').textContent = pitchPercent.toFixed(1) + '%';
                     });
                     
-                    // Help overlay click
-                    document.getElementById('help-overlay').addEventListener('click', function(e) {
-                        if (e.target === this) {
-                            this.classList.remove('visible');
-                        }
+                    document.getElementById('cancel-pitch').addEventListener('click', function() {
+                        document.getElementById('pitch-modal').style.display = 'none';
+                        drawingPoints = [];
                     });
                     
-                    // Key events
-                    document.addEventListener('keydown', function(e) {
-                        // Escape key
-                        if (e.key === 'Escape') {
-                            // Cancel drawing
-                            if (drawingLine) {
-                                cancelDrawing();
-                            }
-                            
-                            // Hide dialogs
-                            document.getElementById('pitch-dialog').style.display = 'none';
-                            document.getElementById('confirm-dialog').style.display = 'none';
-                            document.getElementById('help-overlay').classList.remove('visible');
-                            
-                            pendingLine = null;
-                            appState.confirmAction = null;
-                        }
-                    });
-                }
-
-                function setDrawingMode(mode) {
-                    // Reset active state on all buttons
-                    document.querySelectorAll('.action-button').forEach(button => {
-                        button.classList.remove('active');
+                    document.getElementById('confirm-pitch').addEventListener('click', function() {
+                        document.getElementById('pitch-modal').style.display = 'none';
+                        finalizeLineWithPitch(pitchPercent);
                     });
                     
-                    // Cancel any current drawing
-                    cancelDrawing();
+                    // Context menu item handlers
+                    document.getElementById('reverse-direction').addEventListener('click', reversePitchDirection);
+                    document.getElementById('delete-item').addEventListener('click', deleteElement);
                     
-                    // Set mode
-                    drawingMode = mode;
+                    // Help modal close
+                    document.querySelector('.help-close').addEventListener('click', function() {
+                        document.getElementById('help-modal').style.display = 'none';
+                    });
                     
-                    // Update UI
-                    if (mode === 'street') {
-                        document.getElementById('street-btn').classList.add('active');
-                        showToast('Drawing street pitch - tap along street guides');
-                    } else if (mode === 'curb') {
-                        document.getElementById('curb-btn').classList.add('active');
-                        showToast('Drawing curb pitch - tap along curb guides');
-                    } else if (mode === 'catchbasin') {
-                        document.getElementById('catchbasin-btn').classList.add('active');
-                        showToast('Adding catch basins - tap to place');
-                    } else if (mode === 'highpoint') {
-                        document.getElementById('highpoint-btn').classList.add('active');
-                        showToast('Adding high points - tap to place');
-                    }
+                    // Hide context menu on document click
+                    document.addEventListener('click', hideContextMenu);
+                    
+                    // Initialize undo button state
+                    updateUndoButtonState();
                 }
             }
         });
