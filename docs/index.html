@@ -33,22 +33,20 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* FIX 1: Let the browser give the real dynamic viewport */
         html, body {
-            height: 100%;
+            height: 100%; /* Fallback for older browsers */
+            /* FIX 1: Replace 100vh with better viewport handling */
             color: var(--text-color);
             background-color: var(--light-color);
-        }
-
-        /* FIX 1: Only hide horizontal scroll; allow vertical if needed */
-        body {
+            /* FIX 1: Allow vertical scrolling if needed */
             overflow-x: hidden;
             overflow-y: auto;
         }
 
         .app-container {
             position: relative;
-            height: 100dvh; /* FIX 1: Use dynamic viewport height */
+            /* FIX 1: Use dynamic viewport height */
+            height: 100dvh;
             width: 100vw;
         }
 
@@ -56,16 +54,6 @@
             height: 100%;
             width: 100%;
             z-index: 1;
-        }
-
-        /* iOS safe area support */
-        @supports(padding: env(safe-area-inset-bottom)) {
-            body {
-                padding-bottom: env(safe-area-inset-bottom);
-            }
-            .drawing-toolbar {
-                bottom: calc(16px + env(safe-area-inset-bottom));
-            }
         }
 
         /* Top Action Bar */
@@ -119,7 +107,7 @@
         /* Drawing Toolbar */
         .drawing-toolbar {
             position: absolute;
-            bottom: 16px; /* FIX 1: Reduced from 24px to 16px */
+            bottom: 16px; /* FIX 1: Reduced from 24px for better positioning */
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
@@ -188,21 +176,27 @@
             border-color: white;
         }
 
-        /* Finish guide button */
+        /* Complete Guide Button */
         .finish-guide-btn {
-            display: none;
             position: absolute;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--primary-color);
+            right: 16px;
+            bottom: 90px;
+            z-index: 1000;
+            display: none;
+            background-color: var(--success-color);
             color: white;
-            padding: 10px 20px;
-            border-radius: var(--rounded);
-            box-shadow: var(--shadow);
-            z-index: 1001;
+            padding: 8px 16px;
+            border-radius: 20px;
             border: none;
+            box-shadow: var(--shadow);
             font-weight: 600;
+            cursor: pointer;
+        }
+
+        .finish-guide-btn.visible {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* Menu Panel */
@@ -758,7 +752,8 @@
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
-            pointer-events: auto; /* FIX 5: Changed from none to allow clicking */
+            /* FIX 5: Allow interaction with guides */
+            pointer-events: auto;
         }
 
         .curb-guide {
@@ -767,7 +762,8 @@
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
-            pointer-events: auto; /* FIX 5: Changed from none to allow clicking */
+            /* FIX 5: Allow interaction with guides */
+            pointer-events: auto;
         }
 
         .custom-guide {
@@ -776,7 +772,7 @@
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
-            pointer-events: auto; /* FIX 5: Changed from none to allow clicking */
+            pointer-events: auto;
         }
 
         /* Valid area highlight */
@@ -915,6 +911,16 @@
         .status-bar i {
             color: var(--primary-color);
             flex-shrink: 0;
+        }
+
+        /* iOS safe area support */
+        @supports(padding: env(safe-area-inset-bottom)) {
+            body {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            .drawing-toolbar {
+                bottom: calc(16px + env(safe-area-inset-bottom));
+            }
         }
 
         /* Style adjustments for smaller screens */
@@ -1100,14 +1106,16 @@
             <button class="tool-button" id="clear-tool" title="Clear All">
                 <i class="fas fa-trash"></i>
             </button>
-            <!-- FIX 3: Added Undo button to toolbar for better access on iOS -->
+            <!-- FIX 5: Added Undo button inside toolbar for better access -->
             <button class="tool-button" id="toolbar-undo-btn" title="Undo">
                 <i class="fas fa-undo"></i>
             </button>
         </div>
 
-        <!-- FIX 3: Added Finish Guide Button for custom guides -->
-        <button class="finish-guide-btn" id="finish-guide-btn">Finish Guide</button>
+        <!-- Finish Guide Button -->
+        <button class="finish-guide-btn" id="finish-guide-btn">
+            <i class="fas fa-check"></i> Finish Guide
+        </button>
 
         <!-- Status Bar -->
         <div class="status-bar">
@@ -1249,8 +1257,7 @@
                         <p class="help-text">• The app will snap to the nearest valid street or curb when drawing<br>
                         • A highlight will show valid drawing areas as you move your finger<br>
                         • After drawing a line, you can set its pitch percentage<br>
-                        • Right-click or long-press on lines to reverse direction or delete<br>
-                        • For custom guides, use the "Finish Guide" button to complete drawing</p>
+                        • Right-click or long-press on lines to reverse direction or delete</p>
                     </div>
 
                     <div class="help-section">
@@ -1303,6 +1310,7 @@
                 let snapEnabled = true;
                 let highlightEnabled = true;
                 let nearestValidPoint = null;
+                let finishGuideBtn = document.getElementById('finish-guide-btn');
                 
                 // Feature layers
                 let streetPitchesLayer = L.layerGroup();
@@ -1356,7 +1364,7 @@
                     trappedWaterLayer.addTo(map);
                     
                     // Map event listeners
-                    // FIX 2: Added 'tap' event for mobile
+                    // FIX 2B: Add 'tap' event handler for mobile
                     map.on('click tap', handleMapClick);
                     map.on('mousemove', handleMouseMove);
                     map.on('touchmove', handleTouchMove);
@@ -1553,7 +1561,7 @@
                     // Overpass API endpoint
                     const overpassUrl = "https://overpass-api.de/api/interpreter";
                     
-                    // FIX 4: Fixed Overpass API call with proper headers
+                    // FIX 4: Add content-type header and encode the body
                     fetch(overpassUrl, {
                         method: 'POST',
                         headers: {
@@ -1606,7 +1614,7 @@
                                 // Create street guide
                                 const streetGuide = L.polyline(latlngs, {
                                     className: 'street-guide',
-                                    interactive: true // FIX 5: Changed from false to true
+                                    interactive: true // FIX 5: Allow interaction
                                 }).addTo(streetGuidesLayer);
                                 
                                 // Generate curb lines on both sides
@@ -1627,95 +1635,83 @@
                     });
                 }
                 
-                // FIX 3: Fixed the createCurbLines function for better distance calculation
+                // FIX 3: Improved curb offset calculation
                 function createCurbLines(streetPoints, streetId) {
                     if (streetPoints.length < 2) return;
                     
-                    // Calculate left and right curb points
-                    const leftCurbPoints = [];
-                    const rightCurbPoints = [];
+                    // Calculate curb offsets
+                    const curbOffsets = curbOffsetPoints(streetPoints, 5); // 5 meters offset
                     
-                    // Curb offset in meters
-                    const meters = 5;
-                    
-                    for (let i = 0; i < streetPoints.length - 1; i++) {
-                        const p1 = L.latLng(streetPoints[i]);
-                        const p2 = L.latLng(streetPoints[i + 1]);
+                    if (curbOffsets && curbOffsets.length > 0) {
+                        // Create left and right curb polylines
+                        const leftCurbPoints = curbOffsets.map(pair => pair[0]);
+                        const rightCurbPoints = curbOffsets.map(pair => pair[1]);
                         
-                        // Convert to pixel coordinates
-                        const a = map.latLngToLayerPoint(p1);
-                        const b = map.latLngToLayerPoint(p2);
+                        const leftCurb = L.polyline(leftCurbPoints, {
+                            className: 'curb-guide',
+                            interactive: true // FIX 5: Allow interaction
+                        }).addTo(curbGuidesLayer);
                         
-                        // Get normalized direction vector
+                        const rightCurb = L.polyline(rightCurbPoints, {
+                            className: 'curb-guide',
+                            interactive: true // FIX 5: Allow interaction
+                        }).addTo(curbGuidesLayer);
+                        
+                        // Store curb data
+                        curbs.push({
+                            id: `${streetId}-left`,
+                            latlngs: leftCurbPoints,
+                            streetId: streetId
+                        });
+                        
+                        curbs.push({
+                            id: `${streetId}-right`,
+                            latlngs: rightCurbPoints,
+                            streetId: streetId
+                        });
+                    }
+                }
+                
+                // FIX 3: Improved function to calculate curb offset points
+                function curbOffsetPoints(streetPts, meters) {
+                    return streetPts.map((p, i, arr) => {
+                        if (i === arr.length - 1) return null;
+                        
+                        // Convert points to screen coordinates for better accuracy
+                        const a = map.latLngToLayerPoint(L.latLng(arr[i]));
+                        const b = map.latLngToLayerPoint(L.latLng(arr[i + 1]));
+                        
+                        // Calculate normalized direction vector
                         const dx = b.x - a.x;
                         const dy = b.y - a.y;
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         
-                        if (dist === 0) continue;
+                        if (dist === 0) return null;
                         
-                        // Normalize
+                        // Normalize direction vector
                         const nx = dx / dist;
                         const ny = dy / dist;
                         
                         // Calculate perpendicular vector
-                        const px = -ny;
-                        const py = nx;
+                        const perpX = -ny;
+                        const perpY = nx;
                         
-                        // Calculate offset in pixels (approximating meters)
-                        // ~0.3 pixels per meter at zoom level 19
-                        const pixelOffset = meters / 0.3;
+                        // Calculate offset in pixels (approx. 3 pixels per meter at zoom level 19)
+                        const pixelsPerMeter = 3;
+                        const offsetPixels = meters * pixelsPerMeter;
                         
-                        // Calculate offset points for left and right curbs
-                        const leftOffsetX = a.x + px * pixelOffset;
-                        const leftOffsetY = a.y + py * pixelOffset;
-                        const rightOffsetX = a.x - px * pixelOffset;
-                        const rightOffsetY = a.y - py * pixelOffset;
+                        // Apply offset
+                        const leftX = a.x + perpX * offsetPixels;
+                        const leftY = a.y + perpY * offsetPixels;
+                        const rightX = a.x - perpX * offsetPixels;
+                        const rightY = a.y - perpY * offsetPixels;
                         
-                        // Convert back to latlng
-                        const leftPoint = map.layerPointToLatLng(L.point(leftOffsetX, leftOffsetY));
-                        const rightPoint = map.layerPointToLatLng(L.point(rightOffsetX, rightOffsetY));
+                        // Convert back to lat/lng
+                        const leftLatLng = map.layerPointToLatLng(L.point(leftX, leftY));
+                        const rightLatLng = map.layerPointToLatLng(L.point(rightX, rightY));
                         
-                        leftCurbPoints.push([leftPoint.lat, leftPoint.lng]);
-                        rightCurbPoints.push([rightPoint.lat, rightPoint.lng]);
-                        
-                        // Add the last point if this is the last segment
-                        if (i === streetPoints.length - 2) {
-                            const leftLastX = b.x + px * pixelOffset;
-                            const leftLastY = b.y + py * pixelOffset;
-                            const rightLastX = b.x - px * pixelOffset;
-                            const rightLastY = b.y - py * pixelOffset;
-                            
-                            const leftLastPoint = map.layerPointToLatLng(L.point(leftLastX, leftLastY));
-                            const rightLastPoint = map.layerPointToLatLng(L.point(rightLastX, rightLastY));
-                            
-                            leftCurbPoints.push([leftLastPoint.lat, leftLastPoint.lng]);
-                            rightCurbPoints.push([rightLastPoint.lat, rightLastPoint.lng]);
-                        }
-                    }
-                    
-                    // Create curb polylines
-                    const leftCurb = L.polyline(leftCurbPoints, {
-                        className: 'curb-guide',
-                        interactive: true // FIX 5: Changed from false to true
-                    }).addTo(curbGuidesLayer);
-                    
-                    const rightCurb = L.polyline(rightCurbPoints, {
-                        className: 'curb-guide',
-                        interactive: true // FIX 5: Changed from false to true
-                    }).addTo(curbGuidesLayer);
-                    
-                    // Store curb data
-                    curbs.push({
-                        id: `${streetId}-left`,
-                        latlngs: leftCurbPoints,
-                        streetId: streetId
-                    });
-                    
-                    curbs.push({
-                        id: `${streetId}-right`,
-                        latlngs: rightCurbPoints,
-                        streetId: streetId
-                    });
+                        return [leftLatLng, rightLatLng];
+                    }).filter(Boolean); // Remove null values
                 }
                 
                 function drawCustomGuide() {
@@ -1732,13 +1728,16 @@
                         dashArray: '5,5'
                     }).addTo(map);
                     
-                    // FIX 3: Show finish guide button
-                    document.getElementById('finish-guide-btn').style.display = 'block';
+                    // Show finish button
+                    finishGuideBtn.classList.add('visible');
                     
-                    updateStatus('Click to add points to your custom guide. Tap "Finish Guide" when complete.');
+                    updateStatus('Click to add points to your custom guide. Click "Finish Guide" when done.');
                 }
                 
                 function completeCustomGuide() {
+                    // Hide finish button
+                    finishGuideBtn.classList.remove('visible');
+                    
                     // Need at least 2 points for a valid guide
                     if (drawingPoints.length < 2) {
                         if (tempLine) {
@@ -1747,9 +1746,6 @@
                         }
                         isDrawing = false;
                         drawingPoints = [];
-                        
-                        // FIX 3: Hide finish guide button
-                        document.getElementById('finish-guide-btn').style.display = 'none';
                         return;
                     }
                     
@@ -1757,7 +1753,7 @@
                     const guideId = 'custom-' + Date.now();
                     const guide = L.polyline(drawingPoints, {
                         className: 'custom-guide',
-                        interactive: true // FIX 5: Changed from false to true
+                        interactive: true // FIX 5: Allow interaction
                     }).addTo(customGuidesLayer);
                     
                     // Store guide data
@@ -1786,101 +1782,99 @@
                     isDrawing = false;
                     drawingPoints = [];
                     
-                    // FIX 3: Hide finish guide button
-                    document.getElementById('finish-guide-btn').style.display = 'none';
-                    
                     // Update status
                     updateStatus('Custom guide added. You can now draw on it.');
                     showNotification('Custom guide created');
                 }
                 
-                // FIX 2A: Fixed nearest point calculation to use pixels instead of degrees
+                // FIX 2A: Improved nearest point detection using pixels instead of degrees
                 function findNearestValidPoint(point, isStreet) {
                     // Convert to Leaflet latLng if needed
                     if (!point.lat) {
                         point = L.latLng(point);
                     }
                     
-                    const maxPixelDistance = 35; // Maximum pixel distance for snapping
-                    let bestMatch = { 
-                        point: point,
-                        valid: false,
-                        type: null,
-                        distPx: Number.POSITIVE_INFINITY 
-                    };
+                    // Maximum distance in pixels to consider valid
+                    const maxDistancePx = 35; // About the size of a fingertip
                     
-                    // Select dataset to test based on tool type
-                    const dataSets = isStreet ? [[...customGuides], [...streets]] : [[...curbs]];
+                    let minDistancePx = Infinity;
+                    let nearestPoint = null;
+                    let validationType = null;
                     
-                    // Test all appropriate data sets
-                    for (const dataSet of dataSets) {
-                        for (const item of dataSet) {
-                            const result = nearestPointOnArray(point, item.latlngs);
-                            
-                            if (result.distPx < bestMatch.distPx) {
-                                bestMatch = {
-                                    point: result.point,
-                                    valid: result.distPx <= maxPixelDistance,
-                                    type: isStreet ? 'street' : 'curb',
-                                    distPx: result.distPx
-                                };
-                            }
+                    // Arrays to check based on the requested type
+                    const arraysToCheck = isStreet ? 
+                        [customGuides, streets] : 
+                        [curbs];
+                    
+                    // Flatten arrays for simpler checking
+                    arraysToCheck.flat().forEach(obj => {
+                        const result = nearestPointOnArray(point, obj.latlngs);
+                        if (result.distPx < minDistancePx) {
+                            minDistancePx = result.distPx;
+                            nearestPoint = result.point;
+                            validationType = isStreet ? 'street' : 'curb';
+                        }
+                    });
+                    
+                    // Check if the closest point is within valid range
+                    if (minDistancePx <= maxDistancePx) {
+                        return {
+                            point: nearestPoint,
+                            valid: true,
+                            type: validationType
+                        };
+                    } else {
+                        return {
+                            point: point,
+                            valid: false,
+                            type: null
+                        };
+                    }
+                }
+                
+                // Helper function to find nearest point on an array of points
+                function nearestPointOnArray(point, latlngs) {
+                    let minDist = { distPx: Infinity };
+                    
+                    for (let i = 0; i < latlngs.length - 1; i++) {
+                        const segmentResult = projectOnSegment(point, latlngs[i], latlngs[i+1]);
+                        if (segmentResult.distPx < minDist.distPx) {
+                            minDist = segmentResult;
                         }
                     }
                     
-                    return bestMatch;
+                    return minDist;
                 }
                 
-                function nearestPointOnArray(point, pointsArray) {
-                    let minResult = { 
-                        point: null, 
-                        distPx: Number.POSITIVE_INFINITY 
-                    };
+                // Project point onto line segment and get distance in pixels
+                function projectOnSegment(point, start, end) {
+                    // Convert to layer points (screen pixels)
+                    const lp = map.latLngToLayerPoint(L.latLng(point));
+                    const ls = map.latLngToLayerPoint(L.latLng(start));
+                    const le = map.latLngToLayerPoint(L.latLng(end));
                     
-                    // Check each segment of the line
-                    for (let i = 0; i < pointsArray.length - 1; i++) {
-                        const result = projectPointOnSegment(
-                            point, 
-                            L.latLng(pointsArray[i]), 
-                            L.latLng(pointsArray[i + 1])
-                        );
-                        
-                        if (result.distPx < minResult.distPx) {
-                            minResult = result;
-                        }
-                    }
+                    // Calculate vector from start to end
+                    const v = L.point(le.x - ls.x, le.y - ls.y);
                     
-                    return minResult;
-                }
-                
-                function projectPointOnSegment(point, start, end) {
-                    // Convert everything to screen coordinates
-                    const lp = map.latLngToLayerPoint(point);
-                    const la = map.latLngToLayerPoint(start);
-                    const lb = map.latLngToLayerPoint(end);
+                    // Calculate vector from start to point
+                    const w = L.point(lp.x - ls.x, lp.y - ls.y);
                     
-                    // Calculate vectors
-                    const v = L.point(lb.x - la.x, lb.y - la.y); // line vector
-                    const w = L.point(lp.x - la.x, lp.y - la.y); // point to start vector
+                    // Calculate projection scalar
+                    const c1 = w.x * v.x + w.y * v.y;
+                    const c2 = v.x * v.x + v.y * v.y;
                     
-                    // Calculate dot products
-                    const c1 = w.x * v.x + w.y * v.y; // dot product
-                    const c2 = v.x * v.x + v.y * v.y; // squared length
-                    
-                    // Calculate projection parameter (clamped to line segment)
+                    // Calculate normalized projection (clamped to [0,1])
                     const t = c2 === 0 ? 0 : Math.max(0, Math.min(1, c1 / c2));
                     
                     // Calculate projected point
-                    const projx = la.x + v.x * t;
-                    const projy = la.y + v.y * t;
-                    const projPoint = L.point(projx, projy);
+                    const px = ls.x + t * v.x;
+                    const py = ls.y + t * v.y;
+                    const projPoint = L.point(px, py);
                     
                     // Calculate distance in pixels
-                    const distPx = Math.sqrt(
-                        Math.pow(lp.x - projPoint.x, 2) + 
-                        Math.pow(lp.y - projPoint.y, 2)
-                    );
+                    const distPx = Math.sqrt(Math.pow(lp.x - px, 2) + Math.pow(lp.y - py, 2));
                     
+                    // Return result
                     return {
                         point: map.layerPointToLatLng(projPoint),
                         distPx: distPx
@@ -1992,7 +1986,8 @@
                             drawingPoints.push(e.latlng);
                             tempLine.setLatLngs(drawingPoints);
                             
-                            // No double-click detection on mobile - using finish button instead
+                            // Update status
+                            updateStatus(`Guide has ${drawingPoints.length} points. Click "Finish Guide" when done.`);
                         }
                     }
                 }
@@ -2545,3 +2540,490 @@
                     
                     return null; // No intersection
                 }
+                
+                function flowsTowardsPoint(line, point) {
+                    // Simplified approach: check if the last point of the line is closer to the point than the first
+                    const latlngs = line.getLatLngs();
+                    const first = latlngs[0];
+                    const last = latlngs[latlngs.length - 1];
+                    
+                    const distFirst = map.distance(first, point);
+                    const distLast = map.distance(last, point);
+                    
+                    return distLast < distFirst;
+                }
+                
+                function checkForCatchBasinNear(point, radius) {
+                    let found = false;
+                    
+                    catchBasinsLayer.eachLayer(function(layer) {
+                        if (map.distance(layer.getLatLng(), point) <= radius) {
+                            found = true;
+                        }
+                    });
+                    
+                    return found;
+                }
+                
+                function addTrappedWaterIndicator(center) {
+                    // Create a circle to represent trapped water
+                    const circle = L.circle(center, {
+                        radius: 5,
+                        fillColor: 'red',
+                        fillOpacity: 0.6,
+                        color: 'red',
+                        weight: 2,
+                        className: 'trapped-water-area'
+                    }).addTo(trappedWaterLayer);
+                }
+                
+                function showPitchModal() {
+                    document.getElementById('pitch-modal').style.display = 'flex';
+                    document.getElementById('pitch-value').textContent = pitchPercent.toFixed(1) + '%';
+                    document.getElementById('pitch-modal-title').textContent = 
+                        `Set ${currentDrawingType === 'street-tool' ? 'Street' : 'Curb'} Pitch Percentage`;
+                }
+                
+                function showNotification(message) {
+                    const notification = document.getElementById('notification');
+                    document.getElementById('notification-text').textContent = message;
+                    notification.classList.add('visible');
+                    
+                    setTimeout(() => {
+                        notification.classList.remove('visible');
+                    }, 3000);
+                }
+                
+                function updateStatus(message) {
+                    document.getElementById('status-text').textContent = message;
+                }
+                
+                function addToUndoStack(action) {
+                    undoStack.push(action);
+                    updateUndoButtonState();
+                }
+                
+                function undoLastAction() {
+                    if (undoStack.length === 0) return;
+                    
+                    const action = undoStack.pop();
+                    
+                    if (action.type === 'line') {
+                        // Remove arrow and label markers
+                        if (action.element.arrowMarker) {
+                            action.layer.removeLayer(action.element.arrowMarker);
+                        }
+                        if (action.element.labelMarker) {
+                            action.layer.removeLayer(action.element.labelMarker);
+                        }
+                        
+                        // Remove line
+                        action.layer.removeLayer(action.element);
+                        
+                    } else if (action.type === 'marker') {
+                        action.layer.removeLayer(action.element);
+                    } else if (action.type === 'guide') {
+                        // Remove guide
+                        customGuidesLayer.removeLayer(action.element);
+                        
+                        // Remove associated curb lines
+                        const guideId = action.guideId;
+                        
+                        // Find and remove from custom guides array
+                        const guideIndex = customGuides.findIndex(g => g.id === guideId);
+                        if (guideIndex !== -1) {
+                            customGuides.splice(guideIndex, 1);
+                        }
+                        
+                        // Find and remove associated curbs
+                        const curbsToRemove = curbs.filter(c => 
+                            c.id === `${guideId}-left` || c.id === `${guideId}-right`);
+                        
+                        curbsToRemove.forEach(curb => {
+                            const curbIndex = curbs.findIndex(c => c.id === curb.id);
+                            if (curbIndex !== -1) {
+                                curbs.splice(curbIndex, 1);
+                            }
+                        });
+                        
+                        // Need to rebuild curb guides layer
+                        curbGuidesLayer.clearLayers();
+                        curbs.forEach(curb => {
+                            L.polyline(curb.latlngs, {
+                                className: 'curb-guide',
+                                interactive: true // FIX 5: Allow interaction
+                            }).addTo(curbGuidesLayer);
+                        });
+                    }
+                    
+                    // Check for trapped water
+                    detectTrappedWater();
+                    
+                    // Update button state
+                    updateUndoButtonState();
+                    
+                    // Update status
+                    updateStatus('Last action undone');
+                }
+                
+                function updateUndoButtonState() {
+                    const undoButton = document.getElementById('undo-btn');
+                    const toolbarUndoButton = document.getElementById('toolbar-undo-btn');
+                    
+                    if (undoStack.length > 0) {
+                        undoButton.style.opacity = '1';
+                        undoButton.disabled = false;
+                        toolbarUndoButton.style.opacity = '1';
+                        toolbarUndoButton.disabled = false;
+                    } else {
+                        undoButton.style.opacity = '0.5';
+                        undoButton.disabled = true;
+                        toolbarUndoButton.style.opacity = '0.5';
+                        toolbarUndoButton.disabled = true;
+                    }
+                }
+                
+                function clearAll() {
+                    // Clear all layers
+                    streetPitchesLayer.clearLayers();
+                    curbPitchesLayer.clearLayers();
+                    highPointsLayer.clearLayers();
+                    catchBasinsLayer.clearLayers();
+                    trappedWaterLayer.clearLayers();
+                    customGuidesLayer.clearLayers();
+                    
+                    // Clear custom guides array
+                    customGuides = [];
+                    
+                    // Remove custom curbs
+                    curbs = curbs.filter(curb => !curb.id.startsWith('custom-'));
+                    
+                    // Rebuild curb guides layer for remaining curbs
+                    curbGuidesLayer.clearLayers();
+                    curbs.forEach(curb => {
+                        L.polyline(curb.latlngs, {
+                            className: 'curb-guide',
+                            interactive: true // FIX 5: Allow interaction
+                        }).addTo(curbGuidesLayer);
+                    });
+                    
+                    // Clear undo stack
+                    undoStack = [];
+                    updateUndoButtonState();
+                    
+                    // Update status
+                    updateStatus('All elements cleared');
+                    showNotification('All elements cleared');
+                }
+                
+                function toggleLayerVisibility(layerName, visible) {
+                    if (layerName === 'street') {
+                        if (visible) {
+                            if (!map.hasLayer(streetPitchesLayer)) {
+                                map.addLayer(streetPitchesLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(streetPitchesLayer)) {
+                                map.removeLayer(streetPitchesLayer);
+                            }
+                        }
+                    } else if (layerName === 'curb') {
+                        if (visible) {
+                            if (!map.hasLayer(curbPitchesLayer)) {
+                                map.addLayer(curbPitchesLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(curbPitchesLayer)) {
+                                map.removeLayer(curbPitchesLayer);
+                            }
+                        }
+                    } else if (layerName === 'highpoint') {
+                        if (visible) {
+                            if (!map.hasLayer(highPointsLayer)) {
+                                map.addLayer(highPointsLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(highPointsLayer)) {
+                                map.removeLayer(highPointsLayer);
+                            }
+                        }
+                    } else if (layerName === 'basin') {
+                        if (visible) {
+                            if (!map.hasLayer(catchBasinsLayer)) {
+                                map.addLayer(catchBasinsLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(catchBasinsLayer)) {
+                                map.removeLayer(catchBasinsLayer);
+                            }
+                        }
+                    } else if (layerName === 'trapped') {
+                        if (visible) {
+                            if (!map.hasLayer(trappedWaterLayer)) {
+                                map.addLayer(trappedWaterLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(trappedWaterLayer)) {
+                                map.removeLayer(trappedWaterLayer);
+                            }
+                        }
+                    } else if (layerName === 'guide') {
+                        if (visible) {
+                            if (!map.hasLayer(streetGuidesLayer)) {
+                                map.addLayer(streetGuidesLayer);
+                            }
+                            if (!map.hasLayer(curbGuidesLayer)) {
+                                map.addLayer(curbGuidesLayer);
+                            }
+                            if (!map.hasLayer(customGuidesLayer)) {
+                                map.addLayer(customGuidesLayer);
+                            }
+                        } else {
+                            if (map.hasLayer(streetGuidesLayer)) {
+                                map.removeLayer(streetGuidesLayer);
+                            }
+                            if (map.hasLayer(curbGuidesLayer)) {
+                                map.removeLayer(curbGuidesLayer);
+                            }
+                            if (map.hasLayer(customGuidesLayer)) {
+                                map.removeLayer(customGuidesLayer);
+                            }
+                        }
+                    }
+                }
+                
+                function setActiveDrawingMode(mode) {
+                    // Reset drawing state
+                    if (isDrawing && tempLine) {
+                        map.removeLayer(tempLine);
+                        tempLine = null;
+                    }
+                    
+                    isDrawing = false;
+                    drawingPoints = [];
+                    
+                    // Hide finish guide button
+                    finishGuideBtn.classList.remove('visible');
+                    
+                    // Remove active class from all tools
+                    document.querySelectorAll('.tool-button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Set new active mode
+                    if (mode) {
+                        document.getElementById(mode).classList.add('active');
+                        activeDrawingMode = mode;
+                        
+                        // Update status based on tool
+                        if (mode === 'street-tool') {
+                            updateStatus('Click on a street to start drawing a pitch line');
+                        } else if (mode === 'curb-tool') {
+                            updateStatus('Click on a curb to start drawing a pitch line');
+                        } else if (mode === 'high-point-tool') {
+                            updateStatus('Click to place a high point');
+                        } else if (mode === 'catch-basin-tool') {
+                            updateStatus('Click to place a catch basin');
+                        } else if (mode === 'draw-guide-tool') {
+                            updateStatus('Click to draw a custom street guide');
+                        }
+                    } else {
+                        activeDrawingMode = null;
+                        updateStatus('Select a tool to begin');
+                    }
+                }
+                
+                function initUIHandlers() {
+                    // Tool button clicks
+                    document.getElementById('street-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('street-tool');
+                    });
+                    
+                    document.getElementById('curb-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('curb-tool');
+                    });
+                    
+                    document.getElementById('high-point-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('high-point-tool');
+                    });
+                    
+                    document.getElementById('catch-basin-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('catch-basin-tool');
+                    });
+                    
+                    document.getElementById('draw-guide-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('draw-guide-tool');
+                    });
+                    
+                    document.getElementById('clear-tool').addEventListener('click', function() {
+                        if (confirm('Are you sure you want to clear all elements?')) {
+                            clearAll();
+                        }
+                    });
+                    
+                    // Action buttons
+                    document.getElementById('locate-btn').addEventListener('click', function() {
+                        if (currentPosition) {
+                            map.setView(currentPosition, 19);
+                        } else {
+                            getUserLocation();
+                        }
+                    });
+                    
+                    document.getElementById('undo-btn').addEventListener('click', undoLastAction);
+                    document.getElementById('toolbar-undo-btn').addEventListener('click', undoLastAction);
+                    
+                    document.getElementById('menu-btn').addEventListener('click', function() {
+                        document.getElementById('menu-panel').classList.toggle('visible');
+                    });
+                    
+                    document.getElementById('help-btn').addEventListener('click', function() {
+                        document.getElementById('help-modal').style.display = 'flex';
+                    });
+                    
+                    // Finish guide button
+                    document.getElementById('finish-guide-btn').addEventListener('click', function() {
+                        if (isDrawing && currentDrawingType === 'guide') {
+                            completeCustomGuide();
+                        }
+                    });
+                    
+                    // Layer toggle handlers
+                    document.getElementById('street-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('street', this.checked);
+                    });
+                    
+                    document.getElementById('curb-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('curb', this.checked);
+                    });
+                    
+                    document.getElementById('highpoint-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('highpoint', this.checked);
+                    });
+                    
+                    document.getElementById('basin-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('basin', this.checked);
+                    });
+                    
+                    document.getElementById('trapped-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('trapped', this.checked);
+                    });
+                    
+                    document.getElementById('guide-toggle').addEventListener('change', function() {
+                        toggleLayerVisibility('guide', this.checked);
+                    });
+                    
+                    // Snap toggle
+                    document.getElementById('snap-toggle').addEventListener('change', function() {
+                        snapEnabled = this.checked;
+                    });
+                    
+                    // Highlight toggle
+                    document.getElementById('highlight-toggle').addEventListener('change', function() {
+                        highlightEnabled = this.checked;
+                        if (!highlightEnabled) {
+                            highlightArea.style.display = 'none';
+                        }
+                    });
+                    
+                    // Menu panel close
+                    document.querySelector('.menu-panel-close').addEventListener('click', function() {
+                        document.getElementById('menu-panel').classList.remove('visible');
+                    });
+                    
+                    // Pitch modal handlers
+                    document.getElementById('increase-pitch').addEventListener('click', function() {
+                        pitchPercent = Math.min(10, pitchPercent + 0.1);
+                        document.getElementById('pitch-value').textContent = pitchPercent.toFixed(1) + '%';
+                    });
+                    
+                    document.getElementById('decrease-pitch').addEventListener('click', function() {
+                        pitchPercent = Math.max(0.1, pitchPercent - 0.1);
+                        document.getElementById('pitch-value').textContent = pitchPercent.toFixed(1) + '%';
+                    });
+                    
+                    document.getElementById('cancel-pitch').addEventListener('click', function() {
+                        document.getElementById('pitch-modal').style.display = 'none';
+                        drawingPoints = [];
+                    });
+                    
+                    document.getElementById('confirm-pitch').addEventListener('click', function() {
+                        document.getElementById('pitch-modal').style.display = 'none';
+                        finalizeLineWithPitch(pitchPercent);
+                    });
+                    
+                    // Context menu item handlers
+                    document.getElementById('reverse-direction').addEventListener('click', reversePitchDirection);
+                    document.getElementById('delete-item').addEventListener('click', deleteElement);
+                    
+                    // Help modal close
+                    document.querySelector('.help-close').addEventListener('click', function() {
+                        document.getElementById('help-modal').style.display = 'none';
+                    });
+                    
+                    // Location modal handlers
+                    document.getElementById('location-current-btn').addEventListener('click', function() {
+                        document.getElementById('location-modal').style.display = 'none';
+                        getUserLocation();
+                    });
+                    
+                    document.getElementById('location-search-btn').addEventListener('click', searchLocation);
+                    
+                    document.querySelector('.location-close').addEventListener('click', function() {
+                        document.getElementById('location-modal').style.display = 'none';
+                        
+                        // If no location is set yet, use default NYC location
+                        if (!currentPosition) {
+                            map.setView([40.7128, -74.0060], 16);
+                            loadRoadData();
+                        }
+                    });
+                    
+                    // Borough selection
+                    document.querySelectorAll('.borough-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            // Toggle active state
+                            if (this.classList.contains('active')) {
+                                this.classList.remove('active');
+                                selectedBorough = null;
+                            } else {
+                                // Remove active class from all borough buttons
+                                document.querySelectorAll('.borough-btn').forEach(b => {
+                                    b.classList.remove('active');
+                                });
+                                
+                                // Set active class on clicked borough
+                                this.classList.add('active');
+                                selectedBorough = this.getAttribute('data-borough');
+                            }
+                        });
+                    });
+                    
+                    // Keyboard event for Escape to cancel drawing
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape' && isDrawing) {
+                            // Cancel drawing
+                            if (tempLine) {
+                                map.removeLayer(tempLine);
+                                tempLine = null;
+                            }
+                            // Hide finish guide button
+                            finishGuideBtn.classList.remove('visible');
+                            
+                            isDrawing = false;
+                            drawingPoints = [];
+                            updateStatus('Drawing canceled. Select a tool to begin.');
+                        }
+                    });
+                    
+                    // Hide context menu on document click
+                    document.addEventListener('click', hideContextMenu);
+                    
+                    // Initialize undo button state
+                    updateUndoButtonState();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
