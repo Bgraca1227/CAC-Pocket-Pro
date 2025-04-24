@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Prevent zooming on UI elements -->
+    <style>
+        @media (touch-enabled) {
+            .tool-button, .action-button, .modal-btn, .location-btn, .borough-btn, 
+            .menu-panel, .context-menu, .modal-container, .help-container, 
+            .location-container, .status-bar, .notification, .finish-guide-btn {
+                touch-action: manipulation;
+            }
+        }
+    </style>
     <title>CAC Pocket</title>
     
     <!-- Leaflet CSS -->
@@ -158,8 +168,8 @@
             border-color: white;
         }
 
-        .tool-button.high-point-tool.active {
-            background-color: #ff9800;
+        .tool-button.utilities-tool.active {
+            background-color: #673ab7;
             color: white;
             border-color: white;
         }
@@ -716,6 +726,93 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             border: 2px solid white;
         }
+        
+        /* Utility styles */
+        .utility-marker {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: white;
+            background-color: #673ab7;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border: 2px solid white;
+        }
+        
+        .utility-direction-line {
+            stroke: #673ab7;
+            stroke-width: 4;
+            stroke-dasharray: 5,3;
+        }
+        
+        .utility-info-card {
+            position: absolute;
+            background-color: var(--panel-bg);
+            border-radius: var(--rounded);
+            padding: 15px;
+            box-shadow: var(--shadow);
+            z-index: 1500;
+            width: 280px;
+            max-width: 90vw;
+            display: none;
+        }
+        
+        .utility-info-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 8px;
+        }
+        
+        .utility-info-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .utility-info-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        .utility-info-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .utility-info-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .utility-info-label {
+            font-weight: 500;
+            color: var(--gray-color);
+        }
+        
+        .utility-info-value {
+            font-weight: 500;
+        }
+        
+        .utility-info-image {
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .utility-info-image img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            display: block;
+        }
 
         .high-point-icon {
             width: 36px;
@@ -1021,8 +1118,8 @@
                 </div>
                 <div class="layer-toggle">
                     <div class="toggle-label">
-                        <i class="fas fa-chevron-up toggle-indicator highpoint-indicator"></i>
-                        High Points
+                        <i class="fas fa-tools toggle-indicator" style="color: #673ab7;"></i>
+                        Utilities
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="highpoint-toggle" checked>
@@ -1094,11 +1191,11 @@
             <button class="tool-button curb-tool" id="curb-tool" title="Draw Curb Pitch">
                 <i class="fas fa-grip-lines"></i>
             </button>
-            <button class="tool-button high-point-tool" id="high-point-tool" title="Add High Point">
-                <i class="fas fa-chevron-up"></i>
+            <button class="tool-button utilities-tool" id="utilities-tool" title="Add Utility">
+                <i class="fas fa-tools"></i>
             </button>
             <button class="tool-button catch-basin-tool" id="catch-basin-tool" title="Add Catch Basin">
-                <i class="fas fa-drain"></i>
+                <i class="fas fa-water">🕳️</i>
             </button>
             <button class="tool-button draw-guide-tool" id="draw-guide-tool" title="Draw Custom Guide">
                 <i class="fas fa-pen"></i>
@@ -1141,6 +1238,98 @@
                         <button class="modal-btn cancel-btn" id="cancel-pitch">Cancel</button>
                         <button class="modal-btn confirm-btn" id="confirm-pitch">Confirm</button>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Utility Direction Modal -->
+        <div class="modal-overlay" id="utility-direction-modal">
+            <div class="modal-container">
+                <div class="modal-header">Set Utility Direction</div>
+                <div class="modal-content">
+                    <div class="pitch-input-container">
+                        <button class="pitch-adjust-btn" id="rotate-left">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <div class="pitch-value">
+                            <i class="fas fa-arrow-up" style="font-size: 24px;" id="direction-indicator"></i>
+                        </div>
+                        <button class="pitch-adjust-btn" id="rotate-right">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn cancel-btn" id="cancel-direction">Cancel</button>
+                        <button class="modal-btn confirm-btn" id="confirm-direction">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Utility Details Modal -->
+        <div class="modal-overlay" id="utility-details-modal">
+            <div class="modal-container" style="max-width: 350px;">
+                <div class="modal-header">Utility Details</div>
+                <div class="modal-content">
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label for="utility-type" style="display: block; margin-bottom: 5px; font-weight: 500;">Type:</label>
+                            <select id="utility-type" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+                                <option value="water">Water</option>
+                                <option value="gas">Gas</option>
+                                <option value="electric">Electric</option>
+                                <option value="sewer">Sewer</option>
+                                <option value="telecom">Telecom</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="utility-size" style="display: block; margin-bottom: 5px; font-weight: 500;">Size (inches):</label>
+                            <input type="number" id="utility-size" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd;" value="4">
+                        </div>
+                        <div>
+                            <label for="utility-depth" style="display: block; margin-bottom: 5px; font-weight: 500;">Depth (feet):</label>
+                            <input type="number" id="utility-depth" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd;" value="3">
+                        </div>
+                        <div>
+                            <label for="utility-image" style="display: block; margin-bottom: 5px; font-weight: 500;">Image (optional):</label>
+                            <input type="file" id="utility-image" accept="image/*" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="modal-actions" style="margin-top: 20px;">
+                        <button class="modal-btn cancel-btn" id="cancel-details">Cancel</button>
+                        <button class="modal-btn confirm-btn" id="confirm-details">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Utility Info Card -->
+        <div class="utility-info-card" id="utility-info-card">
+            <div class="utility-info-header">
+                <div class="utility-info-title">Utility Information</div>
+                <button class="utility-info-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="utility-info-content">
+                <div class="utility-info-row">
+                    <div class="utility-info-label">Type:</div>
+                    <div class="utility-info-value" id="info-type">Water</div>
+                </div>
+                <div class="utility-info-row">
+                    <div class="utility-info-label">Size:</div>
+                    <div class="utility-info-value" id="info-size">4 inches</div>
+                </div>
+                <div class="utility-info-row">
+                    <div class="utility-info-label">Depth:</div>
+                    <div class="utility-info-value" id="info-depth">3 feet</div>
+                </div>
+                <div class="utility-info-row">
+                    <div class="utility-info-label">Direction:</div>
+                    <div class="utility-info-value" id="info-direction">North</div>
+                </div>
+                <div class="utility-info-image" id="info-image-container">
+                    <!-- Image will be inserted here if available -->
                 </div>
             </div>
         </div>
@@ -1311,11 +1500,16 @@
                 let highlightEnabled = true;
                 let nearestValidPoint = null;
                 let finishGuideBtn = document.getElementById('finish-guide-btn');
+                let utilityAngle = 0;
+                let tempUtilityMarker = null;
+                let tempUtilityLine = null;
+                let selectedUtility = null;
+                let utilityInfoCard = document.getElementById('utility-info-card');
                 
                 // Feature layers
                 let streetPitchesLayer = L.layerGroup();
                 let curbPitchesLayer = L.layerGroup();
-                let highPointsLayer = L.layerGroup();
+                let utilitiesLayer = L.layerGroup();
                 let catchBasinsLayer = L.layerGroup();
                 let trappedWaterLayer = L.layerGroup();
                 let streetGuidesLayer = L.layerGroup();
@@ -1359,7 +1553,7 @@
                     customGuidesLayer.addTo(map);
                     streetPitchesLayer.addTo(map);
                     curbPitchesLayer.addTo(map);
-                    highPointsLayer.addTo(map);
+                    utilitiesLayer.addTo(map);
                     catchBasinsLayer.addTo(map);
                     trappedWaterLayer.addTo(map);
                     
@@ -1971,8 +2165,8 @@
                             drawingPoints.push(clickPoint);
                             completeLine();
                         }
-                    } else if (activeDrawingMode === 'high-point-tool') {
-                        addHighPoint(e.latlng);
+                    } else if (activeDrawingMode === 'utilities-tool') {
+                        addUtility(e.latlng);
                     } else if (activeDrawingMode === 'catch-basin-tool') {
                         addCatchBasin(e.latlng);
                     } else if (activeDrawingMode === 'draw-guide-tool') {
@@ -2238,9 +2432,9 @@
                 }
                 
                 function addCatchBasin(latlng) {
-                    // Create catch basin icon
+                    // Create catch basin icon with hole emoji
                     const catchBasinIcon = L.divIcon({
-                        html: '<div class="catch-basin-icon"><i class="fas fa-drain"></i></div>',
+                        html: '<div class="catch-basin-icon">🕳️</div>',
                         className: '',
                         iconSize: [36, 36],
                         iconAnchor: [18, 18]
@@ -2284,6 +2478,293 @@
                     
                     // Check for trapped water after adding catch basin
                     detectTrappedWater();
+                }
+                
+                function addUtility(latlng) {
+                    // Start the utility placement workflow
+                    
+                    // Create temporary marker at click location
+                    const utilityIcon = L.divIcon({
+                        html: '<div class="utility-marker"><i class="fas fa-tools"></i></div>',
+                        className: '',
+                        iconSize: [36, 36],
+                        iconAnchor: [18, 18]
+                    });
+                    
+                    // Create temporary marker
+                    tempUtilityMarker = L.marker(latlng, {
+                        icon: utilityIcon,
+                        draggable: false
+                    }).addTo(map);
+                    
+                    // Calculate end point for direction line (default direction is North)
+                    const startPoint = latlng;
+                    const endPoint = calculateEndPoint(startPoint, 0, 50); // 50 pixels length
+                    
+                    // Create temporary direction line
+                    tempUtilityLine = L.polyline([startPoint, endPoint], {
+                        color: '#673ab7',
+                        weight: 4,
+                        dashArray: '5,3',
+                        className: 'utility-direction-line'
+                    }).addTo(map);
+                    
+                    // Reset utility angle
+                    utilityAngle = 0;
+                    
+                    // Show direction setting modal
+                    document.getElementById('utility-direction-modal').style.display = 'flex';
+                    
+                    // Update direction indicator
+                    updateDirectionIndicator();
+                }
+                
+                function updateDirectionIndicator() {
+                    // Update the direction arrow in the modal
+                    const indicator = document.getElementById('direction-indicator');
+                    indicator.style.transform = `rotate(${utilityAngle}deg)`;
+                    
+                    // Update the line on the map
+                    if (tempUtilityMarker && tempUtilityLine) {
+                        const startPoint = tempUtilityMarker.getLatLng();
+                        const endPoint = calculateEndPoint(startPoint, utilityAngle, 50); // 50 pixels length
+                        tempUtilityLine.setLatLngs([startPoint, endPoint]);
+                    }
+                }
+                
+                function calculateEndPoint(startLatLng, angleDegrees, lengthPixels) {
+                    // Convert angle to radians
+                    const angleRadians = (angleDegrees - 90) * Math.PI / 180; // -90 to make 0 degrees point North
+                    
+                    // Get current map zoom and pixel coordinates
+                    const startPoint = map.latLngToLayerPoint(startLatLng);
+                    
+                    // Calculate end point in pixels
+                    const endX = startPoint.x + lengthPixels * Math.cos(angleRadians);
+                    const endY = startPoint.y + lengthPixels * Math.sin(angleRadians);
+                    
+                    // Convert back to LatLng
+                    return map.layerPointToLatLng(L.point(endX, endY));
+                }
+                
+                function confirmUtilityDirection() {
+                    // Hide direction modal
+                    document.getElementById('utility-direction-modal').style.display = 'none';
+                    
+                    // Show details modal
+                    document.getElementById('utility-details-modal').style.display = 'flex';
+                }
+                
+                function cancelUtilityDirection() {
+                    // Hide direction modal
+                    document.getElementById('utility-direction-modal').style.display = 'none';
+                    
+                    // Clean up temporary elements
+                    if (tempUtilityMarker) {
+                        map.removeLayer(tempUtilityMarker);
+                        tempUtilityMarker = null;
+                    }
+                    
+                    if (tempUtilityLine) {
+                        map.removeLayer(tempUtilityLine);
+                        tempUtilityLine = null;
+                    }
+                }
+                
+                function confirmUtilityDetails() {
+                    // Hide details modal
+                    document.getElementById('utility-details-modal').style.display = 'none';
+                    
+                    // Get utility details from form
+                    const type = document.getElementById('utility-type').value;
+                    const size = document.getElementById('utility-size').value;
+                    const depth = document.getElementById('utility-depth').value;
+                    
+                    // Create utility data object
+                    const utilityData = {
+                        type: type,
+                        size: size,
+                        depth: depth,
+                        direction: utilityAngle,
+                        imageData: null
+                    };
+                    
+                    // Process image if one was uploaded
+                    const imageInput = document.getElementById('utility-image');
+                    if (imageInput.files && imageInput.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            utilityData.imageData = e.target.result;
+                            finishUtilityCreation(utilityData);
+                        };
+                        reader.readAsDataURL(imageInput.files[0]);
+                    } else {
+                        finishUtilityCreation(utilityData);
+                    }
+                }
+                
+                function finishUtilityCreation(utilityData) {
+                    // Get the position from the temp marker
+                    const position = tempUtilityMarker.getLatLng();
+                    
+                    // Clean up temporary elements
+                    if (tempUtilityMarker) {
+                        map.removeLayer(tempUtilityMarker);
+                        tempUtilityMarker = null;
+                    }
+                    
+                    if (tempUtilityLine) {
+                        map.removeLayer(tempUtilityLine);
+                        tempUtilityLine = null;
+                    }
+                    
+                    // Create a permanent utility marker
+                    const utilityIcon = L.divIcon({
+                        html: `<div class="utility-marker"><i class="fas fa-${getUtilityIcon(utilityData.type)}"></i></div>`,
+                        className: '',
+                        iconSize: [36, 36],
+                        iconAnchor: [18, 18]
+                    });
+                    
+                    // Create the marker
+                    const marker = L.marker(position, {
+                        icon: utilityIcon,
+                        draggable: true
+                    }).addTo(utilitiesLayer);
+                    
+                    // Create the direction line
+                    const endPoint = calculateEndPoint(position, utilityData.direction, 50);
+                    const line = L.polyline([position, endPoint], {
+                        color: '#673ab7',
+                        weight: 3,
+                        opacity: 0.7,
+                        className: 'utility-direction-line'
+                    }).addTo(utilitiesLayer);
+                    
+                    // Store data with the marker
+                    marker.utilityData = utilityData;
+                    marker.directionLine = line;
+                    
+                    // Update the line when the marker is dragged
+                    marker.on('drag', function(e) {
+                        const newPos = e.target.getLatLng();
+                        const newEnd = calculateEndPoint(newPos, utilityData.direction, 50);
+                        line.setLatLngs([newPos, newEnd]);
+                    });
+                    
+                    // Add the utility to the undo stack
+                    addToUndoStack({
+                        type: 'utility',
+                        element: marker,
+                        line: line,
+                        layer: utilitiesLayer
+                    });
+                    
+                    // Setup click handler to show info card
+                    marker.on('click', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        showUtilityInfo(marker);
+                    });
+                    
+                    // Setup context menu
+                    marker.on('contextmenu', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        showContextMenu(e, marker, 'utility');
+                    });
+                    
+                    // Handle long press for mobile
+                    let pressTimer;
+                    marker.on('mousedown touchstart', function(e) {
+                        pressTimer = setTimeout(function() {
+                            L.DomEvent.stopPropagation(e);
+                            showContextMenu(e.originalEvent || e, marker, 'utility');
+                        }, 500);
+                    });
+                    
+                    marker.on('mouseup mouseleave touchend touchcancel', function() {
+                        clearTimeout(pressTimer);
+                    });
+                    
+                    // Reset the image input for next time
+                    document.getElementById('utility-image').value = '';
+                    
+                    // Update status
+                    updateStatus('Utility added');
+                }
+                
+                function getUtilityIcon(type) {
+                    // Return appropriate Font Awesome icon based on utility type
+                    switch (type) {
+                        case 'water': return 'tint';
+                        case 'gas': return 'fire';
+                        case 'electric': return 'bolt';
+                        case 'sewer': return 'toilet';
+                        case 'telecom': return 'phone';
+                        default: return 'tools';
+                    }
+                }
+                
+                function showUtilityInfo(marker) {
+                    // Get the utility data
+                    const data = marker.utilityData;
+                    
+                    // Update info card contents
+                    document.getElementById('info-type').textContent = data.type.charAt(0).toUpperCase() + data.type.slice(1);
+                    document.getElementById('info-size').textContent = `${data.size} inches`;
+                    document.getElementById('info-depth').textContent = `${data.depth} feet`;
+                    document.getElementById('info-direction').textContent = getDirectionName(data.direction);
+                    
+                    // Handle image if present
+                    const imageContainer = document.getElementById('info-image-container');
+                    if (data.imageData) {
+                        imageContainer.innerHTML = `<img src="${data.imageData}" alt="Utility photo">`;
+                        imageContainer.style.display = 'block';
+                    } else {
+                        imageContainer.innerHTML = '';
+                        imageContainer.style.display = 'none';
+                    }
+                    
+                    // Position the info card
+                    const markerPoint = map.latLngToContainerPoint(marker.getLatLng());
+                    utilityInfoCard.style.left = `${markerPoint.x + 20}px`;
+                    utilityInfoCard.style.top = `${markerPoint.y - 100}px`;
+                    
+                    // Show the card
+                    utilityInfoCard.style.display = 'block';
+                    
+                    // Store reference to the selected utility
+                    selectedUtility = marker;
+                }
+                
+                function getDirectionName(angle) {
+                    // Convert angle to compass direction
+                    const directions = ['North', 'Northeast', 'East', 'Southeast', 'South', 'Southwest', 'West', 'Northwest'];
+                    const index = Math.round(angle / 45) % 8;
+                    return directions[index];
+                }
+                
+                function cancelUtilityDetails() {
+                    // Hide details modal
+                    document.getElementById('utility-details-modal').style.display = 'none';
+                    
+                    // Clean up temporary elements
+                    if (tempUtilityMarker) {
+                        map.removeLayer(tempUtilityMarker);
+                        tempUtilityMarker = null;
+                    }
+                    
+                    if (tempUtilityLine) {
+                        map.removeLayer(tempUtilityLine);
+                        tempUtilityLine = null;
+                    }
+                    
+                    // Reset image input
+                    document.getElementById('utility-image').value = '';
+                }
+                
+                function hideUtilityInfo() {
+                    utilityInfoCard.style.display = 'none';
+                    selectedUtility = null;
                 }
                 
                 function handleContextMenu(e) {
@@ -2622,6 +3103,17 @@
                         
                     } else if (action.type === 'marker') {
                         action.layer.removeLayer(action.element);
+                    } else if (action.type === 'utility') {
+                        // Remove utility marker and direction line
+                        action.layer.removeLayer(action.element);
+                        if (action.line) {
+                            action.layer.removeLayer(action.line);
+                        }
+                        
+                        // Hide info card if this utility is selected
+                        if (selectedUtility === action.element) {
+                            hideUtilityInfo();
+                        }
                     } else if (action.type === 'guide') {
                         // Remove guide
                         customGuidesLayer.removeLayer(action.element);
@@ -2687,7 +3179,7 @@
                     // Clear all layers
                     streetPitchesLayer.clearLayers();
                     curbPitchesLayer.clearLayers();
-                    highPointsLayer.clearLayers();
+                    utilitiesLayer.clearLayers();
                     catchBasinsLayer.clearLayers();
                     trappedWaterLayer.clearLayers();
                     customGuidesLayer.clearLayers();
@@ -2706,6 +3198,9 @@
                             interactive: true // FIX 5: Allow interaction
                         }).addTo(curbGuidesLayer);
                     });
+                    
+                    // Hide any open utility info card
+                    hideUtilityInfo();
                     
                     // Clear undo stack
                     undoStack = [];
@@ -2737,14 +3232,14 @@
                                 map.removeLayer(curbPitchesLayer);
                             }
                         }
-                    } else if (layerName === 'highpoint') {
+                    } else if (layerName === 'utility') {
                         if (visible) {
-                            if (!map.hasLayer(highPointsLayer)) {
-                                map.addLayer(highPointsLayer);
+                            if (!map.hasLayer(utilitiesLayer)) {
+                                map.addLayer(utilitiesLayer);
                             }
                         } else {
-                            if (map.hasLayer(highPointsLayer)) {
-                                map.removeLayer(highPointsLayer);
+                            if (map.hasLayer(utilitiesLayer)) {
+                                map.removeLayer(utilitiesLayer);
                             }
                         }
                     } else if (layerName === 'basin') {
@@ -2820,8 +3315,8 @@
                             updateStatus('Click on a street to start drawing a pitch line');
                         } else if (mode === 'curb-tool') {
                             updateStatus('Click on a curb to start drawing a pitch line');
-                        } else if (mode === 'high-point-tool') {
-                            updateStatus('Click to place a high point');
+                        } else if (mode === 'utilities-tool') {
+                            updateStatus('Click to place a utility');
                         } else if (mode === 'catch-basin-tool') {
                             updateStatus('Click to place a catch basin');
                         } else if (mode === 'draw-guide-tool') {
@@ -2843,8 +3338,8 @@
                         setActiveDrawingMode('curb-tool');
                     });
                     
-                    document.getElementById('high-point-tool').addEventListener('click', function() {
-                        setActiveDrawingMode('high-point-tool');
+                    document.getElementById('utilities-tool').addEventListener('click', function() {
+                        setActiveDrawingMode('utilities-tool');
                     });
                     
                     document.getElementById('catch-basin-tool').addEventListener('click', function() {
@@ -2898,7 +3393,7 @@
                     });
                     
                     document.getElementById('highpoint-toggle').addEventListener('change', function() {
-                        toggleLayerVisibility('highpoint', this.checked);
+                        toggleLayerVisibility('utility', this.checked);
                     });
                     
                     document.getElementById('basin-toggle').addEventListener('change', function() {
@@ -2955,6 +3450,31 @@
                     // Context menu item handlers
                     document.getElementById('reverse-direction').addEventListener('click', reversePitchDirection);
                     document.getElementById('delete-item').addEventListener('click', deleteElement);
+                    
+                    // Utility direction modal handlers
+                    document.getElementById('rotate-left').addEventListener('click', function() {
+                        utilityAngle = (utilityAngle - 15) % 360;
+                        if (utilityAngle < 0) utilityAngle += 360;
+                        updateDirectionIndicator();
+                    });
+                    
+                    document.getElementById('rotate-right').addEventListener('click', function() {
+                        utilityAngle = (utilityAngle + 15) % 360;
+                        updateDirectionIndicator();
+                    });
+                    
+                    document.getElementById('cancel-direction').addEventListener('click', cancelUtilityDirection);
+                    document.getElementById('confirm-direction').addEventListener('click', confirmUtilityDirection);
+                    
+                    // Utility details modal handlers
+                    document.getElementById('cancel-details').addEventListener('click', cancelUtilityDetails);
+                    document.getElementById('confirm-details').addEventListener('click', confirmUtilityDetails);
+                    
+                    // Utility info card close button
+                    document.querySelector('.utility-info-close').addEventListener('click', hideUtilityInfo);
+                    
+                    // Hide utility info card when map is clicked
+                    map.on('click', hideUtilityInfo);
                     
                     // Help modal close
                     document.querySelector('.help-close').addEventListener('click', function() {
