@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FlowMaster Pro 2.0</title>
+    <title>FlowMaster Pro 3.0</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -660,6 +660,45 @@
             text-align: center;
         }
 
+        /* Street paths highlighting */
+        .leaflet-overlay-pane path.highlight-street {
+            stroke: rgba(0, 117, 255, 0.3);
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+        }
+
+        .leaflet-overlay-pane path.highlight-curb-left,
+        .leaflet-overlay-pane path.highlight-curb-right {
+            stroke: rgba(255, 204, 0, 0.3);
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+        }
+
+        /* Status bar */
+        .status-bar {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--panel-bg);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 999;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-bar i {
+            color: var(--primary-color);
+        }
+
         /* Style adjustments for smaller screens */
         @media (max-width: 480px) {
             .drawing-toolbar {
@@ -684,55 +723,6 @@
             .action-button i {
                 font-size: 18px;
             }
-        }
-
-        /* Road Network Overlay */
-        .road-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            z-index: 500;
-        }
-
-        /* Added these classes for highlighting streets and curbs */
-        .street-highlight {
-            stroke: rgba(0, 117, 255, 0.2);
-            stroke-width: 18;
-            fill: none;
-            pointer-events: all;
-            cursor: pointer;
-        }
-
-        .curb-highlight {
-            stroke: rgba(255, 204, 0, 0.2);
-            stroke-width: 6;
-            fill: none;
-            pointer-events: all;
-            cursor: pointer;
-        }
-
-        /* Status bar */
-        .status-bar {
-            position: absolute;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--panel-bg);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 999;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-bar i {
-            color: var(--primary-color);
         }
     </style>
 </head>
@@ -902,7 +892,7 @@
                 <div class="help-content">
                     <div class="help-section">
                         <div class="help-section-title">Getting Started</div>
-                        <p class="help-text">FlowMaster Pro helps you plan water drainage on construction sites. The app displays real streets and curbs from your current location, allowing you to mark pitches and drainage points accurately.</p>
+                        <p class="help-text">FlowMaster Pro helps you plan water drainage on construction sites. The app uses real street data, allowing you to mark pitches and drainage points accurately on actual roads.</p>
                     </div>
 
                     <div class="help-section">
@@ -983,7 +973,8 @@
 
                     <div class="help-section">
                         <div class="help-section-title">Tips</div>
-                        <p class="help-text">• You can only draw street pitches on streets and curb pitches on curbs<br>
+                        <p class="help-text">• Street pitches automatically snap to the actual roads<br>
+                        • Curb pitches automatically snap to the edges of roads<br>
                         • Right-click or long-press any element to access more options<br>
                         • Use the center button to return to your current location<br>
                         • Red highlighted areas indicate where water will be trapped</p>
@@ -1037,13 +1028,16 @@
                 let catchBasinsLayer = L.layerGroup();
                 let trappedWaterLayer = L.layerGroup();
                 
-                // Layers for OSM street data
-                let streetLayer = L.layerGroup();
-                let curbLayer = L.layerGroup();
+                // Overlay layers for streets and curbs
+                let streetsOverlay = L.layerGroup();
+                let curbsLeftOverlay = L.layerGroup();
+                let curbsRightOverlay = L.layerGroup();
                 
-                // Store streets and curbs data for collision detection
-                let streets = [];
-                let curbs = [];
+                // Road data storage
+                let roadData = {
+                    streets: [],
+                    curbs: []
+                };
                 
                 // Initialize map
                 initMap();
@@ -1054,8 +1048,7 @@
                 function initMap() {
                     // Create map with default view (will be updated with user location)
                     map = L.map('map', {
-                        zoomControl: false,
-                        attributionControl: true
+                        zoomControl: false
                     }).setView([0, 0], 2);
                     
                     // Add zoom control to bottom left
@@ -1063,20 +1056,23 @@
                         position: 'bottomleft'
                     }).addTo(map);
                     
-                    // Add tile layer (OpenStreetMap)
+                    // Add OpenStreetMap tile layer
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                         maxZoom: 22
                     }).addTo(map);
                     
                     // Add feature layers to map
-                    streetLayer.addTo(map);
-                    curbLayer.addTo(map);
                     streetPitchesLayer.addTo(map);
                     curbPitchesLayer.addTo(map);
                     highPointsLayer.addTo(map);
                     catchBasinsLayer.addTo(map);
                     trappedWaterLayer.addTo(map);
+                    
+                    // Add overlay layers
+                    streetsOverlay.addTo(map);
+                    curbsLeftOverlay.addTo(map);
+                    curbsRightOverlay.addTo(map);
                     
                     // Get user location
                     getUserLocation();
@@ -1085,10 +1081,17 @@
                     map.on('click', handleMapClick);
                     map.on('mousemove', handleMouseMove);
                     map.on('contextmenu', handleContextMenu);
-                    map.on('moveend', fetchOsmData);
-                    
-                    // Hide context menu on map move
                     map.on('movestart', hideContextMenu);
+                    
+                    // Listen for zoom end to fetch road data
+                    map.on('zoomend', function() {
+                        fetchRoadData();
+                    });
+                    
+                    // Listen for move end to fetch road data
+                    map.on('moveend', function() {
+                        fetchRoadData();
+                    });
                 }
                 
                 function getUserLocation() {
@@ -1121,8 +1124,8 @@
                                 userMarker.setLatLng(currentPosition);
                             }
                             
-                            // Fetch OSM data for current view
-                            fetchOsmData();
+                            // Fetch road data for this location
+                            fetchRoadData();
                             
                             // Update status
                             updateStatus('Select a tool to begin');
@@ -1156,11 +1159,11 @@
                             // Hide loading overlay
                             document.querySelector('.loading-overlay').style.display = 'none';
                             
-                            // Set default view
-                            map.setView([40.7128, -74.0060], 14);
+                            // Set default view to New York City
+                            map.setView([40.7128, -74.0060], 18);
                             
-                            // Fetch OSM data for this view
-                            fetchOsmData();
+                            // Fetch road data for this location
+                            fetchRoadData();
                         }, {
                             enableHighAccuracy: true,
                             maximumAge: 0,
@@ -1173,401 +1176,436 @@
                         // Hide loading overlay
                         document.querySelector('.loading-overlay').style.display = 'none';
                         
-                        // Set default view
-                        map.setView([40.7128, -74.0060], 14);
+                        // Set default view to New York City
+                        map.setView([40.7128, -74.0060], 18);
                         
-                        // Fetch OSM data for this view
-                        fetchOsmData();
+                        // Fetch road data for this location
+                        fetchRoadData();
                     }
                 }
                 
-                function fetchOsmData() {
-                    // Clean previous data
-                    streetLayer.clearLayers();
-                    curbLayer.clearLayers();
-                    streets = [];
-                    curbs = [];
+                function fetchRoadData() {
+                    // Only fetch if zoom level is high enough for detailed road data
+                    if (map.getZoom() < 16) {
+                        updateStatus('Zoom in to see detailed road data');
+                        return;
+                    }
                     
-                    // Get current map bounds
+                    updateStatus('Loading road data...');
+                    
+                    // Get map bounds
                     const bounds = map.getBounds();
                     const south = bounds.getSouth();
                     const west = bounds.getWest();
                     const north = bounds.getNorth();
                     const east = bounds.getEast();
                     
-                    // Update status
-                    updateStatus('Loading street data...');
+                    // Use Overpass API to fetch road data (streets)
+                    const overpassApiUrl = 'https://overpass-api.de/api/interpreter';
                     
-                    // Show loading indicator
-                    document.querySelector('.loading-overlay').style.display = 'flex';
+                    // Query for highways (roads)
+                    const query = `[out:json];
+                        way[highway][highway!~"pedestrian|path|footway|cycleway|steps|service|track"]
+                            (${south},${west},${north},${east});
+                        out body geom;`;
                     
-                    // Create Overpass API query for roads and highways
-                    // We're requesting streets (highways) and using the OSM data model
-                    const query = `
-                        [out:json][timeout:25];
-                        (
-                            way["highway"](${south},${west},${north},${east});
-                        );
-                        out body geom;
-                    `;
+                    // Clear existing overlay data
+                    streetsOverlay.clearLayers();
+                    curbsLeftOverlay.clearLayers();
+                    curbsRightOverlay.clearLayers();
                     
-                    // Encode query for URL
-                    const encodedQuery = encodeURIComponent(query);
+                    // Clear road data
+                    roadData.streets = [];
+                    roadData.curbs = [];
                     
-                    // Fetch data from Overpass API
-                    fetch(`https://overpass-api.de/api/interpreter?data=${encodedQuery}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            processOsmData(data);
-                            document.querySelector('.loading-overlay').style.display = 'none';
-                            updateStatus('Select a tool to begin');
-                        })
-                        .catch(error => {
-                            console.error('Error fetching OSM data:', error);
-                            document.querySelector('.loading-overlay').style.display = 'none';
-                            updateStatus('Error loading street data, but you can still use the app');
-                            // Fall back to demo data if we can't fetch from OSM
-                            createDemoStreets();
-                        });
-                }
-                
-                function processOsmData(data) {
-                    // Process each way (road)
-                    data.elements.forEach((element) => {
-                        if (element.type === 'way' && element.tags && element.tags.highway) {
-                            const highway = element.tags.highway;
-                            
-                            // Skip some highway types that aren't relevant
-                            if (['footway', 'path', 'track', 'service', 'steps'].includes(highway)) {
-                                return;
-                            }
-                            
-                            // Convert geometry to Leaflet format
-                            const points = element.geometry.map(node => [node.lat, node.lng]);
-                            
-                            // Ensure we have at least 2 points to make a line
-                            if (points.length < 2) return;
-                            
-                            // Create street polyline
-                            const street = L.polyline(points, {
-                                color: '#0075ff',
-                                weight: 4,
-                                opacity: 0.5
-                            });
-                            
-                            // Add street to layer
-                            streetLayer.addLayer(street);
-                            
-                            // Create street highlight for interactivity
-                            const streetHighlight = L.polyline(points, {
-                                className: 'street-highlight'
-                            });
-                            
-                            // Add click handler for street highlight
-                            streetHighlight.on('click', function(e) {
-                                if (activeDrawingMode === 'street-tool') {
-                                    handleStreetClick(e, points);
-                                }
-                            });
-                            
-                            // Add street highlight to layer
-                            streetLayer.addLayer(streetHighlight);
-                            
-                            // Store street data for collision detection
-                            streets.push({
-                                id: element.id,
-                                points: points,
-                                element: street,
-                                highlight: streetHighlight
-                            });
-                            
-                            // Create curbs on both sides of the street
-                            createCurbsForStreet(points, element.id);
-                        }
+                    // Fetch data using CORS proxy
+                    fetch(overpassApiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: 'data=' + encodeURIComponent(query)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        processRoadData(data);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching road data:', error);
+                        updateStatus('Error loading road data. Using fallback data.');
+                        
+                        // Use fallback road data centered on current map view
+                        createFallbackRoadData();
                     });
                 }
                 
-                function createCurbsForStreet(points, streetId) {
-                    // We'll create two curbs, one on each side of the street
-                    const leftCurbPoints = [];
-                    const rightCurbPoints = [];
+                function processRoadData(data) {
+                    // Process roads from Overpass API response
+                    if (data && data.elements) {
+                        data.elements.forEach(element => {
+                            if (element.type === 'way' && element.geometry) {
+                                // Convert geometry to LatLng array
+                                const nodes = element.geometry.map(node => [node.lat, node.lon]);
+                                
+                                if (nodes.length > 1) {
+                                    // Store street data
+                                    const streetId = `street-${element.id}`;
+                                    roadData.streets.push({
+                                        id: streetId,
+                                        nodes: nodes,
+                                        osmId: element.id,
+                                        tags: element.tags || {}
+                                    });
+                                    
+                                    // Create street overlay
+                                    const street = L.polyline(nodes, {
+                                        color: 'rgba(0, 0, 0, 0)',
+                                        weight: 12,
+                                        className: 'highlight-street',
+                                        id: streetId
+                                    }).addTo(streetsOverlay);
+                                    
+                                    // Generate curbs on both sides of the street
+                                    const curbsData = generateCurbsForStreet(nodes, streetId);
+                                    roadData.curbs.push(...curbsData);
+                                }
+                            }
+                        });
+                        
+                        updateStatus('Road data loaded. Select a tool to begin.');
+                    } else {
+                        updateStatus('No road data found. Using fallback data.');
+                        createFallbackRoadData();
+                    }
+                }
+                
+                function generateCurbsForStreet(streetNodes, streetId) {
+                    const curbsData = [];
                     
-                    // For each segment of the street
-                    for (let i = 0; i < points.length - 1; i++) {
-                        const p1 = points[i];
-                        const p2 = points[i + 1];
+                    // Skip if not enough nodes
+                    if (streetNodes.length < 2) return curbsData;
+                    
+                    // Generate left and right curbs
+                    const leftCurbNodes = [];
+                    const rightCurbNodes = [];
+                    
+                    // Loop through street nodes to generate parallel curb lines
+                    for (let i = 0; i < streetNodes.length - 1; i++) {
+                        const point1 = L.latLng(streetNodes[i]);
+                        const point2 = L.latLng(streetNodes[i + 1]);
                         
-                        // Convert to pixel coordinates to calculate perpendicular
-                        const point1 = map.latLngToLayerPoint(L.latLng(p1));
-                        const point2 = map.latLngToLayerPoint(L.latLng(p2));
-                        
-                        // Calculate direction vector
-                        const dx = point2.x - point1.x;
-                        const dy = point2.y - point1.y;
-                        
-                        // Calculate perpendicular vector (normalized)
+                        // Calculate perpendicular vector
+                        const dx = point2.lng - point1.lng;
+                        const dy = point2.lat - point1.lat;
                         const length = Math.sqrt(dx * dx + dy * dy);
-                        const perpX = -dy / length;
-                        const perpY = dx / length;
                         
-                        // Calculate offset (5 pixels)
-                        const offsetX = perpX * 8;
-                        const offsetY = perpY * 8;
+                        // Normalize and scale for curb offset (5 meters)
+                        // We need to convert meters to degrees which varies by latitude
+                        const latRadians = point1.lat * Math.PI / 180;
+                        // Constants for converting meters to degrees at given latitude
+                        const metersPerDegreeLat = 111132.92;
+                        const metersPerDegreeLng = 111132.92 * Math.cos(latRadians);
+                        
+                        // Calculate offset in degrees (5 meters)
+                        const curbOffsetLat = (5 / metersPerDegreeLat) * (dy / length);
+                        const curbOffsetLng = (5 / metersPerDegreeLng) * (dx / length);
                         
                         // Calculate left and right curb points
-                        const leftPoint1 = L.point(point1.x + offsetX, point1.y + offsetY);
-                        const leftPoint2 = L.point(point2.x + offsetX, point2.y + offsetY);
-                        const rightPoint1 = L.point(point1.x - offsetX, point1.y - offsetY);
-                        const rightPoint2 = L.point(point2.x - offsetX, point2.y - offsetY);
+                        // Left is 90 degrees counter-clockwise from the street direction
+                        const leftCurbLat = point1.lat - curbOffsetLng;
+                        const leftCurbLng = point1.lng + curbOffsetLat;
                         
-                        // Convert back to LatLng
-                        const leftLatLng1 = map.layerPointToLatLng(leftPoint1);
-                        const leftLatLng2 = map.layerPointToLatLng(leftPoint2);
-                        const rightLatLng1 = map.layerPointToLatLng(rightPoint1);
-                        const rightLatLng2 = map.layerPointToLatLng(rightPoint2);
+                        // Right is 90 degrees clockwise from the street direction
+                        const rightCurbLat = point1.lat + curbOffsetLng;
+                        const rightCurbLng = point1.lng - curbOffsetLat;
                         
-                        // Add to curb points
-                        if (i === 0) {
-                            leftCurbPoints.push([leftLatLng1.lat, leftLatLng1.lng]);
-                            rightCurbPoints.push([rightLatLng1.lat, rightLatLng1.lng]);
+                        leftCurbNodes.push([leftCurbLat, leftCurbLng]);
+                        rightCurbNodes.push([rightCurbLat, rightCurbLng]);
+                        
+                        // Add final points for the last street node
+                        if (i === streetNodes.length - 2) {
+                            const leftFinalLat = point2.lat - curbOffsetLng;
+                            const leftFinalLng = point2.lng + curbOffsetLat;
+                            
+                            const rightFinalLat = point2.lat + curbOffsetLng;
+                            const rightFinalLng = point2.lng - curbOffsetLat;
+                            
+                            leftCurbNodes.push([leftFinalLat, leftFinalLng]);
+                            rightCurbNodes.push([rightFinalLat, rightFinalLng]);
                         }
-                        leftCurbPoints.push([leftLatLng2.lat, leftLatLng2.lng]);
-                        rightCurbPoints.push([rightLatLng2.lat, rightLatLng2.lng]);
                     }
                     
-                    // Create left curb
-                    const leftCurb = L.polyline(leftCurbPoints, {
-                        color: '#ffcc00',
-                        weight: 2,
-                        opacity: 0.5
+                    // Create curb overlay for left side
+                    const leftCurbId = `curb-left-${streetId}`;
+                    L.polyline(leftCurbNodes, {
+                        color: 'rgba(0, 0, 0, 0)',
+                        weight: 6,
+                        className: 'highlight-curb-left',
+                        id: leftCurbId
+                    }).addTo(curbsLeftOverlay);
+                    
+                    // Create curb overlay for right side
+                    const rightCurbId = `curb-right-${streetId}`;
+                    L.polyline(rightCurbNodes, {
+                        color: 'rgba(0, 0, 0, 0)',
+                        weight: 6,
+                        className: 'highlight-curb-right',
+                        id: rightCurbId
+                    }).addTo(curbsRightOverlay);
+                    
+                    // Store curb data
+                    curbsData.push({
+                        id: leftCurbId,
+                        nodes: leftCurbNodes,
+                        streetId: streetId,
+                        side: 'left'
                     });
                     
-                    // Create right curb
-                    const rightCurb = L.polyline(rightCurbPoints, {
-                        color: '#ffcc00',
-                        weight: 2,
-                        opacity: 0.5
+                    curbsData.push({
+                        id: rightCurbId,
+                        nodes: rightCurbNodes,
+                        streetId: streetId,
+                        side: 'right'
                     });
                     
-                    // Add curbs to layer
-                    curbLayer.addLayer(leftCurb);
-                    curbLayer.addLayer(rightCurb);
-                    
-                    // Create curb highlights for interactivity
-                    const leftCurbHighlight = L.polyline(leftCurbPoints, {
-                        className: 'curb-highlight'
-                    });
-                    
-                    const rightCurbHighlight = L.polyline(rightCurbPoints, {
-                        className: 'curb-highlight'
-                    });
-                    
-                    // Add click handlers for curb highlights
-                    leftCurbHighlight.on('click', function(e) {
-                        if (activeDrawingMode === 'curb-tool') {
-                            handleCurbClick(e, leftCurbPoints);
-                        }
-                    });
-                    
-                    rightCurbHighlight.on('click', function(e) {
-                        if (activeDrawingMode === 'curb-tool') {
-                            handleCurbClick(e, rightCurbPoints);
-                        }
-                    });
-                    
-                    // Add curb highlights to layer
-                    curbLayer.addLayer(leftCurbHighlight);
-                    curbLayer.addLayer(rightCurbHighlight);
-                    
-                    // Store curb data for collision detection
-                    curbs.push({
-                        id: 'left-' + streetId,
-                        points: leftCurbPoints,
-                        element: leftCurb,
-                        highlight: leftCurbHighlight,
-                        parentStreet: streetId
-                    });
-                    
-                    curbs.push({
-                        id: 'right-' + streetId,
-                        points: rightCurbPoints,
-                        element: rightCurb,
-                        highlight: rightCurbHighlight,
-                        parentStreet: streetId
-                    });
+                    return curbsData;
                 }
-
-                function createDemoStreets() {
-                    // This is a fallback function that creates demonstration streets
-                    // when we can't fetch real data from OpenStreetMap
+                
+                function createFallbackRoadData() {
+                    // Create fallback road data when API fails or no roads found
+                    // This creates a simple grid pattern around the current view
                     
-                    // Get map center and convert to points
+                    // Clear existing data
+                    streetsOverlay.clearLayers();
+                    curbsLeftOverlay.clearLayers();
+                    curbsRightOverlay.clearLayers();
+                    roadData.streets = [];
+                    roadData.curbs = [];
+                    
                     const center = map.getCenter();
-                    const centerPoint = map.latLngToLayerPoint(center);
+                    const bounds = map.getBounds();
+                    const latDiff = bounds.getNorth() - bounds.getSouth();
+                    const lngDiff = bounds.getEast() - bounds.getWest();
                     
-                    // Calculate points for a cross-shaped road network
-                    const size = 300; // pixels
-                    
-                    // Main horizontal street
-                    const hStart = map.layerPointToLatLng(L.point(centerPoint.x - size, centerPoint.y));
-                    const hEnd = map.layerPointToLatLng(L.point(centerPoint.x + size, centerPoint.y));
-                    const hMid1 = map.layerPointToLatLng(L.point(centerPoint.x - size/2, centerPoint.y));
-                    const hMid2 = map.layerPointToLatLng(L.point(centerPoint.x + size/2, centerPoint.y));
-                    
-                    // Vertical crossing street
-                    const vStart = map.layerPointToLatLng(L.point(centerPoint.x, centerPoint.y - size));
-                    const vEnd = map.layerPointToLatLng(L.point(centerPoint.x, centerPoint.y + size));
-                    const vMid1 = map.layerPointToLatLng(L.point(centerPoint.x, centerPoint.y - size/2));
-                    const vMid2 = map.layerPointToLatLng(L.point(centerPoint.x, centerPoint.y + size/2));
-                    
-                    // Create main horizontal street with multiple points
-                    const hStreetPoints = [
-                        [hStart.lat, hStart.lng],
-                        [hMid1.lat, hMid1.lng],
-                        [center.lat, center.lng],
-                        [hMid2.lat, hMid2.lng],
-                        [hEnd.lat, hEnd.lng]
+                    // Create a horizontal street
+                    const horizontalStreetNodes = [
+                        [center.lat, center.lng - lngDiff * 0.4],
+                        [center.lat, center.lng + lngDiff * 0.4]
                     ];
                     
-                    // Create vertical street with multiple points
-                    const vStreetPoints = [
-                        [vStart.lat, vStart.lng],
-                        [vMid1.lat, vMid1.lng],
-                        [center.lat, center.lng],
-                        [vMid2.lat, vMid2.lng],
-                        [vEnd.lat, vEnd.lng]
+                    const horizontalStreetId = 'street-fallback-h';
+                    roadData.streets.push({
+                        id: horizontalStreetId,
+                        nodes: horizontalStreetNodes,
+                        osmId: 'fallback-h',
+                        tags: { highway: 'residential' }
+                    });
+                    
+                    // Create horizontal street overlay
+                    L.polyline(horizontalStreetNodes, {
+                        color: 'rgba(0, 0, 0, 0)',
+                        weight: 12,
+                        className: 'highlight-street',
+                        id: horizontalStreetId
+                    }).addTo(streetsOverlay);
+                    
+                    // Create a vertical street
+                    const verticalStreetNodes = [
+                        [center.lat - latDiff * 0.4, center.lng],
+                        [center.lat + latDiff * 0.4, center.lng]
                     ];
                     
-                    // Process main horizontal street
-                    const hStreet = L.polyline(hStreetPoints, {
-                        color: '#0075ff',
-                        weight: 4,
-                        opacity: 0.5
+                    const verticalStreetId = 'street-fallback-v';
+                    roadData.streets.push({
+                        id: verticalStreetId,
+                        nodes: verticalStreetNodes,
+                        osmId: 'fallback-v',
+                        tags: { highway: 'residential' }
                     });
                     
-                    streetLayer.addLayer(hStreet);
+                    // Create vertical street overlay
+                    L.polyline(verticalStreetNodes, {
+                        color: 'rgba(0, 0, 0, 0)',
+                        weight: 12,
+                        className: 'highlight-street',
+                        id: verticalStreetId
+                    }).addTo(streetsOverlay);
                     
-                    const hStreetHighlight = L.polyline(hStreetPoints, {
-                        className: 'street-highlight'
-                    });
+                    // Generate curbs for both streets
+                    const horizontalCurbs = generateCurbsForStreet(horizontalStreetNodes, horizontalStreetId);
+                    const verticalCurbs = generateCurbsForStreet(verticalStreetNodes, verticalStreetId);
                     
-                    hStreetHighlight.on('click', function(e) {
-                        if (activeDrawingMode === 'street-tool') {
-                            handleStreetClick(e, hStreetPoints);
-                        }
-                    });
+                    roadData.curbs.push(...horizontalCurbs, ...verticalCurbs);
                     
-                    streetLayer.addLayer(hStreetHighlight);
-                    
-                    streets.push({
-                        id: 'demo-h-street',
-                        points: hStreetPoints,
-                        element: hStreet,
-                        highlight: hStreetHighlight
-                    });
-                    
-                    // Process vertical street
-                    const vStreet = L.polyline(vStreetPoints, {
-                        color: '#0075ff',
-                        weight: 4,
-                        opacity: 0.5
-                    });
-                    
-                    streetLayer.addLayer(vStreet);
-                    
-                    const vStreetHighlight = L.polyline(vStreetPoints, {
-                        className: 'street-highlight'
-                    });
-                    
-                    vStreetHighlight.on('click', function(e) {
-                        if (activeDrawingMode === 'street-tool') {
-                            handleStreetClick(e, vStreetPoints);
-                        }
-                    });
-                    
-                    streetLayer.addLayer(vStreetHighlight);
-                    
-                    streets.push({
-                        id: 'demo-v-street',
-                        points: vStreetPoints,
-                        element: vStreet,
-                        highlight: vStreetHighlight
-                    });
-                    
-                    // Create curbs for both streets
-                    createCurbsForStreet(hStreetPoints, 'demo-h-street');
-                    createCurbsForStreet(vStreetPoints, 'demo-v-street');
+                    updateStatus('Using fallback road network. Select a tool to begin.');
                 }
                 
-                function handleStreetClick(e, streetPoints) {
-                    // Find nearest point on the street to the click
-                    let minDistance = Infinity;
-                    let nearestPoint = null;
+                function isPointNearStreet(point, tolerance = 6) {
+                    // Convert Leaflet latLng to an array
+                    const testPoint = [point.lat, point.lng];
                     
-                    // If we're drawing, add to existing line
-                    if (isDrawing && currentDrawingType === 'street-tool') {
-                        // Add click point to existing drawing
-                        const clickLatLng = e.latlng;
-                        drawingPoints.push([clickLatLng.lat, clickLatLng.lng]);
+                    // Check each street
+                    for (const street of roadData.streets) {
+                        const nodes = street.nodes;
                         
-                        // Update temp line
-                        if (tempLine) {
-                            tempLine.setLatLngs(drawingPoints);
+                        // Check each segment of the street
+                        for (let i = 0; i < nodes.length - 1; i++) {
+                            const pointA = L.latLng(nodes[i]);
+                            const pointB = L.latLng(nodes[i + 1]);
+                            
+                            // Calculate distance from point to line segment
+                            const distance = distanceToLineSegment(pointA, pointB, point);
+                            
+                            if (distance <= tolerance) {
+                                return {
+                                    isNear: true,
+                                    street: street,
+                                    segmentStart: i,
+                                    segmentEnd: i + 1
+                                };
+                            }
                         }
+                    }
+                    
+                    return { isNear: false };
+                }
+                
+                function isPointNearCurb(point, tolerance = 6) {
+                    // Convert Leaflet latLng to an array
+                    const testPoint = [point.lat, point.lng];
+                    
+                    // Check each curb
+                    for (const curb of roadData.curbs) {
+                        const nodes = curb.nodes;
                         
-                        // Check if we've completed a line (clicked near first point)
-                        if (drawingPoints.length > 1 && isCloseToFirstPoint(e.latlng)) {
-                            completeLine();
+                        // Check each segment of the curb
+                        for (let i = 0; i < nodes.length - 1; i++) {
+                            const pointA = L.latLng(nodes[i]);
+                            const pointB = L.latLng(nodes[i + 1]);
+                            
+                            // Calculate distance from point to line segment
+                            const distance = distanceToLineSegment(pointA, pointB, point);
+                            
+                            if (distance <= tolerance) {
+                                return {
+                                    isNear: true,
+                                    curb: curb,
+                                    segmentStart: i,
+                                    segmentEnd: i + 1
+                                };
+                            }
                         }
+                    }
+                    
+                    return { isNear: false };
+                }
+                
+                function distanceToLineSegment(lineStart, lineEnd, point) {
+                    // Calculate distance from point to line segment in meters
+                    const x = point.lng;
+                    const y = point.lat;
+                    const x1 = lineStart.lng;
+                    const y1 = lineStart.lat;
+                    const x2 = lineEnd.lng;
+                    const y2 = lineEnd.lat;
+                    
+                    // Line segment length squared
+                    const l2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+                    
+                    // If line segment is just a point
+                    if (l2 === 0) return distance(point, lineStart);
+                    
+                    // Consider the line extending the segment, parameterized as lineStart + t (lineEnd - lineStart)
+                    // Project the point onto that line
+                    const t = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / l2;
+                    
+                    if (t < 0) {
+                        // Beyond the lineStart end of the segment
+                        return distance(point, lineStart);
+                    } else if (t > 1) {
+                        // Beyond the lineEnd end of the segment
+                        return distance(point, lineEnd);
                     } else {
-                        // Start drawing a new line from this point
-                        isDrawing = true;
-                        currentDrawingType = 'street-tool';
-                        drawingPoints = [[e.latlng.lat, e.latlng.lng]];
-                        
-                        // Create temporary line
-                        tempLine = L.polyline(drawingPoints, {
-                            color: '#0075ff',
-                            weight: 5,
-                            opacity: 0.7,
-                            dashArray: '5,5'
-                        }).addTo(map);
-                        
-                        updateStatus('Click to continue the line, click near the start point to complete');
+                        // Projection falls on the segment
+                        const projectionX = x1 + t * (x2 - x1);
+                        const projectionY = y1 + t * (y2 - y1);
+                        return distance(point, L.latLng(projectionY, projectionX));
                     }
                 }
                 
-                function handleCurbClick(e, curbPoints) {
-                    // Similar to handleStreetClick but for curbs
-                    if (isDrawing && currentDrawingType === 'curb-tool') {
-                        // Add click point to existing drawing
-                        const clickLatLng = e.latlng;
-                        drawingPoints.push([clickLatLng.lat, clickLatLng.lng]);
+                function distance(point1, point2) {
+                    // Calculate distance between two points in meters
+                    return map.distance(point1, point2);
+                }
+                
+                function snapToStreet(point) {
+                    // Find the nearest street and snap the point to it
+                    const result = isPointNearStreet(point);
+                    
+                    if (result.isNear) {
+                        const street = result.street;
+                        const segmentStart = result.segmentStart;
+                        const segmentEnd = result.segmentEnd;
                         
-                        // Update temp line
-                        if (tempLine) {
-                            tempLine.setLatLngs(drawingPoints);
-                        }
+                        const pointA = L.latLng(street.nodes[segmentStart]);
+                        const pointB = L.latLng(street.nodes[segmentEnd]);
                         
-                        // Check if we've completed a line
-                        if (drawingPoints.length > 1 && isCloseToFirstPoint(e.latlng)) {
-                            completeLine();
-                        }
+                        // Project point onto line segment
+                        return projectPointOnLine(point, pointA, pointB);
+                    }
+                    
+                    return point; // Return original point if no street is nearby
+                }
+                
+                function snapToCurb(point) {
+                    // Find the nearest curb and snap the point to it
+                    const result = isPointNearCurb(point);
+                    
+                    if (result.isNear) {
+                        const curb = result.curb;
+                        const segmentStart = result.segmentStart;
+                        const segmentEnd = result.segmentEnd;
+                        
+                        const pointA = L.latLng(curb.nodes[segmentStart]);
+                        const pointB = L.latLng(curb.nodes[segmentEnd]);
+                        
+                        // Project point onto line segment
+                        return projectPointOnLine(point, pointA, pointB);
+                    }
+                    
+                    return point; // Return original point if no curb is nearby
+                }
+                
+                function projectPointOnLine(point, lineStart, lineEnd) {
+                    // Project point onto line segment and return the projected point
+                    const x = point.lng;
+                    const y = point.lat;
+                    const x1 = lineStart.lng;
+                    const y1 = lineStart.lat;
+                    const x2 = lineEnd.lng;
+                    const y2 = lineEnd.lat;
+                    
+                    // Line segment length squared
+                    const l2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+                    
+                    // If line segment is just a point
+                    if (l2 === 0) return lineStart;
+                    
+                    // Consider the line extending the segment, parameterized as lineStart + t (lineEnd - lineStart)
+                    // Project the point onto that line
+                    const t = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / l2;
+                    
+                    if (t < 0) {
+                        // Beyond the lineStart end of the segment
+                        return lineStart;
+                    } else if (t > 1) {
+                        // Beyond the lineEnd end of the segment
+                        return lineEnd;
                     } else {
-                        // Start drawing a new line from this point
-                        isDrawing = true;
-                        currentDrawingType = 'curb-tool';
-                        drawingPoints = [[e.latlng.lat, e.latlng.lng]];
-                        
-                        // Create temporary line
-                        tempLine = L.polyline(drawingPoints, {
-                            color: '#ffcc00',
-                            weight: 5,
-                            opacity: 0.7,
-                            dashArray: '5,5'
-                        }).addTo(map);
-                        
-                        updateStatus('Click to continue the line, click near the start point to complete');
+                        // Projection falls on the segment
+                        const projectionX = x1 + t * (x2 - x1);
+                        const projectionY = y1 + t * (y2 - y1);
+                        return L.latLng(projectionY, projectionX);
                     }
                 }
                 
@@ -1576,34 +1614,113 @@
                     hideContextMenu();
                     
                     // Handle click based on active drawing mode
-                    if (activeDrawingMode === 'high-point-tool') {
+                    if (activeDrawingMode === 'street-tool') {
+                        // Check if click is near a street
+                        const streetResult = isPointNearStreet(e.latlng);
+                        
+                        if (!streetResult.isNear) {
+                            showNotification('Can only draw street pitches on streets');
+                            return;
+                        }
+                        
+                        // Snap point to the street
+                        const snappedPoint = snapToStreet(e.latlng);
+                        
+                        // Handle street line drawing
+                        handleLineDrawing(snappedPoint, 'street');
+                        
+                    } else if (activeDrawingMode === 'curb-tool') {
+                        // Check if click is near a curb
+                        const curbResult = isPointNearCurb(e.latlng);
+                        
+                        if (!curbResult.isNear) {
+                            showNotification('Can only draw curb pitches on curbs');
+                            return;
+                        }
+                        
+                        // Snap point to the curb
+                        const snappedPoint = snapToCurb(e.latlng);
+                        
+                        // Handle curb line drawing
+                        handleLineDrawing(snappedPoint, 'curb');
+                        
+                    } else if (activeDrawingMode === 'high-point-tool') {
                         addHighPoint(e.latlng);
                     } else if (activeDrawingMode === 'catch-basin-tool') {
                         addCatchBasin(e.latlng);
                     }
-                    // Street and curb clicks are handled by their respective highlights
+                }
+                
+                function handleLineDrawing(point, type) {
+                    if (!isDrawing) {
+                        // Start new line
+                        isDrawing = true;
+                        drawingPoints = [point];
+                        currentDrawingType = type;
+                        
+                        // Create temporary line
+                        tempLine = L.polyline([point, point], {
+                            color: type === 'street' ? '#0075ff' : '#ffcc00',
+                            weight: 5,
+                            opacity: 0.7,
+                            dashArray: '5,5'
+                        }).addTo(map);
+                        
+                        updateStatus('Click to add points, double-click to complete the line');
+                    } else if (isDrawing && (
+                        (currentDrawingType === 'street' && type === 'street') || 
+                        (currentDrawingType === 'curb' && type === 'curb')
+                    )) {
+                        // Add point to existing line
+                        drawingPoints.push(point);
+                        
+                        // Update temporary line
+                        tempLine.setLatLngs(drawingPoints);
+                        
+                        // Check if double-clicked (points are very close together)
+                        if (drawingPoints.length > 1 && 
+                            distance(drawingPoints[drawingPoints.length - 1], 
+                                     drawingPoints[drawingPoints.length - 2]) < 2) {
+                            // Remove the duplicate point
+                            drawingPoints.pop();
+                            completeLine();
+                        }
+                    }
                 }
                 
                 function handleMouseMove(e) {
                     // Update temporary line during drawing
                     if (isDrawing && tempLine) {
-                        const points = [...drawingPoints, [e.latlng.lat, e.latlng.lng]];
-                        tempLine.setLatLngs(points);
+                        const lastPoint = drawingPoints[drawingPoints.length - 1];
+                        
+                        // Snap the mouse position based on the drawing type
+                        let snappedPoint;
+                        if (currentDrawingType === 'street') {
+                            // Check if mouse is near a street
+                            const streetResult = isPointNearStreet(e.latlng);
+                            if (streetResult.isNear) {
+                                snappedPoint = snapToStreet(e.latlng);
+                            } else {
+                                snappedPoint = lastPoint;
+                            }
+                        } else if (currentDrawingType === 'curb') {
+                            // Check if mouse is near a curb
+                            const curbResult = isPointNearCurb(e.latlng);
+                            if (curbResult.isNear) {
+                                snappedPoint = snapToCurb(e.latlng);
+                            } else {
+                                snappedPoint = lastPoint;
+                            }
+                        } else {
+                            snappedPoint = e.latlng;
+                        }
+                        
+                        const points = [...drawingPoints];
+                        if (points.length > 0) {
+                            points.push(snappedPoint);
+                            tempLine.setLatLngs(points);
+                        }
                     }
-                }
-                
-                function isCloseToFirstPoint(latlng, threshold = 10) {
-                    if (drawingPoints.length < 1) return false;
-                    
-                    const firstPoint = map.latLngToLayerPoint(L.latLng(drawingPoints[0][0], drawingPoints[0][1]));
-                    const currentPoint = map.latLngToLayerPoint(latlng);
-                    
-                    const distance = Math.sqrt(
-                        Math.pow(firstPoint.x - currentPoint.x, 2) +
-                        Math.pow(firstPoint.y - currentPoint.y, 2)
-                    );
-                    
-                    return distance < threshold;
                 }
                 
                 function completeLine() {
@@ -1628,7 +1745,7 @@
                 
                 function finalizeLineWithPitch(percent) {
                     // Create final polyline
-                    const lineType = currentDrawingType === 'street-tool' ? 'street' : 'curb';
+                    const lineType = currentDrawingType === 'street' ? 'street' : 'curb';
                     const line = L.polyline(drawingPoints, {
                         color: lineType === 'street' ? '#0075ff' : '#ffcc00',
                         weight: 5,
@@ -1673,12 +1790,6 @@
                     // Get line midpoint
                     const latlngs = line.getLatLngs();
                     const midIndex = Math.floor(latlngs.length / 2);
-                    
-                    // Ensure we have enough points
-                    if (midIndex < 1 || latlngs.length < 2) {
-                        return;
-                    }
-                    
                     const point1 = latlngs[midIndex - 1];
                     const point2 = latlngs[midIndex];
                     
@@ -1863,17 +1974,21 @@
                     
                     // Check all layers for clicked elements
                     streetPitchesLayer.eachLayer(function(layer) {
-                        if (layer instanceof L.Polyline && !layer.arrowMarker && !layer.labelMarker && layer.getBounds().contains(e.latlng)) {
-                            clickedElement = layer;
-                            elementType = 'street';
+                        if (layer instanceof L.Polyline && !layer.arrowMarker && !layer.labelMarker) {
+                            if (isPointOnLine(e.latlng, layer.getLatLngs())) {
+                                clickedElement = layer;
+                                elementType = 'street';
+                            }
                         }
                     });
                     
                     if (!clickedElement) {
                         curbPitchesLayer.eachLayer(function(layer) {
-                            if (layer instanceof L.Polyline && !layer.arrowMarker && !layer.labelMarker && layer.getBounds().contains(e.latlng)) {
-                                clickedElement = layer;
-                                elementType = 'curb';
+                            if (layer instanceof L.Polyline && !layer.arrowMarker && !layer.labelMarker) {
+                                if (isPointOnLine(e.latlng, layer.getLatLngs())) {
+                                    clickedElement = layer;
+                                    elementType = 'curb';
+                                }
                             }
                         });
                     }
@@ -1883,6 +1998,20 @@
                     
                     // Show context menu
                     showContextMenu(e, clickedElement, elementType);
+                }
+                
+                function isPointOnLine(point, linePoints, tolerance = 10) {
+                    // Check if point is on line within tolerance
+                    for (let i = 0; i < linePoints.length - 1; i++) {
+                        const pointA = linePoints[i];
+                        const pointB = linePoints[i + 1];
+                        
+                        const dist = distanceToLineSegment(pointA, pointB, point);
+                        if (dist <= tolerance) {
+                            return true;
+                        }
+                    }
+                    return false;
                 }
                 
                 function showContextMenu(e, element, elementType) {
@@ -2022,21 +2151,20 @@
                         }
                     });
                     
-                    // For this demo, we'll use a simplified approach to detect water traps:
-                    // 1. Find intersections between lines
-                    // 2. Check if the flow directions at these intersections create traps
-                    
                     // Check street line intersections
                     checkLinesForTraps(streetLines);
                     
                     // Check curb line intersections
                     checkLinesForTraps(curbLines);
+                    
+                    // Check street/curb intersections
+                    checkStreetCurbIntersections(streetLines, curbLines);
                 }
                 
                 function checkLinesForTraps(lines) {
                     for (let i = 0; i < lines.length; i++) {
                         for (let j = i + 1; j < lines.length; j++) {
-                            // Find intersection point (simplified approach)
+                            // Find intersection point
                             const intersection = findIntersection(lines[i], lines[j]);
                             
                             if (intersection) {
@@ -2059,10 +2187,33 @@
                     }
                 }
                 
+                function checkStreetCurbIntersections(streetLines, curbLines) {
+                    for (let i = 0; i < streetLines.length; i++) {
+                        for (let j = 0; j < curbLines.length; j++) {
+                            // Find intersection point
+                            const intersection = findIntersection(streetLines[i], curbLines[j]);
+                            
+                            if (intersection) {
+                                // Check flow directions
+                                const flowsToIntersection1 = flowsTowardsPoint(streetLines[i], intersection);
+                                const flowsToIntersection2 = flowsTowardsPoint(curbLines[j], intersection);
+                                
+                                // If both lines flow towards the intersection, it's a potential trap
+                                if (flowsToIntersection1 && flowsToIntersection2) {
+                                    // Check for catch basins near the intersection
+                                    const hasCatchBasin = checkForCatchBasinNear(intersection, 30);
+                                    
+                                    if (!hasCatchBasin) {
+                                        // Create water trap indicator
+                                        addTrappedWaterIndicator(intersection);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
                 function findIntersection(line1, line2) {
-                    // This is a simplified approach for demonstration purposes
-                    // A real implementation would use proper line intersection algorithms
-                    
                     // Get line points
                     const line1Points = line1.getLatLngs();
                     const line2Points = line2.getLatLngs();
@@ -2077,7 +2228,6 @@
                             const d = map.latLngToLayerPoint(line2Points[j + 1]);
                             
                             // Basic line segment intersection check
-                            // This is an approximation
                             const denominator = ((b.y - a.y) * (d.x - c.x) - (b.x - a.x) * (d.y - c.y));
                             
                             if (denominator === 0) continue; // Lines are parallel
@@ -2100,7 +2250,7 @@
                 }
                 
                 function flowsTowardsPoint(line, point) {
-                    // Simplified approach: check if the last point of the line is closer to the point than the first
+                    // Check if the last point of the line is closer to the point than the first
                     const latlngs = line.getLatLngs();
                     const first = latlngs[0];
                     const last = latlngs[latlngs.length - 1];
@@ -2139,7 +2289,7 @@
                     document.getElementById('pitch-modal').style.display = 'flex';
                     document.getElementById('pitch-value').textContent = pitchPercent.toFixed(1) + '%';
                     document.getElementById('pitch-modal-title').textContent = 
-                        `Set ${currentDrawingType === 'street-tool' ? 'Street' : 'Curb'} Pitch Percentage`;
+                        `Set ${currentDrawingType === 'street' ? 'Street' : 'Curb'} Pitch Percentage`;
                 }
                 
                 function showNotification(message) {
@@ -2386,7 +2536,7 @@
                         document.getElementById('pitch-value').textContent = pitchPercent.toFixed(1) + '%';
                     });
                     
-                    document.getElementById('decrease-pitch').addEventListener('click', function() {
+                    document.getElementById('decrease-pitch').addEventListener('click', function() { 
                         pitchPercent = Math.max(0.1, pitchPercent - 0.1);
                         document.getElementById('pitch-value').textContent = pitchPercent.toFixed(1) + '%';
                     });
