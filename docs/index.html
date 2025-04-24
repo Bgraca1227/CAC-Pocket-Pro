@@ -4,13 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- Prevent zooming on UI elements -->
+    <!-- Prevent zooming on UI elements -->
     <style>
-        @media (touch-enabled) {
-            .tool-button, .action-button, .modal-btn, .location-btn, .borough-btn, 
-            .menu-panel, .context-menu, .modal-container, .help-container, 
-            .location-container, .status-bar, .notification, .finish-guide-btn {
-                touch-action: manipulation;
-            }
+        /* Prevent zooming on UI elements */
+        .tool-button, .action-button, .modal-btn, .location-btn, .borough-btn, 
+        .menu-panel, .context-menu, .modal-container, .help-container, 
+        .location-container, .status-bar, .notification, .finish-guide-btn,
+        .modal-overlay, .utility-info-card, .pitch-adjust-btn, .pitch-input-container,
+        .modal-header, .modal-content, .modal-actions, .utility-info-header,
+        .utility-info-content, .utility-info-row, input, select, button {
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        /* Always visible controls */
+        .always-visible-controls {
+            position: fixed;
+            bottom: 100px;
+            right: 16px;
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+        }
+        
+        .control-button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: var(--panel-bg);
+            box-shadow: var(--shadow);
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--dark-color);
+            touch-action: none;
+        }
+        
+        .control-button:active {
+            transform: scale(0.95);
         }
     </style>
     <title>CAC Pocket</title>
@@ -1064,6 +1102,19 @@
 
         <!-- Highlight for valid drawing area -->
         <div id="highlight-area" class="highlight-area"></div>
+        
+        <!-- Always visible controls -->
+        <div class="always-visible-controls">
+            <button class="control-button" id="zoom-in-btn" title="Zoom In">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="control-button" id="zoom-out-btn" title="Zoom Out">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button class="control-button" id="cancel-drawing-btn" title="Cancel Drawing" style="display: none;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
 
         <!-- Top Action Bar -->
         <div class="action-bar">
@@ -1925,12 +1976,18 @@
                     // Show finish button
                     finishGuideBtn.classList.add('visible');
                     
+                    // Show cancel drawing button
+                    document.getElementById('cancel-drawing-btn').style.display = 'block';
+                    
                     updateStatus('Click to add points to your custom guide. Click "Finish Guide" when done.');
                 }
                 
                 function completeCustomGuide() {
                     // Hide finish button
                     finishGuideBtn.classList.remove('visible');
+                    
+                    // Hide cancel drawing button
+                    document.getElementById('cancel-drawing-btn').style.display = 'none';
                     
                     // Need at least 2 points for a valid guide
                     if (drawingPoints.length < 2) {
@@ -2252,8 +2309,95 @@
                         return;
                     }
                     
+                    // If drawing a curb line, snap to the nearest curb
+                    if (currentDrawingType === 'curb-tool') {
+                        snapLineToNearestCurb();
+                    } else if (currentDrawingType === 'street-tool') {
+                        snapLineToNearestStreet();
+                    }
+                    
                     // Show pitch input modal
                     showPitchModal();
+                }
+                
+                function snapLineToNearestCurb() {
+                    // For each point in the drawing, find the nearest point on any curb
+                    const snappedPoints = [];
+                    
+                    drawingPoints.forEach(point => {
+                        const nearest = findNearestPointOnCurbs(point);
+                        if (nearest) {
+                            snappedPoints.push(nearest);
+                        } else {
+                            snappedPoints.push(point); // Keep original if no curb found
+                        }
+                    });
+                    
+                    // Replace drawing points with snapped points
+                    if (snappedPoints.length === drawingPoints.length) {
+                        drawingPoints = snappedPoints;
+                    }
+                }
+                
+                function snapLineToNearestStreet() {
+                    // For each point in the drawing, find the nearest point on any street
+                    const snappedPoints = [];
+                    
+                    drawingPoints.forEach(point => {
+                        const nearest = findNearestPointOnStreets(point);
+                        if (nearest) {
+                            snappedPoints.push(nearest);
+                        } else {
+                            snappedPoints.push(point); // Keep original if no street found
+                        }
+                    });
+                    
+                    // Replace drawing points with snapped points
+                    if (snappedPoints.length === drawingPoints.length) {
+                        drawingPoints = snappedPoints;
+                    }
+                }
+                
+                function findNearestPointOnCurbs(point) {
+                    const maxDistancePx = 50; // Larger distance for post-draw snapping
+                    let minDistancePx = Infinity;
+                    let nearestPoint = null;
+                    
+                    // Check all curbs
+                    curbs.forEach(curb => {
+                        const result = nearestPointOnArray(point, curb.latlngs);
+                        if (result.distPx < minDistancePx) {
+                            minDistancePx = result.distPx;
+                            nearestPoint = result.point;
+                        }
+                    });
+                    
+                    return minDistancePx <= maxDistancePx ? nearestPoint : null;
+                }
+                
+                function findNearestPointOnStreets(point) {
+                    const maxDistancePx = 50; // Larger distance for post-draw snapping
+                    let minDistancePx = Infinity;
+                    let nearestPoint = null;
+                    
+                    // Check all streets and custom guides
+                    streets.forEach(street => {
+                        const result = nearestPointOnArray(point, street.latlngs);
+                        if (result.distPx < minDistancePx) {
+                            minDistancePx = result.distPx;
+                            nearestPoint = result.point;
+                        }
+                    });
+                    
+                    customGuides.forEach(guide => {
+                        const result = nearestPointOnArray(point, guide.latlngs);
+                        if (result.distPx < minDistancePx) {
+                            minDistancePx = result.distPx;
+                            nearestPoint = result.point;
+                        }
+                    });
+                    
+                    return minDistancePx <= maxDistancePx ? nearestPoint : null;
                 }
                 
                 function finalizeLineWithPitch(percent) {
@@ -2491,7 +2635,7 @@
                         iconAnchor: [18, 18]
                     });
                     
-                    // Create temporary marker
+                    // Create temporary utility marker
                     tempUtilityMarker = L.marker(latlng, {
                         icon: utilityIcon,
                         draggable: false
@@ -2514,6 +2658,9 @@
                     
                     // Show direction setting modal
                     document.getElementById('utility-direction-modal').style.display = 'flex';
+                    
+                    // Show cancel drawing button
+                    document.getElementById('cancel-drawing-btn').style.display = 'block';
                     
                     // Update direction indicator
                     updateDirectionIndicator();
@@ -2559,6 +2706,9 @@
                     // Hide direction modal
                     document.getElementById('utility-direction-modal').style.display = 'none';
                     
+                    // Hide cancel drawing button
+                    document.getElementById('cancel-drawing-btn').style.display = 'none';
+                    
                     // Clean up temporary elements
                     if (tempUtilityMarker) {
                         map.removeLayer(tempUtilityMarker);
@@ -2574,6 +2724,9 @@
                 function confirmUtilityDetails() {
                     // Hide details modal
                     document.getElementById('utility-details-modal').style.display = 'none';
+                    
+                    // Hide cancel drawing button
+                    document.getElementById('cancel-drawing-btn').style.display = 'none';
                     
                     // Get utility details from form
                     const type = document.getElementById('utility-type').value;
@@ -2618,12 +2771,12 @@
                         tempUtilityLine = null;
                     }
                     
-                    // Create a permanent utility marker
+                    // Create a permanent utility marker with type-specific icon
                     const utilityIcon = L.divIcon({
-                        html: `<div class="utility-marker"><i class="fas fa-${getUtilityIcon(utilityData.type)}"></i></div>`,
+                        html: getUtilityIconHTML(utilityData.type),
                         className: '',
-                        iconSize: [36, 36],
-                        iconAnchor: [18, 18]
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
                     });
                     
                     // Create the marker
@@ -2635,7 +2788,7 @@
                     // Create the direction line
                     const endPoint = calculateEndPoint(position, utilityData.direction, 50);
                     const line = L.polyline([position, endPoint], {
-                        color: '#673ab7',
+                        color: getUtilityColor(utilityData.type),
                         weight: 3,
                         opacity: 0.7,
                         className: 'utility-direction-line'
@@ -2692,6 +2845,16 @@
                     updateStatus('Utility added');
                 }
                 
+                function getUtilityIconHTML(type) {
+                    // Return HTML with appropriate icon and background color based on utility type
+                    const iconClass = getUtilityIcon(type);
+                    const bgColor = getUtilityColor(type);
+                    
+                    return `<div class="utility-marker" style="background-color: ${bgColor};">
+                              <i class="fas fa-${iconClass}"></i>
+                            </div>`;
+                }
+                
                 function getUtilityIcon(type) {
                     // Return appropriate Font Awesome icon based on utility type
                     switch (type) {
@@ -2701,6 +2864,18 @@
                         case 'sewer': return 'toilet';
                         case 'telecom': return 'phone';
                         default: return 'tools';
+                    }
+                }
+                
+                function getUtilityColor(type) {
+                    // Return appropriate color based on utility type
+                    switch (type) {
+                        case 'water': return '#2196f3'; // Blue
+                        case 'gas': return '#ff9800'; // Orange
+                        case 'electric': return '#ffeb3b'; // Yellow
+                        case 'sewer': return '#795548'; // Brown
+                        case 'telecom': return '#9c27b0'; // Purple
+                        default: return '#673ab7'; // Default purple
                     }
                 }
                 
@@ -2746,6 +2921,9 @@
                 function cancelUtilityDetails() {
                     // Hide details modal
                     document.getElementById('utility-details-modal').style.display = 'none';
+                    
+                    // Hide cancel drawing button
+                    document.getElementById('cancel-drawing-btn').style.display = 'none';
                     
                     // Clean up temporary elements
                     if (tempUtilityMarker) {
@@ -2959,7 +3137,7 @@
                 function checkLinesForTraps(lines) {
                     for (let i = 0; i < lines.length; i++) {
                         for (let j = i + 1; j < lines.length; j++) {
-                            // Find intersection point (simplified approach)
+                            // Find intersection point
                             const intersection = findIntersection(lines[i], lines[j]);
                             
                             if (intersection) {
@@ -2969,12 +3147,18 @@
                                 
                                 // If both lines flow towards the intersection, it's a potential trap
                                 if (flowsToIntersection1 && flowsToIntersection2) {
-                                    // Check for catch basins near the intersection
-                                    const hasCatchBasin = checkForCatchBasinNear(intersection, 30);
+                                    // Improved trap detection - check if both lines have non-zero pitch
+                                    const line1HasPitch = lines[i].options.pitchPercent && lines[i].options.pitchPercent > 0;
+                                    const line2HasPitch = lines[j].options.pitchPercent && lines[j].options.pitchPercent > 0;
                                     
-                                    if (!hasCatchBasin) {
-                                        // Create water trap indicator
-                                        addTrappedWaterIndicator(intersection);
+                                    if (line1HasPitch && line2HasPitch) {
+                                        // Check for catch basins near the intersection
+                                        const hasCatchBasin = checkForCatchBasinNear(intersection, 30);
+                                        
+                                        if (!hasCatchBasin) {
+                                            // Create water trap indicator
+                                            addTrappedWaterIndicator(intersection);
+                                        }
                                     }
                                 }
                             }
@@ -3300,6 +3484,9 @@
                     // Hide finish guide button
                     finishGuideBtn.classList.remove('visible');
                     
+                    // Hide the cancel drawing button
+                    document.getElementById('cancel-drawing-btn').style.display = 'none';
+                    
                     // Remove active class from all tools
                     document.querySelectorAll('.tool-button').forEach(btn => {
                         btn.classList.remove('active');
@@ -3309,6 +3496,11 @@
                     if (mode) {
                         document.getElementById(mode).classList.add('active');
                         activeDrawingMode = mode;
+                        
+                        // Show the cancel drawing button for drawing tools
+                        if (mode === 'street-tool' || mode === 'curb-tool' || mode === 'draw-guide-tool' || mode === 'utilities-tool') {
+                            document.getElementById('cancel-drawing-btn').style.display = 'block';
+                        }
                         
                         // Update status based on tool
                         if (mode === 'street-tool') {
@@ -3475,6 +3667,56 @@
                     
                     // Hide utility info card when map is clicked
                     map.on('click', hideUtilityInfo);
+                    
+                    // Always visible control buttons
+                    document.getElementById('zoom-in-btn').addEventListener('click', function() {
+                        map.zoomIn(1);
+                    });
+                    
+                    document.getElementById('zoom-out-btn').addEventListener('click', function() {
+                        map.zoomOut(1);
+                    });
+                    
+                    document.getElementById('cancel-drawing-btn').addEventListener('click', function() {
+                        // Cancel any active drawing
+                        if (isDrawing) {
+                            if (tempLine) {
+                                map.removeLayer(tempLine);
+                                tempLine = null;
+                            }
+                            isDrawing = false;
+                            drawingPoints = [];
+                            
+                            // Hide finish guide button
+                            finishGuideBtn.classList.remove('visible');
+                        }
+                        
+                        // Cancel utility placement
+                        if (tempUtilityMarker || tempUtilityLine) {
+                            if (tempUtilityMarker) {
+                                map.removeLayer(tempUtilityMarker);
+                                tempUtilityMarker = null;
+                            }
+                            
+                            if (tempUtilityLine) {
+                                map.removeLayer(tempUtilityLine);
+                                tempUtilityLine = null;
+                            }
+                            
+                            // Hide any open modals
+                            document.getElementById('utility-direction-modal').style.display = 'none';
+                            document.getElementById('utility-details-modal').style.display = 'none';
+                        }
+                        
+                        // Reset active drawing mode
+                        setActiveDrawingMode(null);
+                        
+                        // Hide the cancel button
+                        this.style.display = 'none';
+                        
+                        // Update status
+                        updateStatus('Drawing canceled');
+                    });
                     
                     // Help modal close
                     document.querySelector('.help-close').addEventListener('click', function() {
