@@ -34,7 +34,9 @@
             
             /* Mode colors */
             --drainage-color: #2196f3;
+            --pitch-color: #ffc107; /* New color for yellow pitch lines */
             --utility-color: #673ab7;
+            --gap-highlight-color: rgba(33, 150, 243, 0.4); /* Blue highlight for gaps */
         }
 
         * {
@@ -499,7 +501,7 @@
         }
 
         .curb-pitch-line {
-            stroke: var(--drainage-color);
+            stroke: var(--pitch-color); /* Changed to yellow for drainage pitches */
             stroke-width: 4;
         }
 
@@ -508,6 +510,14 @@
             stroke-width: 8;
             stroke-dasharray: 10, 5;
             animation: pulse 2s infinite;
+        }
+
+        /* New style for the highlighted gaps */
+        .curb-gap {
+            stroke: var(--gap-highlight-color);
+            stroke-width: 8;
+            stroke-dasharray: 5, 3;
+            animation: pulse 1.5s infinite;
         }
 
         @keyframes pulse {
@@ -887,6 +897,61 @@
             opacity: 0.8;
         }
 
+        /* New style for utility action modal */
+        .utility-action-modal {
+            background-color: var(--panel-bg);
+            border-radius: var(--rounded);
+            box-shadow: var(--shadow);
+            position: absolute;
+            z-index: 1500;
+            width: 280px;
+            max-width: 90vw;
+            padding: 0;
+            display: none;
+            overflow: hidden;
+        }
+
+        .utility-action-option {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            color: var(--dark-color);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .utility-action-option:last-child {
+            border-bottom: none;
+        }
+
+        .utility-action-option:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .utility-action-option i {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .utility-action-option-label {
+            font-weight: 500;
+        }
+
+        .utility-action-option-desc {
+            font-size: 12px;
+            color: var(--gray-color);
+            margin-top: 2px;
+        }
+
+        /* New style for highpoint option in gap modal */
+        #highpoint-option {
+            display: none;
+        }
+
         /* iOS safe area support */
         @supports(padding: env(safe-area-inset-bottom)) {
             body {
@@ -1069,11 +1134,21 @@
                     </div>
                     <div class="layer-toggle">
                         <div class="toggle-label">
-                            <div class="color-indicator" style="background-color: var(--drainage-color);"></div>
+                            <div class="color-indicator" style="background-color: var(--pitch-color);"></div>
                             <span>Curb Pitches</span>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="pitches-toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="layer-toggle">
+                        <div class="toggle-label">
+                            <div class="color-indicator" style="background-color: var(--gap-highlight-color);"></div>
+                            <span>Curb Gaps</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="gaps-toggle" checked>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1271,6 +1346,12 @@
                                 </div>
                                 <div class="connection-label">Transition</div>
                             </div>
+                            <div class="connection-option" data-option="highpoint">
+                                <div class="connection-icon">
+                                    <i class="fas fa-mountain"></i>
+                                </div>
+                                <div class="connection-label">Highpoint</div>
+                            </div>
                         </div>
                     </div>
                     
@@ -1305,6 +1386,31 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- New highpoint option section -->
+                    <div id="highpoint-option" style="display: none;">
+                        <div class="form-group">
+                            <label>Highpoint Position</label>
+                            <input type="range" class="form-control" id="highpoint-position" min="0" max="100" value="50">
+                            <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                <span>Start</span>
+                                <span>Middle</span>
+                                <span>End</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="highpoint-pitch-percentage">Pitch Percentage</label>
+                            <div class="direction-controls">
+                                <button class="direction-button" id="highpoint-decrease-pitch">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <div class="direction-value" id="highpoint-pitch-value">2.0%</div>
+                                <button class="direction-button" id="highpoint-increase-pitch">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-cancel" id="cancel-gap-btn">Cancel</button>
@@ -1313,7 +1419,7 @@
             </div>
         </div>
         
-                        <!-- Utility Found Modal -->
+        <!-- Utility Found Modal -->
         <div class="modal" id="utility-found-modal">
             <div class="modal-container">
                 <div class="modal-header">
@@ -1396,11 +1502,11 @@
                     <div class="form-group">
                         <label>Connection Type</label>
                         <div class="connection-options">
-                            <div class="connection-option" data-option="continuation">
+                            <div class="connection-option" data-option="snap">
                                 <div class="connection-icon">
                                     <i class="fas fa-bezier-curve"></i>
                                 </div>
-                                <div class="connection-label">Continuation</div>
+                                <div class="connection-label">Snap</div>
                             </div>
                             <div class="connection-option" data-option="offset">
                                 <div class="connection-icon">
@@ -1412,7 +1518,7 @@
                                 <div class="connection-icon">
                                     <i class="fas fa-unlink"></i>
                                 </div>
-                                <div class="connection-label">Separate</div>
+                                <div class="connection-label">No Connection</div>
                             </div>
                         </div>
                     </div>
@@ -1420,6 +1526,29 @@
                 <div class="modal-footer">
                     <button class="btn btn-cancel" id="cancel-connection-btn">Cancel</button>
                     <button class="btn btn-primary" id="confirm-connection-btn">Confirm</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Utility Tap Modal -->
+        <div class="modal" id="utility-tap-modal">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title">Tap Utility Main</div>
+                    <button class="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Connect service line to this main?</p>
+                    <div class="form-group">
+                        <label for="tap-size">Service Size (inches)</label>
+                        <input type="number" class="form-control" id="tap-size" value="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-cancel" id="cancel-tap-btn">Cancel</button>
+                    <button class="btn btn-primary" id="confirm-tap-btn">Confirm</button>
                 </div>
             </div>
         </div>
@@ -1527,6 +1656,24 @@
         <div class="loading-overlay">
             <div class="spinner"></div>
         </div>
+        
+        <!-- New Utility Action Modal -->
+        <div class="utility-action-modal" id="utility-action-modal">
+            <div class="utility-action-option" id="map-utility-option">
+                <i class="fas fa-map-marked-alt"></i>
+                <div>
+                    <div class="utility-action-option-label">Map Utility</div>
+                    <div class="utility-action-option-desc">Draw path of known utility line</div>
+                </div>
+            </div>
+            <div class="utility-action-option" id="found-utility-option">
+                <i class="fas fa-search"></i>
+                <div>
+                    <div class="utility-action-option-label">Found Utility</div>
+                    <div class="utility-action-option-desc">Document discovered utility</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
@@ -1591,6 +1738,14 @@
                 let tempUtilityLocation = null;
                 let currentDrawingType = null;
                 
+                // New variable for tracking two-click pitch drawing process
+                let pitchDrawingStep = 0;
+                let isTappingMain = false;
+                let tappedMainUtility = null;
+                let tappedMainPoint = null;
+                let gapCurbLayer = L.layerGroup(); // New layer for highlighted gaps
+                let highpointPercent = 2.0;
+                
                 // Drainage layers
                 let catchBasinsLayer = L.layerGroup();
                 let curbPitchesLayer = L.layerGroup();
@@ -1643,6 +1798,7 @@
                     catchBasinsLayer.addTo(map);
                     curbPitchesLayer.addTo(map);
                     curbAvailableLayer.addTo(map);
+                    gapCurbLayer.addTo(map); // Add new gap layer
                     utilitiesLayer.addTo(map);
                     
                     // Map event listeners
@@ -1671,6 +1827,7 @@
                     
                     // Clear existing road guides
                     curbAvailableLayer.clearLayers();
+                    gapCurbLayer.clearLayers(); // Clear gap layer
                     streets = [];
                     curbs = [];
                     
@@ -1745,6 +1902,7 @@
                                 // Try to recover by showing past streets if available
                                 if (streets.length > 0) {
                                     showAvailableCurbs();
+                                    showCurbGaps(); // Show gaps in existing curbs
                                 } else {
                                     // Suggest alternative
                                     showNotification('Try searching for a specific address instead');
@@ -1801,6 +1959,7 @@
                                 // Add available curbs to map if in drainage mode
                                 if (activeMode === 'drainage') {
                                     showAvailableCurbs();
+                                    showCurbGaps(); // Show gaps in curbs
                                 }
                                 
                                 // Initialize drainage heatmap if not already created
@@ -1930,6 +2089,101 @@
                     }
                 }
                 
+                // New function to show gaps between pitches
+                function showCurbGaps() {
+                    // Clear existing gap highlights
+                    gapCurbLayer.clearLayers();
+                    
+                    // If gaps toggle is not checked, don't show any gaps
+                    if (!document.getElementById('gaps-toggle').checked) {
+                        return;
+                    }
+                    
+                    // For each curb with at least two pitches, find and highlight gaps
+                    curbs.forEach(curb => {
+                        if (curb.pitches.length >= 2) {
+                            // Sort pitches by startIndex
+                            const sortedPitches = [...curb.pitches].sort((a, b) => a.startIndex - b.startIndex);
+                            
+                            // Check for gaps between pitches
+                            for (let i = 0; i < sortedPitches.length - 1; i++) {
+                                const currentPitch = sortedPitches[i];
+                                const nextPitch = sortedPitches[i + 1];
+                                
+                                if (nextPitch.startIndex > currentPitch.endIndex + 1) {
+                                    // There's a gap between these pitches
+                                    const gapPoints = curb.latlngs.slice(currentPitch.endIndex + 1, nextPitch.startIndex);
+                                    
+                                    // Create a gap polyline
+                                    const gapLine = L.polyline(gapPoints, {
+                                        className: 'curb-gap',
+                                        curbId: curb.id,
+                                        startIndex: currentPitch.endIndex + 1,
+                                        endIndex: nextPitch.startIndex - 1,
+                                        prevPitch: currentPitch,
+                                        nextPitch: nextPitch
+                                    }).addTo(gapCurbLayer);
+                                    
+                                    // Add click handler
+                                    gapLine.on('click', handleGapClick);
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Handler for gap click
+                function handleGapClick(e) {
+                    // Stop event propagation to prevent map click
+                    L.DomEvent.stopPropagation(e);
+                    
+                    const layer = e.target;
+                    const curbId = layer.options.curbId;
+                    const curb = curbs.find(c => c.id === curbId);
+                    
+                    if (!curb) return;
+                    
+                    // Store selected gap info
+                    selectedElement = {
+                        type: 'gap',
+                        layer: layer,
+                        curb: curb,
+                        startIndex: layer.options.startIndex,
+                        endIndex: layer.options.endIndex,
+                        prevPitch: layer.options.prevPitch,
+                        nextPitch: layer.options.nextPitch
+                    };
+                    
+                    // Reset option selection
+                    document.querySelectorAll('#gap-pitch-modal .connection-option').forEach(option => {
+                        option.classList.remove('selected');
+                    });
+                    
+                    // Select first option by default
+                    document.querySelector('#gap-pitch-modal .connection-option').classList.add('selected');
+                    
+                    // Update option visibility
+                    showSelectedGapOption('add-pitch');
+                    
+                    // Show gap modal
+                    showModal('gap-pitch-modal');
+                }
+                
+                // Function to show selected gap option
+                function showSelectedGapOption(option) {
+                    // Hide all option panels
+                    document.getElementById('add-pitch-option').style.display = 'none';
+                    document.getElementById('highpoint-option').style.display = 'none';
+                    
+                    // Show selected panel
+                    if (option === 'add-pitch') {
+                        document.getElementById('add-pitch-option').style.display = 'block';
+                    } else if (option === 'highpoint') {
+                        document.getElementById('highpoint-option').style.display = 'block';
+                    }
+                    // 'transition' option doesn't need a panel
+                }
+                
                 function findCurbGaps(curb) {
                     const gaps = [];
                     
@@ -1997,84 +2251,58 @@
                     
                     if (!curb) return;
                     
-                    // If there are pitches on either side, show gap options
-                    if (curb.pitches.length > 0) {
-                        showGapPitchOptions(e.target, curb);
-                    } else {
-                        // No existing pitches, just start a new pitch
+                    // If pitch tool is active, start pitch drawing
+                    if (activeTool === 'add-pitch-btn') {
                         startCurbPitch(e.latlng, curb);
                     }
                 }
                 
-                function showGapPitchOptions(layer, curb) {
-                    // Get gap details
-                    const startIndex = layer.options.startIndex;
-                    const endIndex = layer.options.endIndex;
-                    
-                    // Find adjacent pitches
-                    let prevPitch = null;
-                    let nextPitch = null;
-                    
-                    curb.pitches.forEach(pitch => {
-                        if (pitch.endIndex === startIndex - 1) {
-                            prevPitch = pitch;
-                        }
-                        if (pitch.startIndex === endIndex + 1) {
-                            nextPitch = pitch;
-                        }
-                    });
-                    
-                    // Store selected gap info
-                    selectedElement = {
-                        type: 'gap',
-                        layer: layer,
-                        curb: curb,
-                        startIndex: startIndex,
-                        endIndex: endIndex,
-                        prevPitch: prevPitch,
-                        nextPitch: nextPitch
-                    };
-                    
-                    // Reset option selection
-                    document.querySelectorAll('#gap-pitch-modal .connection-option').forEach(option => {
-                        option.classList.remove('selected');
-                    });
-                    
-                    // Select first option by default
-                    document.querySelector('#gap-pitch-modal .connection-option').classList.add('selected');
-                    
-                    // Hide pitch options initially
-                    document.getElementById('add-pitch-option').style.display = 'none';
-                    
-                    // Show gap modal
-                    showModal('gap-pitch-modal');
-                }
-                
+                // Modified to implement the two-click process
                 function startCurbPitch(latlng, curb) {
                     // Find nearest point on curb
                     const result = nearestPointOnCurb(latlng, curb);
                     
                     if (!result || !result.point) return;
                     
-                    // Start drawing from this point
-                    isDrawing = true;
-                    drawingPoints = [result.point];
-                    drawingCurb = curb;
-                    drawingStartIndex = result.index;
-                    currentDrawingType = 'pitch';
-                    
-                    // Create temporary line
-                    tempLine = L.polyline([result.point, result.point], {
-                        color: '#2196f3',
-                        weight: 4,
-                        opacity: 0.7,
-                        dashArray: '5,5'
-                    }).addTo(map);
-                    
-                    // Show cancel drawing button
-                    document.getElementById('cancel-drawing-btn').style.display = 'block';
-                    
-                    updateStatus('Click on another point along the curb to complete the pitch line');
+                    // Begin first step of pitch drawing
+                    if (pitchDrawingStep === 0) {
+                        // Start drawing from this point
+                        isDrawing = true;
+                        drawingPoints = [result.point];
+                        drawingCurb = curb;
+                        drawingStartIndex = result.index;
+                        currentDrawingType = 'pitch';
+                        pitchDrawingStep = 1;
+                        
+                        // Create temporary line
+                        tempLine = L.polyline([result.point, result.point], {
+                            color: '#ffc107', // Using yellow for drainage pitches
+                            weight: 4,
+                            opacity: 0.7,
+                            dashArray: '5,5'
+                        }).addTo(map);
+                        
+                        // Show cancel drawing button
+                        document.getElementById('cancel-drawing-btn').style.display = 'block';
+                        
+                        updateStatus('Click on another point along the same curb to complete the pitch line');
+                    } 
+                    // Second click
+                    else if (pitchDrawingStep === 1) {
+                        // Check if clicking on the same curb
+                        if (drawingCurb.id === curb.id) {
+                            // Check if the new point is different from the start and in valid order
+                            if (result.index !== drawingStartIndex && result.index >= drawingStartIndex) {
+                                // Complete the pitch with the second point
+                                completeCurbPitch(result.point, result.index);
+                                pitchDrawingStep = 0; // Reset for next drawing
+                            } else {
+                                showNotification('Please select a point further along the curb');
+                            }
+                        } else {
+                            showNotification('Please select a point on the same curb');
+                        }
+                    }
                 }
                 
                 function completeCurbPitch(endPoint, endIndex) {
@@ -2088,7 +2316,7 @@
                     isDrawing = false;
                     
                     // Need at least 2 points for a valid line
-                    if (drawingPoints.length < 2) {
+                    if (drawingPoints.length < 1) {
                         drawingPoints = [];
                         return;
                     }
@@ -2127,7 +2355,7 @@
                 function finalizeCurbPitch(pitchData) {
                     // Create final pitch line
                     const line = L.polyline(pitchData.points, {
-                        color: '#2196f3',
+                        color: '#ffc107', // Using yellow for drainage pitches
                         weight: 4,
                         opacity: 1,
                         className: 'curb-pitch-line',
@@ -2237,6 +2465,9 @@
                     // Update available curbs
                     showAvailableCurbs();
                     
+                    // Update gaps
+                    showCurbGaps();
+                    
                     // Update drainage heatmap
                     updateDrainageHeatmap();
                     
@@ -2264,6 +2495,39 @@
                     
                     // Finalize the pitch
                     finalizeCurbPitch(pitchData);
+                }
+                
+                // New function to create highpoint (ridge) with dual pitch flow directions
+                function createHighpointPitch(curb, startIndex, endIndex, percent, highpointPosition) {
+                    // Calculate highpoint index
+                    const range = endIndex - startIndex;
+                    const highIndex = startIndex + Math.floor(range * (highpointPosition / 100));
+                    
+                    // Create first pitch (flows from highpoint to start)
+                    const firstPitchPoints = curb.latlngs.slice(startIndex, highIndex + 1).reverse();
+                    const firstPitchData = {
+                        curbId: curb.id,
+                        startIndex: startIndex,
+                        endIndex: highIndex,
+                        points: firstPitchPoints,
+                        angle: 180, // Opposite direction (flows toward start)
+                        percent: percent
+                    };
+                    
+                    // Create second pitch (flows from highpoint to end)
+                    const secondPitchPoints = curb.latlngs.slice(highIndex, endIndex + 1);
+                    const secondPitchData = {
+                        curbId: curb.id,
+                        startIndex: highIndex,
+                        endIndex: endIndex,
+                        points: secondPitchPoints,
+                        angle: 0, // Standard direction (flows toward end)
+                        percent: percent
+                    };
+                    
+                    // Finalize both pitches
+                    finalizeCurbPitch(firstPitchData);
+                    finalizeCurbPitch(secondPitchData);
                 }
                 
                 function calculateTransitionAngle(startPitch, endPitch) {
@@ -2298,7 +2562,7 @@
                     // Create arrow icon with specified angle
                     const arrowSvg = `
                         <div class="pitch-arrow" style="width: 24px; height: 24px;">
-                            <i class="fas fa-arrow-up" style="color: #2196f3; font-size: 20px; transform: rotate(${angle}deg);"></i>
+                            <i class="fas fa-arrow-up" style="color: #ffc107; font-size: 20px; transform: rotate(${angle}deg);"></i>
                         </div>
                     `;
                     
@@ -2326,7 +2590,7 @@
                     
                     // Create label icon
                     const labelHtml = `
-                        <div style="background-color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #2196f3; border: 1px solid #2196f3;">
+                        <div style="background-color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #ffc107; border: 1px solid #ffc107;">
                             ${percent}%
                         </div>
                     `;
@@ -2690,6 +2954,19 @@
                     };
                 }
                 
+                // Modified utility action workflow
+                function handleUtilityAction(latlng) {
+                    // Store the location for later
+                    tempUtilityLocation = latlng;
+                    
+                    // Position and show the action modal
+                    const containerPoint = map.latLngToContainerPoint(latlng);
+                    const modal = document.getElementById('utility-action-modal');
+                    modal.style.left = `${containerPoint.x - 140}px`; // Center horizontally
+                    modal.style.top = `${containerPoint.y - 70}px`; // Position above click point
+                    modal.style.display = 'block';
+                }
+                
                 function addUtilityFound(latlng) {
                     // Store the location for later
                     tempUtilityLocation = latlng;
@@ -2883,6 +3160,11 @@
                         }).addTo(map);
                         
                         updateStatus('Click to add points, double-click to finish');
+                        
+                        // If we're drawing a service line, check for nearby mains to tap
+                        if (selectedLineType === 'service') {
+                            checkForMainTap(latlng);
+                        }
                     }
                     // If double click or more than 10 points, finish drawing
                     else if (
@@ -2902,7 +3184,130 @@
                         if (tempLine) {
                             tempLine.setLatLngs(drawingPoints);
                         }
+                        
+                        // If we need to continue checking for main taps
+                        if (selectedLineType === 'service' && !isTappingMain) {
+                            checkForMainTap(latlng);
+                        }
                     }
+                }
+                
+                // New function to check for main to tap
+                function checkForMainTap(latlng) {
+                    // Only check for main taps when drawing a service line
+                    if (selectedLineType !== 'service') return;
+                    
+                    // Find nearby mains of the same type
+                    const nearbyMains = findNearbyMains(latlng, selectedUtilityType);
+                    
+                    if (nearbyMains.length > 0) {
+                        // Get the closest main
+                        const closestMain = nearbyMains[0];
+                        
+                        // Store the tap location and main
+                        tappedMainUtility = closestMain.utility;
+                        tappedMainPoint = closestMain.connectLatLng;
+                        
+                        // Show tap modal
+                        showTapModal(tappedMainUtility);
+                        
+                        // Set flag
+                        isTappingMain = true;
+                    }
+                }
+                
+                // New function to find nearby mains
+                function findNearbyMains(point, utilityType) {
+                    const nearbyList = [];
+                    const maxDistance = 15; // meters to search for mains
+                    
+                    // Check each utility of the same type that is a main
+                    utilities[utilityType].forEach(utility => {
+                        if (utility.lineType !== 'main') return;
+                        
+                        const utilityPoints = utility.points;
+                        if (!utilityPoints || utilityPoints.length < 2) return;
+                        
+                        // Check each segment of the main line
+                        for (let i = 0; i < utilityPoints.length - 1; i++) {
+                            const segmentStart = utilityPoints[i];
+                            const segmentEnd = utilityPoints[i+1];
+                            
+                            // Calculate distance to segment
+                            const segmentResult = projectOnSegment(point, segmentStart, segmentEnd);
+                            
+                            if (segmentResult.distance <= maxDistance) {
+                                nearbyList.push({
+                                    utility: utility,
+                                    connectPoint: 'middle',
+                                    connectIndex: i,
+                                    connectLatLng: segmentResult.point,
+                                    distance: segmentResult.distance,
+                                    segmentStart: segmentStart,
+                                    segmentEnd: segmentEnd
+                                });
+                                
+                                // Only need closest point on this main
+                                break;
+                            }
+                        }
+                    });
+                    
+                    // Sort by distance
+                    return nearbyList.sort((a, b) => a.distance - b.distance);
+                }
+                
+                // Function to show the tap modal
+                function showTapModal(mainUtility) {
+                    // Reset and update the tap size field
+                    document.getElementById('tap-size').value = '1';
+                    
+                    // Show the modal
+                    showModal('utility-tap-modal');
+                }
+                
+                // Function to complete a main tap
+                function completeTapConnection() {
+                    if (!tappedMainUtility || !tappedMainPoint || drawingPoints.length === 0) {
+                        isTappingMain = false;
+                        return;
+                    }
+                    
+                    // Get tap size
+                    const tapSize = parseFloat(document.getElementById('tap-size').value) || 1;
+                    
+                    // Update the first point of the drawing to be the tap point
+                    drawingPoints[0] = tappedMainPoint;
+                    
+                    // Update temp line if it exists
+                    if (tempLine) {
+                        tempLine.setLatLngs(drawingPoints);
+                    }
+                    
+                    // Create the utility with connection to main
+                    const serviceUtility = createUtilityLine(
+                        drawingPoints, 
+                        selectedUtilityType, 
+                        'service', 
+                        tappedMainUtility.id
+                    );
+                    
+                    // Update size
+                    serviceUtility.size = tapSize;
+                    if (serviceUtility.line) {
+                        serviceUtility.line.options.size = tapSize;
+                    }
+                    
+                    // Finish drawing
+                    cancelDrawing();
+                    
+                    // Reset tap variables
+                    isTappingMain = false;
+                    tappedMainUtility = null;
+                    tappedMainPoint = null;
+                    
+                    // Update status
+                    updateStatus(`${selectedUtilityType} service connected to main`);
                 }
                 
                 function completeUtilityMapping() {
@@ -2922,10 +3327,15 @@
                         return;
                     }
                     
+                    // Apply a light smoothing to the points for mains
+                    if (selectedLineType === 'main') {
+                        drawingPoints = smoothLinePoints(drawingPoints);
+                    }
+                    
                     // Check for nearby utilities of same type to connect
                     const nearbyUtilities = findNearbyUtilities(drawingPoints[0], selectedUtilityType);
                     
-                    if (nearbyUtilities.length > 0) {
+                    if (nearbyUtilities.length > 0 && selectedLineType === 'main') {
                         // Store for connection modal
                         selectedElement = {
                             type: 'connecting-utility',
@@ -2950,6 +3360,32 @@
                     
                     // Reset drawing state
                     isDrawing = false;
+                }
+                
+                // New function to smooth line points
+                function smoothLinePoints(points) {
+                    if (points.length <= 2) return points;
+                    
+                    // Create a new array for smoothed points
+                    const smoothed = [points[0]]; // Keep first point
+                    
+                    // Apply simple moving average smoothing
+                    for (let i = 1; i < points.length - 1; i++) {
+                        const prev = points[i-1];
+                        const curr = points[i];
+                        const next = points[i+1];
+                        
+                        // Calculate weighted average (current point has more weight)
+                        const avgLat = (prev.lat + curr.lat * 2 + next.lat) / 4;
+                        const avgLng = (prev.lng + curr.lng * 2 + next.lng) / 4;
+                        
+                        smoothed.push(L.latLng(avgLat, avgLng));
+                    }
+                    
+                    // Keep last point
+                    smoothed.push(points[points.length - 1]);
+                    
+                    return smoothed;
                 }
                 
                 function findNearbyUtilities(point, utilityType) {
@@ -3147,9 +3583,9 @@
                     const nearestUtility = nearbyUtilities[0]; // Use closest utility
                     
                     // Different connection logic based on type
-                    if (connectionType === 'continuation') {
+                    if (connectionType === 'snap') {
                         // Smooth connection between lines
-                        const connectedPoints = createContinuationConnection(points, nearestUtility);
+                        const connectedPoints = createSnapConnection(points, nearestUtility);
                         createUtilityLine(connectedPoints, utilityType, lineType, nearestUtility.utility.id);
                     } 
                     else if (connectionType === 'offset') {
@@ -3166,7 +3602,8 @@
                     selectedElement = null;
                 }
                 
-                function createContinuationConnection(newPoints, nearUtility) {
+                // Renamed from createContinuationConnection to createSnapConnection
+                function createSnapConnection(newPoints, nearUtility) {
                     const utility = nearUtility.utility;
                     const connectPoint = nearUtility.connectPoint;
                     
@@ -3554,63 +3991,29 @@
                     // Hide utility info card if open
                     hideUtilityInfo();
                     
+                    // Hide utility action modal if open
+                    document.getElementById('utility-action-modal').style.display = 'none';
+                    
                     // Handle click based on mode and active tool
                     if (activeMode === 'drainage') {
                         if (activeTool === 'add-basin-btn') {
                             addCatchBasin(e.latlng);
                         }
                         else if (activeTool === 'add-pitch-btn') {
-                            if (!isDrawing) {
-                                // Find nearest curb
-                                let nearestCurb = null;
-                                let minDist = Infinity;
-                                
-                                curbs.forEach(curb => {
-                                    const result = nearestPointOnCurb(e.latlng, curb);
-                                    if (result && result.distance < minDist) {
-                                        minDist = result.distance;
-                                        nearestCurb = curb;
-                                    }
-                                });
-                                
-                                // If within 10 meters of a curb, start drawing
-                                if (nearestCurb && minDist <= 10) {
-                                    startCurbPitch(e.latlng, nearestCurb);
-                                } else {
-                                    showNotification('Click on or near a curb to add a pitch');
-                                }
-                            }
-                            else {
-                                // Find nearest point on current drawing curb
-                                const result = nearestPointOnCurb(e.latlng, drawingCurb);
-                                
-                                // Complete drawing if valid point and different from start
-                                if (result && result.distance <= 10 && result.index > drawingStartIndex) {
-                                    completeCurbPitch(result.point, result.index);
-                                }
-                            }
+                            // Just let the curb click handler handle it
+                            // The new two-click process is managed by separate curb handlers
                         }
                     }
                     else if (activeMode === 'utility') {
-                        if (activeTool === 'utility-found-btn') {
-                            addUtilityFound(e.latlng);
-                        }
-                        else if (activeTool === 'mapping-btn') {
-                            // Check if utility type and line type are selected
-                            if (!selectedUtilityType || !selectedLineType) {
-                                showNotification('Select a utility type and line kind first');
-                                return;
-                            }
-                            
-                            if (isDrawing && currentDrawingType === 'utility') {
-                                handleUtilityMappingClick(e.latlng);
-                            }
-                            else {
-                                startUtilityMapping();
-                                // Add first point immediately
-                                handleUtilityMappingClick(e.latlng);
+                        if (activeTool === 'utility-found-btn' || activeTool === 'mapping-btn') {
+                            // Show utility action options at click point
+                            if (selectedUtilityType) {
+                                handleUtilityAction(e.latlng);
+                            } else {
+                                showNotification('Please select a utility type first');
                             }
                         }
+                        // Other utility actions like drawing are handled by the utility action modal handlers
                     }
                 }
                 
@@ -3894,6 +4297,9 @@
                         
                         // Update available curbs
                         showAvailableCurbs();
+                        
+                        // Update curb gaps
+                        showCurbGaps();
                         
                         // Update drainage heatmap
                         updateDrainageHeatmap();
@@ -4223,6 +4629,9 @@
                         // Update available curbs
                         showAvailableCurbs();
                         
+                        // Update gaps
+                        showCurbGaps();
+                        
                         // Update drainage heatmap
                         updateDrainageHeatmap();
                     }
@@ -4285,6 +4694,7 @@
                     // Clear all drainage layers
                     catchBasinsLayer.clearLayers();
                     curbPitchesLayer.clearLayers();
+                    gapCurbLayer.clearLayers(); // Clear the gap layers too
                     
                     // Clear drainage points
                     drainagePoints = [];
@@ -4375,6 +4785,19 @@
                             } else {
                                 if (map.hasLayer(curbAvailableLayer)) {
                                     map.removeLayer(curbAvailableLayer);
+                                }
+                            }
+                        }
+                        else if (layerName === 'gaps') {
+                            if (visible) {
+                                if (!map.hasLayer(gapCurbLayer)) {
+                                    map.addLayer(gapCurbLayer);
+                                }
+                                // Update the gaps display
+                                showCurbGaps();
+                            } else {
+                                if (map.hasLayer(gapCurbLayer)) {
+                                    map.removeLayer(gapCurbLayer);
                                 }
                             }
                         }
@@ -4470,6 +4893,9 @@
                         if (document.getElementById('pitches-toggle').checked) {
                             map.addLayer(curbPitchesLayer);
                         }
+                        if (document.getElementById('gaps-toggle').checked) {
+                            map.addLayer(gapCurbLayer);
+                        }
                         if (document.getElementById('available-curbs-toggle').checked) {
                             map.addLayer(curbAvailableLayer);
                         }
@@ -4484,6 +4910,9 @@
                         
                         // Generate curb availability areas if not already done
                         showAvailableCurbs();
+                        
+                        // Show gaps between pitches
+                        showCurbGaps();
                         
                         // Update drainage heatmap if needed
                         if (!drainageHeatmapLayer) {
@@ -4502,6 +4931,7 @@
                         map.removeLayer(catchBasinsLayer);
                         map.removeLayer(curbPitchesLayer);
                         map.removeLayer(curbAvailableLayer);
+                        map.removeLayer(gapCurbLayer);
                         if (drainageHeatmapLayer) {
                             map.removeLayer(drainageHeatmapLayer);
                         }
@@ -4537,12 +4967,15 @@
                         document.getElementById(toolId).classList.add('active');
                     }
                     
+                    // Reset pitch drawing step
+                    pitchDrawingStep = 0;
+                    
                     // Update status based on selected tool
                     if (activeMode === 'drainage') {
                         if (toolId === 'add-basin-btn') {
                             updateStatus('Click to add a catch basin');
                         } else if (toolId === 'add-pitch-btn') {
-                            updateStatus('Click on a curb to add a pitch');
+                            updateStatus('Click on a curb to start a pitch line, then click again to complete it');
                         } else if (toolId === 'edit-pitch-btn') {
                             updateStatus('Click on a pitch to edit it');
                         } else {
@@ -4550,18 +4983,12 @@
                         }
                     } 
                     else if (activeMode === 'utility') {
-                        if (toolId === 'utility-found-btn') {
-                            updateStatus('Click to mark a utility that was found');
-                        } else if (toolId === 'mapping-btn') {
-                            if (selectedUtilityType && selectedLineType) {
-                                updateStatus(`Click to start mapping a ${selectedUtilityType} ${selectedLineType}`);
-                            } else {
-                                updateStatus('Select a utility type first');
-                            }
+                        if (toolId === 'utility-found-btn' || toolId === 'mapping-btn') {
+                            updateStatus('Click on the map to select action');
                         } else if (['water-btn', 'gas-btn', 'electric-btn', 'sewer-btn', 'telecom-btn'].includes(toolId)) {
                             // Set selected utility type
                             selectedUtilityType = toolId.replace('-btn', '');
-                            updateStatus(`Selected ${selectedUtilityType}. Now choose 'Found' or 'Map'`);
+                            updateStatus(`Selected ${selectedUtilityType}. Now click to add/map utility`);
                         } else {
                             updateStatus('Select a tool to begin');
                         }
@@ -4582,6 +5009,7 @@
                     drawingStartIndex = 0;
                     nearestValidPoint = null;
                     currentDrawingType = null;
+                    pitchDrawingStep = 0;
                     
                     // Hide cancel drawing button
                     document.getElementById('cancel-drawing-btn').style.display = 'none';
@@ -4967,6 +5395,10 @@
                         toggleLayer('available-curbs', this.checked);
                     });
                     
+                    document.getElementById('gaps-toggle').addEventListener('change', function() {
+                        toggleLayer('gaps', this.checked);
+                    });
+                    
                     document.getElementById('heatmap-toggle').addEventListener('change', function() {
                         toggleLayer('heatmap', this.checked);
                     });
@@ -5148,12 +5580,8 @@
                             });
                             this.classList.add('selected');
                             
-                            // Show/hide pitch options
-                            if (option === 'add-pitch') {
-                                document.getElementById('add-pitch-option').style.display = 'block';
-                            } else {
-                                document.getElementById('add-pitch-option').style.display = 'none';
-                            }
+                            // Show/hide appropriate options based on selection
+                            showSelectedGapOption(option);
                         });
                     });
                     
@@ -5178,6 +5606,17 @@
                     document.getElementById('gap-decrease-pitch').addEventListener('click', function() {
                         pitchPercent = Math.max(0.1, pitchPercent - 0.1);
                         document.getElementById('gap-pitch-value').textContent = pitchPercent.toFixed(1) + '%';
+                    });
+                    
+                    // Highpoint controls
+                    document.getElementById('highpoint-increase-pitch').addEventListener('click', function() {
+                        highpointPercent = Math.min(10, highpointPercent + 0.1);
+                        document.getElementById('highpoint-pitch-value').textContent = highpointPercent.toFixed(1) + '%';
+                    });
+                    
+                    document.getElementById('highpoint-decrease-pitch').addEventListener('click', function() {
+                        highpointPercent = Math.max(0.1, highpointPercent - 0.1);
+                        document.getElementById('highpoint-pitch-value').textContent = highpointPercent.toFixed(1) + '%';
                     });
                     
                     document.getElementById('cancel-gap-btn').addEventListener('click', function() {
@@ -5223,6 +5662,17 @@
                                     const nextPitch = selectedElement.nextPitch;
                                     
                                     createTransitionPitch(prevPitch, nextPitch, startIndex, endIndex, curb);
+                                }
+                                else if (optionType === 'highpoint') {
+                                    // Get highpoint position from slider
+                                    const position = parseInt(document.getElementById('highpoint-position').value);
+                                    
+                                    // Create highpoint with bidirectional flow
+                                    const curb = selectedElement.curb;
+                                    const startIndex = selectedElement.startIndex;
+                                    const endIndex = selectedElement.endIndex;
+                                    
+                                    createHighpointPitch(curb, startIndex, endIndex, highpointPercent, position);
                                 }
                             }
                         }
@@ -5289,8 +5739,53 @@
                         }
                     });
                     
+                    // Tap modal handlers
+                    document.getElementById('cancel-tap-btn').addEventListener('click', function() {
+                        hideModal('utility-tap-modal');
+                        isTappingMain = false;
+                        tappedMainUtility = null;
+                        tappedMainPoint = null;
+                        
+                        // Continue with normal drawing
+                        if (drawingPoints.length > 0) {
+                            createUtilityLine(drawingPoints, selectedUtilityType, selectedLineType);
+                        }
+                        
+                        // Cancel drawing
+                        cancelDrawing();
+                    });
+                    
+                    document.getElementById('confirm-tap-btn').addEventListener('click', function() {
+                        hideModal('utility-tap-modal');
+                        completeTapConnection();
+                    });
+                    
+                    // Utility action modal handlers
+                    document.getElementById('map-utility-option').addEventListener('click', function() {
+                        document.getElementById('utility-action-modal').style.display = 'none';
+                        
+                        // Start utility mapping
+                        startUtilityMapping();
+                    });
+                    
+                    document.getElementById('found-utility-option').addEventListener('click', function() {
+                        document.getElementById('utility-action-modal').style.display = 'none';
+                        
+                        if (tempUtilityLocation) {
+                            // Show utility found modal
+                            addUtilityFound(tempUtilityLocation);
+                        }
+                    });
+                    
                     // Handle document clicks to close context menu
                     document.addEventListener('click', function(e) {
+                        // Close utility action modal if clicking outside
+                        const actionModal = document.getElementById('utility-action-modal');
+                        if (e.target.closest('#utility-action-modal') === null && 
+                            actionModal.style.display === 'block') {
+                            actionModal.style.display = 'none';
+                        }
+                        
                         // Close context menu if clicking outside
                         const contextMenu = document.getElementById('context-menu');
                         if (e.target.closest('#context-menu') === null && 
@@ -5334,6 +5829,9 @@
                             
                             // Close utility info if open
                             hideUtilityInfo();
+                            
+                            // Close utility action modal if open
+                            document.getElementById('utility-action-modal').style.display = 'none';
                             
                             // Close all modals
                             document.querySelectorAll('.modal').forEach(modal => {
