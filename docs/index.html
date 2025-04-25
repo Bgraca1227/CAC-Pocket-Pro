@@ -7,8 +7,6 @@
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <!-- Leaflet Heat plugin -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js" />
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     
@@ -1537,14 +1535,36 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for splash screen
-            setTimeout(() => {
-                document.querySelector('.splash-screen').style.opacity = 0;
-                setTimeout(() => {
-                    document.querySelector('.splash-screen').style.display = 'none';
-                    initApp();
-                }, 500);
-            }, 2000);
+            // Wait for splash screen with a minimum timeout but also check for resources
+            let resourcesLoaded = false;
+            
+            // Check when all resources are loaded
+            window.addEventListener('load', function() {
+                resourcesLoaded = true;
+                trySplashScreenDismiss();
+            });
+            
+            // Set minimum timeout for splash screen
+            setTimeout(function() {
+                if (resourcesLoaded) {
+                    trySplashScreenDismiss();
+                } else {
+                    // If resources aren't loaded yet, we'll wait for the load event
+                    // but set a maximum timeout anyway
+                    setTimeout(trySplashScreenDismiss, 1000);
+                }
+            }, 1000);
+            
+            function trySplashScreenDismiss() {
+                const splashScreen = document.querySelector('.splash-screen');
+                if (splashScreen.style.opacity !== '0') {
+                    splashScreen.style.opacity = 0;
+                    setTimeout(() => {
+                        splashScreen.style.display = 'none';
+                        initApp();
+                    }, 500);
+                }
+            }
 
             function initApp() {
                 // Initialize variables
@@ -1553,6 +1573,8 @@
                 let activeTool = null;
                 let selectedUtilityType = 'water';
                 let selectedLineType = 'service';
+                // Limit undo stack size
+                const MAX_UNDO_STACK_SIZE = 100;
                 let undoStack = [];
                 let isDrawing = false;
                 let tempLine = null;
@@ -1563,6 +1585,11 @@
                 let selectedBorough = null;
                 let nearestValidPoint = null;
                 let isSnapping = true;
+                // Added missing variable declarations
+                let drawingCurb = null;
+                let drawingStartIndex = 0;
+                let tempUtilityLocation = null;
+                let currentDrawingType = null;
                 
                 // Drainage layers
                 let catchBasinsLayer = L.layerGroup();
@@ -1584,6 +1611,12 @@
                     sewer: [],
                     telecom: []
                 };
+                
+                // Clear any previous map instances to prevent memory leaks
+                if (map) {
+                    map.remove();
+                    map = null;
+                }
                 
                 // Initialize map
                 initMap();
@@ -1659,6 +1692,9 @@
                     // Overpass API endpoint
                     const overpassUrl = "https://overpass-api.de/api/interpreter";
                     
+                    // Show loading overlay
+                    document.querySelector('.loading-overlay').style.display = 'flex';
+                    
                     fetch(overpassUrl, {
                         method: 'POST',
                         headers: {
@@ -1668,18 +1704,32 @@
                     })
                     .then(response => {
                         if (!response.ok) {
-                            throw new Error('Network response was not ok');
+                            throw new Error(`Network response error: ${response.status} ${response.statusText}`);
                         }
                         return response.json();
                     })
                     .then(data => {
+                        // Hide loading overlay
+                        document.querySelector('.loading-overlay').style.display = 'none';
+                        
                         if (data && data.elements) {
                             processRoadData(data.elements);
+                        } else {
+                            throw new Error('Invalid data format received from Overpass API');
                         }
                     })
                     .catch(error => {
                         console.error('Error fetching road data:', error);
-                        updateStatus('Failed to load street data.');
+                        updateStatus('Failed to load street data. Try again later.');
+                        showNotification('Error loading streets: ' + error.message);
+                        
+                        // Hide loading overlay
+                        document.querySelector('.loading-overlay').style.display = 'none';
+                        
+                        // Try to recover by showing past streets if available
+                        if (streets.length > 0) {
+                            showAvailableCurbs();
+                        }
                     });
                 }
                 
@@ -1698,20 +1748,24 @@
                     elements.forEach(element => {
                         if (element.type === 'way' && element.tags && element.tags.highway && roadTypes.includes(element.tags.highway)) {
                             if (element.geometry && element.geometry.length > 1) {
-                                // Convert geometry to LatLng array
-                                const latlngs = element.geometry.map(node => [node.lat, node.lon]);
-                                
-                                // Add to streets array
-                                streets.push({
-                                    id: element.id,
-                                    latlngs: latlngs,
-                                    type: element.tags.highway
-                                });
-                                
-                                // Generate curb lines on both sides
-                                createCurbLines(latlngs, element.id);
-                                
-                                validRoads++;
+                                try {
+                                    // Convert geometry to LatLng array
+                                    const latlngs = element.geometry.map(node => [node.lat, node.lon]);
+                                    
+                                    // Add to streets array
+                                    streets.push({
+                                        id: element.id,
+                                        latlngs: latlngs,
+                                        type: element.tags.highway
+                                    });
+                                    
+                                    // Generate curb lines on both sides
+                                    createCurbLines(latlngs, element.id);
+                                    
+                                    validRoads++;
+                                } catch (err) {
+                                    console.error('Error processing road element:', err, element);
+                                }
                             }
                         }
                         
@@ -1732,7 +1786,7 @@
                                     updateDrainageHeatmap();
                                 }
                             } else {
-                                updateStatus('No valid streets found.');
+                                updateStatus('No valid streets found. Try zooming in more.');
                             }
                         }
                     });
@@ -1768,44 +1822,52 @@
                 
                 // Calculate curb offset points
                 function curbOffsetPoints(streetPts, meters) {
-                    return streetPts.map((p, i, arr) => {
-                        if (i === arr.length - 1) return null;
+                    try {
+                        const validPoints = streetPts.filter(pt => pt && pt.length === 2);
+                        if (validPoints.length < 2) return [];
                         
-                        // Convert points to screen coordinates for better accuracy
-                        const a = map.latLngToLayerPoint(L.latLng(arr[i]));
-                        const b = map.latLngToLayerPoint(L.latLng(arr[i + 1]));
-                        
-                        // Calculate normalized direction vector
-                        const dx = b.x - a.x;
-                        const dy = b.y - a.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        
-                        if (dist === 0) return null;
-                        
-                        // Normalize direction vector
-                        const nx = dx / dist;
-                        const ny = dy / dist;
-                        
-                        // Calculate perpendicular vector
-                        const perpX = -ny;
-                        const perpY = nx;
-                        
-                        // Calculate offset in pixels (approx. 3 pixels per meter at zoom level 19)
-                        const pixelsPerMeter = 3;
-                        const offsetPixels = meters * pixelsPerMeter;
-                        
-                        // Apply offset
-                        const leftX = a.x + perpX * offsetPixels;
-                        const leftY = a.y + perpY * offsetPixels;
-                        const rightX = a.x - perpX * offsetPixels;
-                        const rightY = a.y - perpY * offsetPixels;
-                        
-                        // Convert back to lat/lng
-                        const leftLatLng = map.layerPointToLatLng(L.point(leftX, leftY));
-                        const rightLatLng = map.layerPointToLatLng(L.point(rightX, rightY));
-                        
-                        return [leftLatLng, rightLatLng];
-                    }).filter(Boolean); // Remove null values
+                        return validPoints.map((p, i, arr) => {
+                            if (i === arr.length - 1) return null;
+                            
+                            // Convert points to screen coordinates for better accuracy
+                            const a = map.latLngToLayerPoint(L.latLng(arr[i]));
+                            const b = map.latLngToLayerPoint(L.latLng(arr[i + 1]));
+                            
+                            // Calculate normalized direction vector
+                            const dx = b.x - a.x;
+                            const dy = b.y - a.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (dist === 0) return null;
+                            
+                            // Normalize direction vector
+                            const nx = dx / dist;
+                            const ny = dy / dist;
+                            
+                            // Calculate perpendicular vector
+                            const perpX = -ny;
+                            const perpY = nx;
+                            
+                            // Calculate offset in pixels (approx. 3 pixels per meter at zoom level 19)
+                            const pixelsPerMeter = 3;
+                            const offsetPixels = meters * pixelsPerMeter;
+                            
+                            // Apply offset
+                            const leftX = a.x + perpX * offsetPixels;
+                            const leftY = a.y + perpY * offsetPixels;
+                            const rightX = a.x - perpX * offsetPixels;
+                            const rightY = a.y - perpY * offsetPixels;
+                            
+                            // Convert back to lat/lng
+                            const leftLatLng = map.layerPointToLatLng(L.point(leftX, leftY));
+                            const rightLatLng = map.layerPointToLatLng(L.point(rightX, rightY));
+                            
+                            return [leftLatLng, rightLatLng];
+                        }).filter(Boolean); // Remove null values
+                    } catch (err) {
+                        console.error('Error calculating curb offsets:', err);
+                        return [];
+                    }
                 }
                 
                 function showAvailableCurbs() {
@@ -1954,6 +2016,9 @@
                         option.classList.remove('selected');
                     });
                     
+                    // Select first option by default
+                    document.querySelector('#gap-pitch-modal .connection-option').classList.add('selected');
+                    
                     // Hide pitch options initially
                     document.getElementById('add-pitch-option').style.display = 'none';
                     
@@ -1972,6 +2037,7 @@
                     drawingPoints = [result.point];
                     drawingCurb = curb;
                     drawingStartIndex = result.index;
+                    currentDrawingType = 'pitch';
                     
                     // Create temporary line
                     tempLine = L.polyline([result.point, result.point], {
@@ -2029,6 +2095,9 @@
                         type: 'new-pitch',
                         pitchData: pitchData
                     };
+                    
+                    // Hide cancel drawing button as we're done drawing
+                    document.getElementById('cancel-drawing-btn').style.display = 'none';
                 }
                 
                 function finalizeCurbPitch(pitchData) {
@@ -2100,7 +2169,7 @@
                         endIndex: endIndex,
                         points: points,
                         angle: calculateTransitionAngle(startPitch, endPitch),
-                        percent: (startPitch.percent + endPitch.percent) / 2
+                        percent: (startPitch?.percent || 0 + endPitch?.percent || 0) / 2
                     };
                     
                     // Finalize the pitch
@@ -2109,8 +2178,8 @@
                 
                 function calculateTransitionAngle(startPitch, endPitch) {
                     // If one pitch is null, use the other's angle
-                    if (!startPitch) return endPitch.angle;
-                    if (!endPitch) return startPitch.angle;
+                    if (!startPitch) return endPitch ? endPitch.angle : 0;
+                    if (!endPitch) return startPitch ? startPitch.angle : 0;
                     
                     // Calculate angle between the two pitches
                     const angleDiff = endPitch.angle - startPitch.angle;
@@ -2251,7 +2320,9 @@
                     
                     // Add points along curbs
                     curbs.forEach(curb => {
-                        for (let i = 0; i < curb.latlngs.length; i += 3) { // Add points every 3rd vertex for performance
+                        // Use fewer points for better performance
+                        const step = Math.max(1, Math.floor(curb.latlngs.length / 20));
+                        for (let i = 0; i < curb.latlngs.length; i += step) {
                             const point = curb.latlngs[i];
                             points.push([point.lat, point.lng, 0.5]); // Initial intensity 0.5
                         }
@@ -2263,35 +2334,57 @@
                 function updateDrainageHeatmap() {
                     if (!drainageHeatmapLayer) return;
                     
-                    // Remove the old heatmap layer
-                    map.removeLayer(drainageHeatmapLayer);
+                    // If already calculating, don't start again
+                    if (updateDrainageHeatmap.isUpdating) return;
+                    updateDrainageHeatmap.isUpdating = true;
                     
-                    // Generate new heatpoints with updated intensities
-                    let heatPoints = calculateDrainageIntensities();
-                    
-                    // Create a new heatmap layer
-                    drainageHeatmapLayer = L.heatLayer(heatPoints, {
-                        radius: 25,
-                        blur: 15,
-                        maxZoom: 17,
-                        gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red'}
+                    // Use requestAnimationFrame to avoid blocking the main thread
+                    requestAnimationFrame(() => {
+                        try {
+                            // Generate new heatpoints with updated intensities
+                            let heatPoints = calculateDrainageIntensities();
+                            
+                            // Only recreate if there's a visible change in the data
+                            const visible = document.getElementById('heatmap-toggle').checked;
+                            
+                            // Remove the old heatmap layer
+                            if (map.hasLayer(drainageHeatmapLayer)) {
+                                map.removeLayer(drainageHeatmapLayer);
+                            }
+                            
+                            // Create a new heatmap layer
+                            drainageHeatmapLayer = L.heatLayer(heatPoints, {
+                                radius: 25,
+                                blur: 15,
+                                maxZoom: 17,
+                                gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red'}
+                            });
+                            
+                            // Add the layer if heatmap toggle is on
+                            if (visible) {
+                                drainageHeatmapLayer.addTo(map);
+                            }
+                        } catch (err) {
+                            console.error('Error updating drainage heatmap:', err);
+                        } finally {
+                            updateDrainageHeatmap.isUpdating = false;
+                        }
                     });
-                    
-                    // Add the layer if heatmap toggle is on
-                    if (document.getElementById('heatmap-toggle').checked) {
-                        drainageHeatmapLayer.addTo(map);
-                    }
                 }
+                updateDrainageHeatmap.isUpdating = false;
                 
                 function calculateDrainageIntensities() {
                     let heatPoints = [];
                     
-                    // Create base heatmap grid
+                    // Create base heatmap grid - more efficiently
                     const bounds = map.getBounds();
                     const southWest = bounds.getSouthWest();
                     const northEast = bounds.getNorthEast();
-                    const latStep = (northEast.lat - southWest.lat) / 50;
-                    const lngStep = (northEast.lng - southWest.lng) / 50;
+                    
+                    // Use grid based on zoom level for performance
+                    const gridSize = 30;
+                    const latStep = (northEast.lat - southWest.lat) / gridSize;
+                    const lngStep = (northEast.lng - southWest.lng) / gridSize;
                     
                     // Get catch basin positions
                     const basins = drainagePoints.filter(p => p.type === 'basin')
@@ -2302,6 +2395,8 @@
                     curbs.forEach(curb => {
                         curb.pitches.forEach(pitch => {
                             const line = pitch.line;
+                            if (!line) return;
+                            
                             const points = line.getLatLngs();
                             const angle = pitch.angle;
                             
@@ -2313,7 +2408,7 @@
                         });
                     });
                     
-                    // Generate grid points
+                    // Generate grid points with optimized calculations
                     for (let lat = southWest.lat; lat <= northEast.lat; lat += latStep) {
                         for (let lng = southWest.lng; lng <= northEast.lng; lng += lngStep) {
                             // Calculate a drainage intensity based on:
@@ -2325,35 +2420,43 @@
                             
                             // Reduce intensity near catch basins
                             if (basins.length > 0) {
-                                const basinDistances = basins.map(b => map.distance(point, b));
-                                const nearestBasinDist = Math.min(...basinDistances);
+                                let minDist = Infinity;
+                                for (const basin of basins) {
+                                    const dist = map.distance(point, basin);
+                                    if (dist < minDist) {
+                                        minDist = dist;
+                                    }
+                                }
                                 
                                 // Normalize distance (max effect within 50 meters)
-                                const normalizedDist = Math.min(nearestBasinDist, 50) / 50;
+                                const normalizedDist = Math.min(minDist, 50) / 50;
                                 intensity = normalizedDist; // Closer basin = lower intensity
                             }
                             
-                            // Adjust for pitch directions - if water flows away from a basin, it increases flooding
-                            pitchData.forEach(pitch => {
+                            // Only check nearby pitches for efficiency
+                            let pitchInfluences = 0;
+                            for (const pitch of pitchData) {
+                                // Quick check if point is in the bounding box of pitch points
                                 const nearestPitchPoint = nearestPointOnLine(point, pitch.points);
                                 if (nearestPitchPoint.distance < 25) { // Only consider close pitches
                                     // Get direction from nearest point to basin
                                     let flowsToBasin = flowsTowardsBasin(nearestPitchPoint.point, pitch.angle, basins);
                                     
                                     // Adjust intensity based on flow direction and pitch percentage
+                                    const pitchEffect = 0.1 * (pitch.percent / 2);
                                     if (flowsToBasin) {
-                                        intensity -= 0.1 * (pitch.percent / 2); // Reduce flooding if flowing to basin
+                                        intensity -= pitchEffect; // Reduce flooding if flowing to basin
                                     } else {
-                                        intensity += 0.1 * (pitch.percent / 2); // Increase flooding if flowing away
+                                        intensity += pitchEffect; // Increase flooding if flowing away
                                     }
+                                    pitchInfluences++;
                                 }
-                            });
+                            }
                             
-                            // Constrain intensity between 0 and 1
-                            intensity = Math.max(0, Math.min(1, intensity));
-                            
-                            // Add point to heatmap if intensity is significant
-                            if (intensity > 0.1) {
+                            // Only calculate for areas with notable drainage effects
+                            if (basins.length > 0 || pitchInfluences > 0) {
+                                // Constrain intensity between 0.1 and 1
+                                intensity = Math.max(0.1, Math.min(1, intensity));
                                 heatPoints.push([lat, lng, intensity]);
                             }
                         }
@@ -2363,25 +2466,29 @@
                 }
                 
                 function flowsTowardsBasin(point, angle, basins) {
-                    if (basins.length === 0) return false;
+                    if (!basins || basins.length === 0) return false;
                     
                     // Find the nearest basin
                     let nearestBasin = null;
                     let minDist = Infinity;
                     
-                    basins.forEach(basin => {
+                    for (const basin of basins) {
                         const dist = map.distance(point, basin);
                         if (dist < minDist) {
                             minDist = dist;
                             nearestBasin = basin;
                         }
-                    });
+                    }
                     
                     if (!nearestBasin) return false;
                     
                     // Calculate angle to basin (0 is North, clockwise)
                     const dx = nearestBasin.lng - point.lng;
                     const dy = nearestBasin.lat - point.lat;
+                    
+                    // Prevent division by zero
+                    if (Math.abs(dx) < 1e-10 && Math.abs(dy) < 1e-10) return true;
+                    
                     const angleToBain = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
                     
                     // Compare with pitch angle (within 45 degrees is considered flowing towards)
@@ -2392,6 +2499,13 @@
                 }
                 
                 function nearestPointOnLine(point, linePoints) {
+                    if (!linePoints || linePoints.length < 2) {
+                        return {
+                            point: point,
+                            distance: Infinity
+                        };
+                    }
+                    
                     let minDist = Infinity;
                     let nearestPoint = null;
                     
@@ -2404,50 +2518,67 @@
                     }
                     
                     return {
-                        point: nearestPoint,
+                        point: nearestPoint || linePoints[0],
                         distance: minDist
                     };
                 }
                 
                 function projectOnSegment(point, start, end) {
-                    // Convert to layer points (screen pixels) for more accurate calculation
-                    const lp = map.latLngToLayerPoint(point);
-                    const ls = map.latLngToLayerPoint(start);
-                    const le = map.latLngToLayerPoint(end);
-                    
-                    // Calculate vector from start to end
-                    const v = L.point(le.x - ls.x, le.y - ls.y);
-                    
-                    // Calculate vector from start to point
-                    const w = L.point(lp.x - ls.x, lp.y - ls.y);
-                    
-                    // Calculate projection scalar
-                    const c1 = w.x * v.x + w.y * v.y;
-                    const c2 = v.x * v.x + v.y * v.y;
-                    
-                    // Calculate normalized projection (clamped to [0,1])
-                    const t = c2 === 0 ? 0 : Math.max(0, Math.min(1, c1 / c2));
-                    
-                    // Calculate projected point
-                    const px = ls.x + t * v.x;
-                    const py = ls.y + t * v.y;
-                    const projPoint = L.point(px, py);
-                    
-                    // Calculate distance in pixels
-                    const distPx = Math.sqrt(Math.pow(lp.x - px, 2) + Math.pow(lp.y - py, 2));
-                    
-                    // Convert back to latlng for distance calculation
-                    const projLatLng = map.layerPointToLatLng(projPoint);
-                    const distance = map.distance(point, projLatLng);
-                    
-                    // Return result
-                    return {
-                        point: projLatLng,
-                        distance: distance
-                    };
+                    try {
+                        // Convert to layer points (screen pixels) for more accurate calculation
+                        const lp = map.latLngToLayerPoint(point);
+                        const ls = map.latLngToLayerPoint(start);
+                        const le = map.latLngToLayerPoint(end);
+                        
+                        // Calculate vector from start to end
+                        const v = L.point(le.x - ls.x, le.y - ls.y);
+                        
+                        // Calculate vector from start to point
+                        const w = L.point(lp.x - ls.x, lp.y - ls.y);
+                        
+                        // Calculate projection scalar
+                        const c1 = w.x * v.x + w.y * v.y;
+                        const c2 = v.x * v.x + v.y * v.y;
+                        
+                        // Handle zero-length segments
+                        if (c2 === 0) {
+                            return {
+                                point: start,
+                                distance: map.distance(point, start)
+                            };
+                        }
+                        
+                        // Calculate normalized projection (clamped to [0,1])
+                        const t = Math.max(0, Math.min(1, c1 / c2));
+                        
+                        // Calculate projected point
+                        const px = ls.x + t * v.x;
+                        const py = ls.y + t * v.y;
+                        const projPoint = L.point(px, py);
+                        
+                        // Convert back to latlng for distance calculation
+                        const projLatLng = map.layerPointToLatLng(projPoint);
+                        const distance = map.distance(point, projLatLng);
+                        
+                        // Return result
+                        return {
+                            point: projLatLng,
+                            distance: distance
+                        };
+                    } catch (err) {
+                        console.error('Error in projectOnSegment:', err);
+                        return {
+                            point: start,
+                            distance: map.distance(point, start)
+                        };
+                    }
                 }
                 
                 function nearestPointOnCurb(point, curb) {
+                    if (!curb || !curb.latlngs || curb.latlngs.length < 2) {
+                        return null;
+                    }
+                    
                     let minDist = Infinity;
                     let nearestPoint = null;
                     let nearestIndex = 0;
@@ -2478,6 +2609,11 @@
                     document.getElementById('utility-direction-arrow').style.transform = `rotate(${directionAngle}deg)`;
                     document.getElementById('utility-direction-angle').textContent = `${directionAngle}°`;
                     
+                    // Set default utility type to match selected utility type button
+                    if (selectedUtilityType) {
+                        document.getElementById('utility-type').value = selectedUtilityType;
+                    }
+                    
                     // Show direction input modal
                     showModal('utility-found-modal');
                 }
@@ -2486,8 +2622,8 @@
                     // Get form values
                     const utilityType = document.getElementById('utility-type').value;
                     const lineType = document.querySelector('input[name="line-type"]:checked').value;
-                    const size = document.getElementById('utility-size').value;
-                    const depth = document.getElementById('utility-depth').value;
+                    const size = parseFloat(document.getElementById('utility-size').value) || 4;
+                    const depth = parseFloat(document.getElementById('utility-depth').value) || 3;
                     
                     // Get utility colors
                     const colors = {
@@ -2539,13 +2675,22 @@
                             // Store media with utility
                             marker.mediaData = mediaData;
                             line.mediaData = mediaData;
+                            
+                            // Also update the utility data in our collection
+                            const utility = utilities[utilityType].find(u => u.id === utilityId);
+                            if (utility) {
+                                utility.mediaData = mediaData;
+                            }
                         };
                         reader.readAsDataURL(mediaInput.files[0]);
                     }
                     
+                    // Generate a unique ID for the utility
+                    const utilityId = 'utility-' + Date.now();
+                    
                     // Store utility data
                     const utilityData = {
-                        id: 'utility-' + Date.now(),
+                        id: utilityId,
                         type: utilityType,
                         lineType: lineType,
                         size: size,
@@ -2590,7 +2735,7 @@
                         line.setLatLngs([newPos, newEndPoint]);
                         
                         // Update utility data
-                        const utility = utilities[utilityType].find(u => u.id === utilityData.id);
+                        const utility = utilities[utilityType].find(u => u.id === utilityId);
                         if (utility) {
                             utility.points = [newPos, newEndPoint];
                         }
@@ -2598,6 +2743,9 @@
                     
                     // Reset the media input
                     mediaInput.value = '';
+                    
+                    // Clear tempUtilityLocation
+                    tempUtilityLocation = null;
                     
                     // Update status
                     updateStatus(`${utilityType} ${lineType} added`);
@@ -2674,6 +2822,9 @@
                         tempLine = null;
                     }
                     
+                    // Hide cancel drawing button
+                    document.getElementById('cancel-drawing-btn').style.display = 'none';
+                    
                     // Need at least 2 points
                     if (drawingPoints.length < 2) {
                         isDrawing = false;
@@ -2694,6 +2845,12 @@
                             nearbyUtilities: nearbyUtilities
                         };
                         
+                        // Select first option by default
+                        document.querySelectorAll('#utility-connection-modal .connection-option').forEach(option => {
+                            option.classList.remove('selected');
+                        });
+                        document.querySelector('#utility-connection-modal .connection-option').classList.add('selected');
+                        
                         // Show connection options
                         showModal('utility-connection-modal');
                     } else {
@@ -2713,6 +2870,8 @@
                     utilities[utilityType].forEach(utility => {
                         // For each end point of the utility line
                         const utilityPoints = utility.points;
+                        if (!utilityPoints || utilityPoints.length < 2) return;
+                        
                         const startPoint = utilityPoints[0];
                         const endPoint = utilityPoints[utilityPoints.length - 1];
                         
@@ -2755,6 +2914,14 @@
                 }
                 
                 function nearestPointOnPolyline(point, polyline) {
+                    if (!polyline || polyline.length < 2) {
+                        return {
+                            point: point,
+                            index: 0,
+                            distance: Infinity
+                        };
+                    }
+                    
                     let minDist = Infinity;
                     let nearestPoint = null;
                     let segmentIndex = 0;
@@ -2769,7 +2936,7 @@
                     }
                     
                     return {
-                        point: nearestPoint,
+                        point: nearestPoint || polyline[0],
                         index: segmentIndex,
                         distance: minDist
                     };
@@ -2806,9 +2973,12 @@
                     line.utilityMarker = marker;
                     marker.utilityLine = line;
                     
+                    // Generate a unique ID
+                    const utilityId = 'utility-' + Date.now();
+                    
                     // Create utility data object
                     const utilityData = {
-                        id: 'utility-' + Date.now(),
+                        id: utilityId,
                         type: utilityType,
                         lineType: lineType,
                         size: 4, // Default size
@@ -2853,6 +3023,9 @@
                         utilityData.points = linePoints;
                     });
                     
+                    // Update status
+                    updateStatus(`${utilityType} ${lineType} added`);
+                    
                     return utilityData;
                 }
                 
@@ -2860,6 +3033,13 @@
                     if (!selectedElement || selectedElement.type !== 'connecting-utility') return;
                     
                     const { points, utilityType, lineType, nearbyUtilities } = selectedElement;
+                    
+                    // Check if there are any nearby utilities
+                    if (!nearbyUtilities || nearbyUtilities.length === 0) {
+                        createUtilityLine(points, utilityType, lineType);
+                        return;
+                    }
+                    
                     const nearestUtility = nearbyUtilities[0]; // Use closest utility
                     
                     // Different connection logic based on type
@@ -2885,6 +3065,10 @@
                 function createContinuationConnection(newPoints, nearUtility) {
                     const utility = nearUtility.utility;
                     const connectPoint = nearUtility.connectPoint;
+                    
+                    if (!utility || !utility.points || utility.points.length < 2) {
+                        return newPoints;
+                    }
                     
                     if (connectPoint === 'start') {
                         // Connect to start of existing utility
@@ -2919,6 +3103,10 @@
                     const utility = nearUtility.utility;
                     const connectPoint = nearUtility.connectPoint;
                     
+                    if (!utility || !utility.points || utility.points.length < 2) {
+                        return newPoints;
+                    }
+                    
                     if (connectPoint === 'start') {
                         // Direct connection to start
                         const startPoint = utility.points[0];
@@ -2945,49 +3133,66 @@
                 }
                 
                 function smoothConnectPoints(points1, points2) {
-                    // Get the first few points from each set
-                    const start1 = points1[0];
-                    const next1 = points1[1];
-                    const start2 = points2[0];
-                    const next2 = points2[1];
-                    
-                    // Calculate the vectors at each end
-                    const vec1 = {
-                        x: next1.lng - start1.lng,
-                        y: next1.lat - start1.lat
-                    };
-                    
-                    const vec2 = {
-                        x: next2.lng - start2.lng,
-                        y: next2.lat - start2.lat
-                    };
-                    
-                    // Calculate the average vector
-                    const avgVec = {
-                        x: (vec1.x + vec2.x) / 2,
-                        y: (vec1.y + vec2.y) / 2
-                    };
-                    
-                    // Normalize the average vector
-                    const length = Math.sqrt(avgVec.x * avgVec.x + avgVec.y * avgVec.y);
-                    avgVec.x /= length;
-                    avgVec.y /= length;
-                    
-                    // Calculate the smooth connection point
-                    const connPoint = L.latLng(
-                        start1.lat - avgVec.y * 0.0001, // Small offset for smooth transition
-                        start1.lng - avgVec.x * 0.0001
-                    );
-                    
-                    // Combine points with the connecting point
-                    const combinedPoints = [connPoint];
-                    
-                    // Add remaining points from points1
-                    for (let i = 0; i < points1.length; i++) {
-                        combinedPoints.push(points1[i]);
+                    if (!points1 || points1.length < 2 || !points2 || points2.length < 2) {
+                        return points1;
                     }
                     
-                    return combinedPoints;
+                    try {
+                        // Get the first few points from each set
+                        const start1 = points1[0];
+                        const next1 = points1[1];
+                        const start2 = points2[0];
+                        const next2 = points2[1];
+                        
+                        // Calculate the vectors at each end
+                        const vec1 = {
+                            x: next1.lng - start1.lng,
+                            y: next1.lat - start1.lat
+                        };
+                        
+                        const vec2 = {
+                            x: next2.lng - start2.lng,
+                            y: next2.lat - start2.lat
+                        };
+                        
+                        // Calculate the average vector
+                        const avgVec = {
+                            x: (vec1.x + vec2.x) / 2,
+                            y: (vec1.y + vec2.y) / 2
+                        };
+                        
+                        // Normalize the average vector
+                        const length = Math.sqrt(avgVec.x * avgVec.x + avgVec.y * avgVec.y);
+                        
+                        // Check for zero length to avoid division by zero
+                        if (length > 1e-10) {
+                            avgVec.x /= length;
+                            avgVec.y /= length;
+                        } else {
+                            // If vectors are opposite, use a default offset
+                            avgVec.x = 0;
+                            avgVec.y = -0.0001;
+                        }
+                        
+                        // Calculate the smooth connection point
+                        const connPoint = L.latLng(
+                            start1.lat - avgVec.y * 0.0001, // Small offset for smooth transition
+                            start1.lng - avgVec.x * 0.0001
+                        );
+                        
+                        // Combine points with the connecting point
+                        const combinedPoints = [connPoint];
+                        
+                        // Add remaining points from points1
+                        for (let i = 0; i < points1.length; i++) {
+                            combinedPoints.push(points1[i]);
+                        }
+                        
+                        return combinedPoints;
+                    } catch (err) {
+                        console.error('Error creating smooth connection', err);
+                        return points1;
+                    }
                 }
                 
                 function createUtilityMarkerIcon(utilityType, lineType) {
@@ -3027,6 +3232,8 @@
                 function showUtilityInfo(marker) {
                     // Find the utility data
                     const line = marker.utilityLine;
+                    if (!line) return;
+                    
                     const utilityType = line.options.utilityType;
                     const utility = utilities[utilityType].find(u => u.line === line);
                     
@@ -3040,11 +3247,13 @@
                     
                     // Calculate direction
                     const points = utility.points;
-                    if (points.length >= 2) {
+                    if (points && points.length >= 2) {
                         const start = points[0];
                         const end = points[1];
                         const angle = calculateAngle(start, end);
                         document.getElementById('info-direction').textContent = getDirectionName(angle);
+                    } else {
+                        document.getElementById('info-direction').textContent = 'Unknown';
                     }
                     
                     // Handle media if present
@@ -3087,9 +3296,17 @@
                 }
                 
                 function calculateAngle(start, end) {
+                    if (!start || !end) return 0;
+                    
                     // Calculate angle in degrees (0 = North, clockwise)
                     const dx = end.lng - start.lng;
                     const dy = end.lat - start.lat;
+                    
+                    // Prevent division by zero or very small numbers
+                    if (Math.abs(dx) < 1e-10 && Math.abs(dy) < 1e-10) {
+                        return 0;
+                    }
+                    
                     let angle = Math.atan2(dx, dy) * 180 / Math.PI;
                     
                     // Normalize to 0-360
@@ -3107,30 +3324,40 @@
                 }
                 
                 function calculateEndPoint(startLatLng, angleDegrees, lengthMeters) {
-                    // Convert angle to radians (0 is North, clockwise)
-                    const angleRadians = (90 - angleDegrees) * Math.PI / 180;
+                    if (!startLatLng) return null;
                     
-                    // Earth's radius in meters
-                    const R = 6378137;
-                    
-                    // Convert length to radians
-                    const d = lengthMeters / R;
-                    
-                    // Convert start point to radians
-                    const lat1 = startLatLng.lat * Math.PI / 180;
-                    const lng1 = startLatLng.lng * Math.PI / 180;
-                    
-                    // Calculate end point
-                    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + 
-                                           Math.cos(lat1) * Math.sin(d) * Math.cos(angleRadians));
-                    
-                    const lng2 = lng1 + Math.atan2(
-                        Math.sin(angleRadians) * Math.sin(d) * Math.cos(lat1),
-                        Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
-                    );
-                    
-                    // Convert back to degrees
-                    return L.latLng(lat2 * 180 / Math.PI, lng2 * 180 / Math.PI);
+                    try {
+                        // Convert angle to radians (0 is North, clockwise)
+                        const angleRadians = (90 - angleDegrees) * Math.PI / 180;
+                        
+                        // Earth's radius in meters
+                        const R = 6378137;
+                        
+                        // Convert length to radians
+                        const d = lengthMeters / R;
+                        
+                        // Convert start point to radians
+                        const lat1 = startLatLng.lat * Math.PI / 180;
+                        const lng1 = startLatLng.lng * Math.PI / 180;
+                        
+                        // Calculate end point
+                        const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + 
+                                               Math.cos(lat1) * Math.sin(d) * Math.cos(angleRadians));
+                        
+                        const lng2 = lng1 + Math.atan2(
+                            Math.sin(angleRadians) * Math.sin(d) * Math.cos(lat1),
+                            Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
+                        );
+                        
+                        // Convert back to degrees
+                        return L.latLng(lat2 * 180 / Math.PI, lng2 * 180 / Math.PI);
+                    } catch (err) {
+                        console.error('Error calculating end point:', err);
+                        
+                        // Fallback - create a point 10 meters north
+                        const north = L.latLng(startLatLng.lat + 0.0001, startLatLng.lng);
+                        return north;
+                    }
                 }
                 
                 function handleMapClick(e) {
@@ -3153,7 +3380,7 @@
                                 
                                 curbs.forEach(curb => {
                                     const result = nearestPointOnCurb(e.latlng, curb);
-                                    if (result.distance < minDist) {
+                                    if (result && result.distance < minDist) {
                                         minDist = result.distance;
                                         nearestCurb = curb;
                                     }
@@ -3171,7 +3398,7 @@
                                 const result = nearestPointOnCurb(e.latlng, drawingCurb);
                                 
                                 // Complete drawing if valid point and different from start
-                                if (result.distance <= 10 && result.index > drawingStartIndex) {
+                                if (result && result.distance <= 10 && result.index > drawingStartIndex) {
                                     completeCurbPitch(result.point, result.index);
                                 }
                             }
@@ -3188,7 +3415,7 @@
                             else {
                                 startUtilityMapping();
                                 // Add first point immediately
-                                drawingPoints.push(e.latlng);
+                                handleUtilityMappingClick(e.latlng);
                             }
                         }
                     }
@@ -3202,8 +3429,11 @@
                         // For curb pitch drawing, snap to curb
                         if (currentDrawingType === 'pitch' && isSnapping && drawingCurb) {
                             const result = nearestPointOnCurb(e.latlng, drawingCurb);
-                            if (result.distance <= 20) {
+                            if (result && result.distance <= 20) {
                                 movePoint = result.point;
+                                nearestValidPoint = result.point;
+                            } else {
+                                nearestValidPoint = null;
                             }
                         }
                         
@@ -3227,8 +3457,11 @@
                             // For curb pitch drawing, snap to curb
                             if (currentDrawingType === 'pitch' && isSnapping && drawingCurb) {
                                 const result = nearestPointOnCurb(latlng, drawingCurb);
-                                if (result.distance <= 20) {
+                                if (result && result.distance <= 20) {
                                     movePoint = result.point;
+                                    nearestValidPoint = result.point;
+                                } else {
+                                    nearestValidPoint = null;
                                 }
                             }
                             
@@ -3349,6 +3582,8 @@
                 }
                 
                 function distanceToPolyline(point, polyline) {
+                    if (!polyline || polyline.length < 2) return Infinity;
+                    
                     let minDist = Infinity;
                     
                     for (let i = 0; i < polyline.length - 1; i++) {
@@ -3558,9 +3793,19 @@
                     // Show loading overlay
                     document.querySelector('.loading-overlay').style.display = 'flex';
                     
+                    // Set a timeout for geolocation (10 seconds)
+                    const locationTimeout = setTimeout(() => {
+                        document.querySelector('.loading-overlay').style.display = 'none';
+                        showNotification('Location timeout. Please try again.');
+                        updateStatus('Failed to get your location. Please try again or enter an address.');
+                    }, 10000);
+                    
                     // Check if geolocation is available
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(function(position) {
+                            // Clear timeout
+                            clearTimeout(locationTimeout);
+                            
                             // Store position
                             currentPosition = [position.coords.latitude, position.coords.longitude];
                             
@@ -3594,7 +3839,7 @@
                             hideModal('location-modal');
                             
                             // Watch position for updates
-                            navigator.geolocation.watchPosition(function(position) {
+                            const watchId = navigator.geolocation.watchPosition(function(position) {
                                 // Update current position
                                 currentPosition = [position.coords.latitude, position.coords.longitude];
                                 
@@ -3610,22 +3855,46 @@
                                 timeout: 5000
                             });
                             
+                            // Store watch ID for cleanup
+                            window.locationWatchId = watchId;
+                            
                         }, function(error) {
+                            // Clear timeout
+                            clearTimeout(locationTimeout);
+                            
                             console.error('Error getting location:', error);
                             
+                            let errorMsg = 'Location access denied.';
+                            switch (error.code) {
+                                case error.PERMISSION_DENIED:
+                                    errorMsg = 'Location access denied. Please enable GPS and refresh.';
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    errorMsg = 'Location unavailable. Try entering an address instead.';
+                                    break;
+                                case error.TIMEOUT:
+                                    errorMsg = 'Location request timed out. Please try again.';
+                                    break;
+                            }
+                            
                             // Update status
-                            updateStatus('Location access denied. Please enable GPS.');
+                            updateStatus(errorMsg);
+                            showNotification(errorMsg);
                             
                             // Hide loading overlay
                             document.querySelector('.loading-overlay').style.display = 'none';
                         }, {
                             enableHighAccuracy: true,
                             maximumAge: 0,
-                            timeout: 5000
+                            timeout: 10000
                         });
                     } else {
+                        // Clear timeout
+                        clearTimeout(locationTimeout);
+                        
                         // Update status
-                        updateStatus('Geolocation not supported in this browser');
+                        updateStatus('Geolocation not supported in this browser. Try entering an address.');
+                        showNotification('Geolocation not supported in this browser');
                         
                         // Hide loading overlay
                         document.querySelector('.loading-overlay').style.display = 'none';
@@ -3655,7 +3924,12 @@
                     
                     // Use Nominatim for geocoding (OpenStreetMap's geocoding service)
                     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`)
-                        .then(response => response.json())
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`Network error: ${response.status}`);
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             if (data && data.length > 0) {
                                 const result = data[0];
@@ -3681,7 +3955,7 @@
                                 document.querySelector('.loading-overlay').style.display = 'none';
                                 
                                 // Show error notification
-                                showNotification('Address not found. Please try again.');
+                                showNotification('Address not found. Please try again with a different address.');
                             }
                         })
                         .catch(error => {
@@ -3691,7 +3965,7 @@
                             document.querySelector('.loading-overlay').style.display = 'none';
                             
                             // Show error notification
-                            showNotification('Error searching location. Please try again.');
+                            showNotification('Error searching location. Please try again later.');
                         });
                 }
                 
@@ -3711,6 +3985,12 @@
                 
                 function addToUndoStack(action) {
                     undoStack.push(action);
+                    
+                    // Limit undo stack size
+                    if (undoStack.length > MAX_UNDO_STACK_SIZE) {
+                        undoStack.shift(); // Remove oldest action
+                    }
+                    
                     updateUndoButtonState();
                 }
                 
@@ -4103,6 +4383,10 @@
                     // Reset drawing state
                     isDrawing = false;
                     drawingPoints = [];
+                    drawingCurb = null;
+                    drawingStartIndex = 0;
+                    nearestValidPoint = null;
+                    currentDrawingType = null;
                     
                     // Hide cancel drawing button
                     document.getElementById('cancel-drawing-btn').style.display = 'none';
@@ -4119,6 +4403,7 @@
                     // Create export data object
                     const exportData = {
                         timestamp: new Date().toISOString(),
+                        version: '1.0',
                         location: map.getCenter(),
                         zoom: map.getZoom(),
                         drainage: {
@@ -4137,28 +4422,59 @@
                                 }))
                             }))
                         },
-                        utilities: utilities
+                        utilities: {}
                     };
                     
-                    // Convert to JSON string
-                    const jsonString = JSON.stringify(exportData, null, 2);
+                    // Prepare utilities for export (removing circular references)
+                    for (const type in utilities) {
+                        exportData.utilities[type] = utilities[type].map(util => ({
+                            id: util.id,
+                            type: util.type,
+                            lineType: util.lineType,
+                            size: util.size,
+                            depth: util.depth,
+                            points: util.points.map(p => ({
+                                lat: p.lat,
+                                lng: p.lng
+                            })),
+                            angle: util.angle,
+                            connectedTo: util.connectedTo,
+                            mediaData: util.mediaData
+                        }));
+                    }
                     
-                    // Create download link
-                    const blob = new Blob([jsonString], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `cac-pocket-export-${new Date().toISOString().split('T')[0]}.json`;
-                    
-                    // Trigger download
-                    document.body.appendChild(a);
-                    a.click();
-                    
-                    // Cleanup
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    
-                    showNotification('Data exported successfully');
+                    try {
+                        // Convert to JSON string
+                        const jsonString = JSON.stringify(exportData, null, 2);
+                        
+                        // Show loading overlay
+                        document.querySelector('.loading-overlay').style.display = 'flex';
+                        
+                        // Create download link
+                        const blob = new Blob([jsonString], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `cac-pocket-export-${new Date().toISOString().split('T')[0]}.json`;
+                        
+                        // Trigger download
+                        document.body.appendChild(a);
+                        a.click();
+                        
+                        // Cleanup
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        // Hide loading overlay with a short delay
+                        setTimeout(() => {
+                            document.querySelector('.loading-overlay').style.display = 'none';
+                            showNotification('Data exported successfully');
+                        }, 500);
+                    } catch (err) {
+                        console.error('Error exporting data:', err);
+                        document.querySelector('.loading-overlay').style.display = 'none';
+                        showNotification('Error exporting data. Please try again.');
+                    }
                 }
                 
                 function importData() {
@@ -4173,13 +4489,16 @@
                             const file = fileInput.files[0];
                             const reader = new FileReader();
                             
+                            // Show loading overlay
+                            document.querySelector('.loading-overlay').style.display = 'flex';
+                            
                             reader.onload = function(e) {
                                 try {
                                     // Parse JSON
                                     const importData = JSON.parse(e.target.result);
                                     
                                     // Validate data structure
-                                    if (!importData.drainage || !importData.utilities) {
+                                    if (!importData.drainage || !importData.utilities || !importData.version) {
                                         throw new Error('Invalid import file format');
                                     }
                                     
@@ -4193,70 +4512,127 @@
                                                     importData.zoom || 19);
                                     }
                                     
-                                    // Import catch basins
-                                    if (importData.drainage.catchBasins) {
-                                        importData.drainage.catchBasins.forEach(basin => {
-                                            addCatchBasin(L.latLng(basin.lat, basin.lng));
-                                        });
-                                    }
+                                    // Load road data and wait for it to finish
+                                    loadRoadData();
                                     
-                                    // Import curb pitches
-                                    if (importData.drainage.curbs) {
-                                        // We need to load road data first
+                                    // Use a timeout to wait for road data to load
+                                    // This is a compromise since there's no easy way to know when the async road data finishes loading
+                                    const dataImportDelay = 2000;
+                                    
+                                    setTimeout(() => {
+                                        // Check if we have enough roads
+                                        if (streets.length === 0) {
+                                            showNotification('Warning: No streets loaded. Some data may not import correctly.');
+                                            dataImportDelay += 1000; // Give it a bit more time
+                                        }
+                                        
+                                        // Continue with import
                                         setTimeout(() => {
-                                            importData.drainage.curbs.forEach(importCurb => {
-                                                // Find matching curb
-                                                const curb = curbs.find(c => c.id === importCurb.id);
-                                                
-                                                if (curb) {
-                                                    // Import pitches
-                                                    importCurb.pitches.forEach(pitch => {
-                                                        // Create pitch points
-                                                        const points = curb.latlngs.slice(
-                                                            pitch.startIndex, pitch.endIndex + 1);
-                                                        
-                                                        // Create pitch data
-                                                        const pitchData = {
-                                                            curbId: curb.id,
-                                                            startIndex: pitch.startIndex,
-                                                            endIndex: pitch.endIndex,
-                                                            points: points,
-                                                            angle: pitch.angle,
-                                                            percent: pitch.percent
-                                                        };
-                                                        
-                                                        // Finalize pitch
-                                                        finalizeCurbPitch(pitchData);
+                                            try {
+                                                // Import catch basins
+                                                if (importData.drainage.catchBasins) {
+                                                    importData.drainage.catchBasins.forEach(basin => {
+                                                        if (basin.lat && basin.lng) {
+                                                            addCatchBasin(L.latLng(basin.lat, basin.lng));
+                                                        }
                                                     });
                                                 }
-                                            });
-                                        }, 1000); // Give time for road data to load
-                                    }
-                                    
-                                    // Import utilities
-                                    for (const type in importData.utilities) {
-                                        importData.utilities[type].forEach(utility => {
-                                            if (utility.points && utility.points.length >= 2) {
-                                                // Convert points to LatLng objects
-                                                const points = utility.points.map(p => L.latLng(p.lat, p.lng));
                                                 
-                                                // Create utility line
-                                                createUtilityLine(
-                                                    points, 
-                                                    utility.type, 
-                                                    utility.lineType,
-                                                    utility.connectedTo
-                                                );
+                                                // Import curb pitches
+                                                if (importData.drainage.curbs && importData.drainage.curbs.length > 0) {
+                                                    // We need roads to be loaded to match curbs
+                                                    importData.drainage.curbs.forEach(importCurb => {
+                                                        // Find matching curb
+                                                        const curb = curbs.find(c => c.id === importCurb.id);
+                                                        
+                                                        if (curb) {
+                                                            // Import pitches
+                                                            importCurb.pitches.forEach(pitch => {
+                                                                if (pitch.startIndex >= 0 && 
+                                                                    pitch.endIndex < curb.latlngs.length && 
+                                                                    pitch.startIndex <= pitch.endIndex) {
+                                                                    
+                                                                    // Create pitch points
+                                                                    const points = curb.latlngs.slice(
+                                                                        pitch.startIndex, pitch.endIndex + 1);
+                                                                    
+                                                                    // Create pitch data
+                                                                    const pitchData = {
+                                                                        curbId: curb.id,
+                                                                        startIndex: pitch.startIndex,
+                                                                        endIndex: pitch.endIndex,
+                                                                        points: points,
+                                                                        angle: pitch.angle || 0,
+                                                                        percent: pitch.percent || 2.0
+                                                                    };
+                                                                    
+                                                                    // Finalize pitch
+                                                                    finalizeCurbPitch(pitchData);
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                                
+                                                // Import utilities
+                                                let utilityCount = 0;
+                                                for (const type in importData.utilities) {
+                                                    if (importData.utilities[type] && importData.utilities[type].length > 0) {
+                                                        importData.utilities[type].forEach(utility => {
+                                                            if (utility.points && utility.points.length >= 2) {
+                                                                // Convert points to LatLng objects
+                                                                const points = utility.points.map(p => L.latLng(p.lat, p.lng));
+                                                                
+                                                                // Create utility line
+                                                                createUtilityLine(
+                                                                    points, 
+                                                                    utility.type || type, 
+                                                                    utility.lineType || 'service',
+                                                                    utility.connectedTo
+                                                                );
+                                                                utilityCount++;
+                                                            }
+                                                        });
+                                                    }
+                                                }
+                                                
+                                                // Hide loading overlay
+                                                document.querySelector('.loading-overlay').style.display = 'none';
+                                                
+                                                // Generate success message
+                                                let successMsg = 'Data imported successfully:';
+                                                const basinCount = drainagePoints.filter(p => p.type === 'basin').length;
+                                                const pitchCount = curbs.reduce((count, curb) => count + curb.pitches.length, 0);
+                                                
+                                                if (basinCount > 0) successMsg += ` ${basinCount} basins,`;
+                                                if (pitchCount > 0) successMsg += ` ${pitchCount} pitches,`;
+                                                if (utilityCount > 0) successMsg += ` ${utilityCount} utilities,`;
+                                                
+                                                // Remove trailing comma
+                                                successMsg = successMsg.replace(/,$/, '');
+                                                
+                                                showNotification(successMsg);
+                                                updateStatus('Data imported. Select a tool to continue.');
+                                                
+                                            } catch (innerError) {
+                                                console.error('Error during final import steps:', innerError);
+                                                document.querySelector('.loading-overlay').style.display = 'none';
+                                                showNotification('Error importing some data: ' + innerError.message);
                                             }
-                                        });
-                                    }
-                                    
-                                    showNotification('Data imported successfully');
+                                        }, 500); // Short delay for UI updates
+                                        
+                                    }, dataImportDelay);
                                     
                                 } catch (error) {
                                     console.error('Import error:', error);
+                                    document.querySelector('.loading-overlay').style.display = 'none';
                                     showNotification('Error importing data: ' + error.message);
                                 }
+                            };
+                            
+                            reader.onerror = function() {
+                                document.querySelector('.loading-overlay').style.display = 'none';
+                                showNotification('Error reading file. Please try again.');
                             };
                             
                             reader.readAsText(file);
@@ -4265,6 +4641,17 @@
                     
                     // Trigger file selection
                     fileInput.click();
+                }
+                
+                function cleanupResources() {
+                    // Cleanup watch position if active
+                    if (window.locationWatchId) {
+                        navigator.geolocation.clearWatch(window.locationWatchId);
+                        window.locationWatchId = null;
+                    }
+                    
+                    // Remove all event listeners to avoid memory leaks
+                    // This would be done more thoroughly in a real application
                 }
                 
                 function initUIHandlers() {
@@ -4432,6 +4819,10 @@
                         showModal('location-modal');
                     });
                     
+                    document.getElementById('help-btn').addEventListener('click', function() {
+                        showNotification('Help functionality coming soon!');
+                    });
+                    
                     document.getElementById('export-btn').addEventListener('click', function() {
                         exportData();
                     });
@@ -4477,6 +4868,7 @@
                             // Different edit actions based on element type
                             if (selectedElement.type === 'pitch') {
                                 // TODO: Show pitch edit modal
+                                showNotification('Pitch editing coming soon');
                             } else if (selectedElement.type === 'utility') {
                                 showUtilityInfo(selectedElement.element);
                             }
@@ -4659,6 +5051,7 @@
                     
                     document.getElementById('cancel-utility-btn').addEventListener('click', function() {
                         hideModal('utility-found-modal');
+                        tempUtilityLocation = null;
                     });
                     
                     document.getElementById('confirm-utility-btn').addEventListener('click', function() {
@@ -4681,7 +5074,9 @@
                     
                     document.getElementById('cancel-connection-btn').addEventListener('click', function() {
                         hideModal('utility-connection-modal');
-                        createUtilityLine(selectedElement.points, selectedElement.utilityType, selectedElement.lineType);
+                        if (selectedElement && selectedElement.type === 'connecting-utility') {
+                            createUtilityLine(selectedElement.points, selectedElement.utilityType, selectedElement.lineType);
+                        }
                         selectedElement = null;
                     });
                     
@@ -4713,6 +5108,21 @@
                         if (e.target.closest('#utility-info-card') === null && 
                             infoCard.style.display === 'block') {
                             hideUtilityInfo();
+                        }
+                        
+                        // Close panels if clicking outside (except their toggle buttons)
+                        const layersPanel = document.getElementById('layers-panel');
+                        if (e.target.closest('#layers-panel') === null && 
+                            e.target.closest('#layers-btn') === null && 
+                            layersPanel.style.display === 'block') {
+                            layersPanel.style.display = 'none';
+                        }
+                        
+                        const menuPanel = document.getElementById('menu-panel');
+                        if (e.target.closest('#menu-panel') === null && 
+                            e.target.closest('#menu-btn') === null && 
+                            menuPanel.style.display === 'block') {
+                            menuPanel.style.display = 'none';
                         }
                     });
                     
@@ -4752,7 +5162,40 @@
                             selectedLineType = this.value;
                         });
                     });
+                    
+                    // Add window resize handler to update UI
+                    window.addEventListener('resize', function() {
+                        // Reposition any open cards or panels
+                        if (document.getElementById('utility-info-card').style.display === 'block' && 
+                            selectedElement && selectedElement.type === 'utility-info') {
+                            const marker = selectedElement.utility.marker;
+                            if (marker) {
+                                const markerPoint = map.latLngToContainerPoint(marker.getLatLng());
+                                const infoCard = document.getElementById('utility-info-card');
+                                infoCard.style.left = `${markerPoint.x + 20}px`;
+                                infoCard.style.top = `${markerPoint.y - 100}px`;
+                            }
+                        }
+                    });
+                    
+                    // Add beforeunload handler to warn about unsaved changes
+                    window.addEventListener('beforeunload', function(e) {
+                        // Check if there are any unsaved changes
+                        if (undoStack.length > 0) {
+                            // Set a warning message
+                            const message = 'You have unsaved changes. Are you sure you want to leave?';
+                            e.returnValue = message;
+                            return message;
+                        }
+                    });
                 }
+                
+                // Initialize the application
+                initMap();
+                initUIHandlers();
+                
+                // Register cleanup function for when the window is closed or unloaded
+                window.addEventListener('unload', cleanupResources);
             }
         });
     </script>
