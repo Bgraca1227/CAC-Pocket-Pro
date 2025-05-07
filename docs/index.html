@@ -2280,312 +2280,262 @@
             cursor: pointer;
         }
 
-        /* Add this CSS after the connection-indicator CSS section */
-        /*********************************
-        * EXCAVATION MODE
-        *********************************/
-        .excavation-mode-active {
-            position: fixed;
-            top: 50px;
-            left: 0;
-            right: 0;
-            background-color: rgba(244, 67, 54, 0.9);
+        /* Add excavation mode styles immediately after the line-type-selector CSS section around line 1440 */
+        /* Excavation Mode Styles */
+        .excavation-mode-button {
+            background-color: var(--danger);
             color: white;
-            text-align: center;
-            padding: var(--space-sm);
-            font-weight: bold;
-            font-size: 1rem;
+            margin-left: var(--space-md);
+        }
+
+        .excavation-mode-button.active {
+            background-color: var(--danger);
+            color: white;
+            animation: pulse-warning 2s infinite;
+        }
+
+        .excavation-mode-indicator {
+            position: absolute;
+            top: calc(var(--space-lg) + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--danger);
+            color: white;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            font-weight: 600;
             z-index: var(--z-fixed);
-            box-shadow: var(--shadow-md);
-            display: none;
-        }
-
-        .excavation-mode-active.visible {
-            display: block;
-            animation: pulse-attention 2s infinite;
-        }
-
-        @keyframes pulse-attention {
-            0% { background-color: rgba(244, 67, 54, 0.9); }
-            50% { background-color: rgba(255, 87, 34, 0.9); }
-            100% { background-color: rgba(244, 67, 54, 0.9); }
-        }
-
-        .safety-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: var(--z-splash);
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
+            gap: var(--space-sm);
+            box-shadow: var(--shadow-md);
             opacity: 0;
             visibility: hidden;
             transition: opacity var(--transition-normal),
                         visibility var(--transition-normal);
         }
 
-        .safety-overlay.visible {
+        .excavation-mode-indicator.visible {
             opacity: 1;
             visibility: visible;
+            animation: pulse-warning 2s infinite;
         }
 
-        .safety-content {
-            background-color: white;
-            border-radius: var(--radius-lg);
-            padding: var(--space-xl);
-            max-width: 90%;
-            width: 350px;
-            text-align: center;
-            box-shadow: var(--shadow-xl);
-        }
-
-        .safety-icon {
-            font-size: 3rem;
-            color: var(--danger);
-            margin-bottom: var(--space-md);
-        }
-
-        .safety-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: var(--space-sm);
-            color: var(--danger);
-        }
-
-        .safety-message {
-            font-size: 1rem;
-            margin-bottom: var(--space-lg);
-            color: var(--text-secondary);
-        }
-
-        .safety-buttons {
+        .proximity-alert-container {
+            position: absolute;
+            top: calc(var(--space-xl) * 2);
+            left: 0;
+            right: 0;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             gap: var(--space-md);
+            z-index: var(--z-toast);
+            pointer-events: none;
+            padding: 0 var(--space-md);
         }
 
-        .proximity-warning {
+        .proximity-alert {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            pointer-events: auto;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity var(--transition-normal),
+                        transform var(--transition-normal);
+        }
+
+        .proximity-alert.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .proximity-alert.danger {
+            border: 3px solid var(--danger);
+        }
+
+        .proximity-alert-header {
+            padding: var(--space-md);
+            background-color: var(--danger);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .proximity-alert-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .proximity-alert-dismiss {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .proximity-alert-body {
+            padding: var(--space-md);
+        }
+
+        .proximity-alert-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-sm);
+        }
+
+        .proximity-info-item {
+            background-color: var(--gray-100);
+            padding: var(--space-sm);
+            border-radius: var(--radius-md);
+        }
+
+        .proximity-info-label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            font-weight: 500;
+        }
+
+        .proximity-info-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .proximity-alert-footer {
+            padding: var(--space-sm) var(--space-md);
+            background-color: var(--gray-100);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .proximity-distance {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .exit-excavation-btn {
             position: fixed;
-            bottom: 170px;
+            bottom: calc(100px + var(--space-xl) * 2);
             left: 50%;
             transform: translateX(-50%);
             background-color: var(--danger);
             color: white;
-            padding: var(--space-md);
-            border-radius: var(--radius-md);
-            width: 90%;
-            max-width: 350px;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-full);
+            font-weight: 600;
             box-shadow: var(--shadow-lg);
             z-index: var(--z-fixed);
-            text-align: center;
-            display: none;
-        }
-
-        .proximity-warning.visible {
-            display: block;
-            animation: warning-pulse 1s infinite alternate;
-        }
-
-        @keyframes warning-pulse {
-            from { transform: translateX(-50%) scale(1); }
-            to { transform: translateX(-50%) scale(1.05); }
-        }
-
-        .warning-header {
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: var(--space-sm);
-            margin-bottom: var(--space-sm);
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        .warning-icon {
-            font-size: 1.5rem;
-        }
-
-        .warning-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--space-xs) var(--space-md);
-            margin-bottom: var(--space-sm);
-            text-align: left;
-        }
-
-        .warning-label {
-            font-size: 0.8rem;
-            opacity: 0.9;
-        }
-
-        .warning-value {
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-align: right;
-        }
-
-        .warning-unknown {
-            color: var(--warning);
-            font-style: italic;
-        }
-
-        .exit-excavation-btn {
-            margin-top: var(--space-sm);
-            padding: var(--space-xs) var(--space-md);
-            background-color: white;
-            color: var(--danger);
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .danger-radar {
-            position: fixed;
-            bottom: 170px;
-            right: var(--space-md);
-            width: 120px;
-            height: 120px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
-            z-index: var(--z-fixed);
-            border: 2px solid white;
-            display: none;
-        }
-
-        .danger-radar.visible {
-            display: block;
-        }
-
-        .radar-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 10px;
-            height: 10px;
-            background-color: white;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .radar-heading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 2px;
-            height: 50%;
-            background-color: rgba(255, 255, 255, 0.7);
-            transform-origin: bottom center;
-            transform: translateX(-50%) rotate(0deg);
-        }
-
-        .radar-ring {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            transform: translate(-50%, -50%);
-        }
-
-        .radar-ring-inner {
-            width: 40px;
-            height: 40px;
-        }
-
-        .radar-ring-middle {
-            width: 70px;
-            height: 70px;
-        }
-
-        .radar-ring-outer {
-            width: 100px;
-            height: 100px;
-        }
-
-        .radar-blip {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background-color: var(--danger);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .radar-blip.yellow {
-            background-color: var(--warning);
-        }
-
-        .radar-blip.orange {
-            background-color: var(--secondary);
-        }
-
-        .radar-blip.red {
-            background-color: var(--danger);
-            animation: radar-pulse 1s infinite;
-        }
-
-        @keyframes radar-pulse {
-            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
-        }
-
-        /* Utility danger zone styling */
-        .utility-danger-zone {
-            stroke-opacity: 0.3;
-            fill-opacity: 0.1;
-            pointer-events: none;
-        }
-
-        .utility-danger-zone.yellow {
-            stroke: var(--warning);
-            fill: var(--warning);
-        }
-
-        .utility-danger-zone.orange {
-            stroke: var(--secondary);
-            fill: var(--secondary);
-        }
-
-        .utility-danger-zone.red {
-            stroke: var(--danger);
-            fill: var(--danger);
-            animation: danger-pulse 1s infinite alternate;
-        }
-
-        @keyframes danger-pulse {
-            from { stroke-opacity: 0.3; fill-opacity: 0.1; }
-            to { stroke-opacity: 0.6; fill-opacity: 0.2; }
-        }
-
-        /* Excavation mode button styling */
-        .nav-button[data-screen="excavation"] {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .nav-button[data-screen="excavation"]::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle, rgba(244,67,54,0.2) 0%, rgba(0,0,0,0) 70%);
             opacity: 0;
-            transition: opacity 0.3s ease;
+            visibility: hidden;
+            transition: opacity var(--transition-normal),
+                        visibility var(--transition-normal);
         }
 
-        .nav-button[data-screen="excavation"]:hover::before {
+        .exit-excavation-btn.visible {
             opacity: 1;
+            visibility: visible;
         }
 
-        .nav-button[data-screen="excavation"].active {
-            background-color: var(--danger);
+        /* Proximity highlight styles */
+        .utility-line.proximity-warning {
+            stroke-width: 8px;
+            stroke: var(--warning);
+            stroke-opacity: 0.7;
+            animation: pulse-line 2s infinite;
+        }
+
+        .utility-line.proximity-caution {
+            stroke-width: 9px;
+            stroke: #ff9800; /* Orange */
+            stroke-opacity: 0.8;
+            animation: pulse-line 1.5s infinite;
+        }
+
+        .utility-line.proximity-danger {
+            stroke-width: 10px;
+            stroke: var(--danger);
+            stroke-opacity: 0.9;
+            animation: pulse-line 1s infinite;
+        }
+
+        .utility-line.proximity-critical {
+            stroke-width: 12px;
+            stroke: var(--danger);
+            stroke-opacity: 1;
+            animation: pulse-line 0.5s infinite;
+        }
+
+        /* Confirm exit dialog */
+        .exit-confirmation {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            width: 90%;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .exit-confirmation-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: var(--space-md);
+        }
+
+        .exit-confirmation-message {
+            margin-bottom: var(--space-lg);
+            color: var(--text-secondary);
+        }
+
+        .exit-confirmation-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        /* Animation for excavation mode pulse */
+        @keyframes pulse-warning {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse-line {
+            0% {
+                stroke-opacity: 0.6;
+            }
+            50% {
+                stroke-opacity: 1;
+            }
+            100% {
+                stroke-opacity: 0.6;
+            }
         }
     </style>
 </head>
@@ -2693,6 +2643,10 @@
                     <i class="fas fa-draw-polygon"></i>
                     <span>Mapping</span>
                 </button>
+                <button class="mode-button excavation-mode-button" data-mode="excavation">
+                    <i class="fas fa-hard-hat"></i>
+                    <span>Excavation</span>
+                </button>
             </div>
             
             <!-- Status Bar -->
@@ -2798,10 +2752,6 @@
                 <button class="nav-button" data-screen="utilities">
                     <i class="fas fa-list"></i>
                     <span class="nav-label">Utilities</span>
-                </button>
-                <button class="nav-button" id="excavation-mode-btn" data-screen="excavation">
-                    <i class="fas fa-hard-hat"></i>
-                    <span class="nav-label">Excavation</span>
                 </button>
                 <button class="nav-button" data-screen="settings">
                     <i class="fas fa-cog"></i>
@@ -3255,71 +3205,6 @@
         </button>
     </div>
 
-    <!-- Excavation Mode UI Elements -->
-    <!-- Excavation Mode Active Indicator -->
-    <div class="excavation-mode-active" id="excavation-mode-indicator">
-        <i class="fas fa-exclamation-triangle"></i> EXCAVATION MODE ACTIVE
-    </div>
-
-    <!-- Safety Reminder Overlay -->
-    <div class="safety-overlay" id="safety-overlay">
-        <div class="safety-content">
-            <div class="safety-icon">
-                <i class="fas fa-hard-hat"></i>
-            </div>
-            <div class="safety-title">Excavation Safety Mode</div>
-            <div class="safety-message">
-                This mode is designed to help prevent accidental utility strikes. 
-                Always follow proper excavation procedures and use this app as a 
-                supplementary tool only.
-            </div>
-            <div class="safety-buttons">
-                <button class="btn btn-secondary" id="cancel-excavation-mode">Cancel</button>
-                <button class="btn btn-danger" id="confirm-excavation-mode">Activate</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Proximity Warning Panel -->
-    <div class="proximity-warning" id="proximity-warning">
-        <div class="warning-header">
-            <i class="fas fa-exclamation-triangle warning-icon"></i>
-            <span>UTILITY DETECTED NEARBY</span>
-        </div>
-        <div class="warning-details">
-            <div class="warning-label">Type:</div>
-            <div class="warning-value" id="warning-type">Gas</div>
-            
-            <div class="warning-label">Size:</div>
-            <div class="warning-value" id="warning-size">4 inches</div>
-            
-            <div class="warning-label">Depth:</div>
-            <div class="warning-value" id="warning-depth">3 feet</div>
-            
-            <div class="warning-label">Line Type:</div>
-            <div class="warning-value" id="warning-line-type">Main</div>
-            
-            <div class="warning-label">Distance:</div>
-            <div class="warning-value" id="warning-distance">8.2 feet</div>
-            
-            <div class="warning-label">Direction:</div>
-            <div class="warning-value" id="warning-direction">Ahead</div>
-        </div>
-        <button class="exit-excavation-btn" id="exit-proximity-warning">
-            <i class="fas fa-check"></i> Acknowledge
-        </button>
-    </div>
-
-    <!-- Danger Radar -->
-    <div class="danger-radar" id="danger-radar">
-        <div class="radar-ring radar-ring-inner"></div>
-        <div class="radar-ring radar-ring-middle"></div>
-        <div class="radar-ring radar-ring-outer"></div>
-        <div class="radar-center"></div>
-        <div class="radar-heading" id="radar-heading"></div>
-        <!-- Radar blips will be added dynamically -->
-    </div>
-
     <!-- Line type selector for mapping mode -->
     <div class="line-type-selector" id="line-type-selector">
         <button class="line-type-button active" data-type="service">
@@ -3360,7 +3245,7 @@
             *********************************/
             // Application State
             const AppState = {
-                mode: 'discovery', // 'discovery' or 'mapping'
+                mode: 'discovery', // 'discovery', 'mapping', or 'excavation'
                 activeUtilityType: 'water', // Selected utility type
                 activeLineType: 'service', // 'service' or 'main'
                 activeTool: null, // Current active tool
@@ -3373,8 +3258,18 @@
                 measureLine: null, // Current measurement line
                 repositioningUtility: null, // Utility being repositioned
                 controlPoints: [], // Control points for repositioning
-                excavationModeActive: false, // Whether excavation mode is active
-                audioAlertsEnabled: true, // Whether audio alerts are enabled for excavation mode
+                
+                // Excavation mode properties
+                isExcavationMode: false, // Whether excavation mode is active
+                activeAlerts: [], // List of active proximity alerts
+                distanceThresholds: {
+                    warning: 50, // Yellow warning (feet)
+                    caution: 25, // Orange warning (feet)
+                    danger: 14,  // Red warning (feet)
+                    critical: 10  // Critical alert (feet)
+                },
+                lastLocationUpdate: null, // Timestamp of last location update
+                highAccuracyWatchId: null // ID for high accuracy location watch
             };
             
             // Data Collections
@@ -3716,9 +3611,6 @@
                     this.map.on('moveend', function() {
                         UI.updateUIPositions();
                     });
-
-                    // Initialize excavation mode
-                    this.initExcavationMode();
                 },
                 
                 // Set up map event listeners
@@ -4834,29 +4726,348 @@
                     return smoothedHeading;
                 },
 
-                // Initialize excavation mode
-                initExcavationMode: function() {
-                    // Add excavation mode UI elements
-                    const excavationModeBtn = document.getElementById('excavation-mode-btn');
-                    excavationModeBtn.addEventListener('click', () => {
-                        UI.toggleExcavationMode();
+                // Add these methods just before the end of the MapController object
+
+                // Enable Excavation Mode
+                enableExcavationMode: function() {
+                    // Already in excavation mode
+                    if (AppState.isExcavationMode) return;
+                    
+                    // Set state
+                    AppState.isExcavationMode = true;
+                    AppState.activeAlerts = [];
+                    
+                    // Show excavation mode UI
+                    UI.showExcavationModeIndicator();
+                    UI.showExitExcavationButton();
+                    
+                    // Set a more focused zoom level and follow user
+                    this.map.setZoom(18);
+                    
+                    // Go to user's location if available
+                    if (this.userLocationMarker) {
+                        this.map.setView(this.userLocationMarker.getLatLng());
+                    }
+                    
+                    // Start high accuracy location tracking
+                    this.startHighAccuracyLocationTracking();
+                    
+                    // Begin proximity monitoring
+                    this.startProximityMonitoring();
+                    
+                    // Disable other controls
+                    UI.disableDrawingControls();
+                    
+                    // Set the map to follow the user's location
+                    this.enableLocationFollowing();
+                    
+                    // Show toast
+                    UI.showToast("Excavation Mode Activated", "warning");
+                },
+                
+                // Disable Excavation Mode
+                disableExcavationMode: function() {
+                    // Not in excavation mode
+                    if (!AppState.isExcavationMode) return;
+                    
+                    // Set state
+                    AppState.isExcavationMode = false;
+                    
+                    // Hide excavation mode UI
+                    UI.hideExcavationModeIndicator();
+                    UI.hideExitExcavationButton();
+                    UI.closeAllProximityAlerts();
+                    
+                    // Stop high accuracy location tracking
+                    this.stopHighAccuracyLocationTracking();
+                    
+                    // Stop proximity monitoring
+                    this.stopProximityMonitoring();
+                    
+                    // Reset utility line styles
+                    this.resetAllUtilityHighlights();
+                    
+                    // Disable location following
+                    this.disableLocationFollowing();
+                    
+                    // Re-enable other controls
+                    UI.enableDrawingControls();
+                    
+                    // Show toast
+                    UI.showToast("Excavation Mode Deactivated", "info");
+                },
+                
+                // Start high accuracy location tracking
+                startHighAccuracyLocationTracking: function() {
+                    // Stop existing watch if any
+                    this.stopHighAccuracyLocationTracking();
+                    
+                    if (navigator.geolocation) {
+                        AppState.highAccuracyWatchId = navigator.geolocation.watchPosition(
+                            // Success callback
+                            (position) => {
+                                const lat = position.coords.latitude;
+                                const lng = position.coords.longitude;
+                                const accuracy = position.coords.accuracy;
+                                
+                                // Update marker position
+                                if (this.userLocationMarker) {
+                                    this.userLocationMarker.setLatLng([lat, lng]);
+                                    
+                                    // Update the accuracy circle size based on accuracy
+                                    const markerElement = this.userLocationMarker.getElement();
+                                    if (markerElement) {
+                                        const accuracyCircle = markerElement.querySelector('.location-accuracy-circle');
+                                        if (accuracyCircle && accuracy) {
+                                            // Scale the accuracy circle based on the accuracy value
+                                            const scale = Math.min(2.0, Math.max(0.9, accuracy / 20));
+                                            accuracyCircle.style.transform = `scale(${scale})`;
+                                        }
+                                    }
+                                } else {
+                                    // Create a marker if it doesn't exist
+                                    this.addUserLocationMarker(lat, lng);
+                                }
+                                
+                                // Update heading indicator if available from GPS
+                                if (position.coords.heading !== null) {
+                                    this.updateHeading(position.coords.heading);
+                                }
+                                
+                                // Store timestamp for frequency monitoring
+                                AppState.lastLocationUpdate = new Date().getTime();
+                                
+                                // Update proximity calculations
+                                if (AppState.isExcavationMode) {
+                                    this.updateProximityCalculations();
+                                }
+                                
+                                // Center map on user if following is enabled
+                                if (AppState.isExcavationMode && this.locationFollowingEnabled) {
+                                    this.map.setView([lat, lng]);
+                                }
+                            },
+                            // Error callback
+                            (error) => {
+                                console.error('Error watching high accuracy position:', error);
+                                UI.showToast("Location error: " + error.message, "error");
+                            },
+                            // Options for high accuracy
+                            {
+                                enableHighAccuracy: true,
+                                timeout: 10000,
+                                maximumAge: 1000
+                            }
+                        );
+                    } else {
+                        UI.showToast("Geolocation is not supported by your browser", "error");
+                    }
+                },
+                
+                // Stop high accuracy location tracking
+                stopHighAccuracyLocationTracking: function() {
+                    if (AppState.highAccuracyWatchId !== null) {
+                        navigator.geolocation.clearWatch(AppState.highAccuracyWatchId);
+                        AppState.highAccuracyWatchId = null;
+                    }
+                },
+                
+                // Enable the map to follow user location
+                enableLocationFollowing: function() {
+                    this.locationFollowingEnabled = true;
+                    
+                    // Add a visual indicator that following is enabled
+                    if (this.userLocationMarker) {
+                        const markerElement = this.userLocationMarker.getElement();
+                        if (markerElement) {
+                            markerElement.classList.add('following-enabled');
+                        }
+                    }
+                },
+                
+                // Disable location following
+                disableLocationFollowing: function() {
+                    this.locationFollowingEnabled = false;
+                    
+                    // Remove the visual indicator
+                    if (this.userLocationMarker) {
+                        const markerElement = this.userLocationMarker.getElement();
+                        if (markerElement) {
+                            markerElement.classList.remove('following-enabled');
+                        }
+                    }
+                },
+                
+                // Start proximity monitoring for nearby utilities
+                startProximityMonitoring: function() {
+                    // Set up interval for monitoring
+                    this.proximityMonitoringInterval = setInterval(() => {
+                        if (AppState.isExcavationMode) {
+                            this.updateProximityCalculations();
+                        }
+                    }, 1000); // Check every second
+                },
+                
+                // Stop proximity monitoring
+                stopProximityMonitoring: function() {
+                    if (this.proximityMonitoringInterval) {
+                        clearInterval(this.proximityMonitoringInterval);
+                        this.proximityMonitoringInterval = null;
+                    }
+                },
+                
+                // Update proximity calculations for all utilities
+                updateProximityCalculations: function() {
+                    // Need user location
+                    if (!this.userLocationMarker) return;
+                    
+                    const userLocation = this.userLocationMarker.getLatLng();
+                    const nearbyUtilities = [];
+                    
+                    // Check each utility type
+                    for (const type in DataStore.utilities) {
+                        DataStore.utilities[type].forEach(utility => {
+                            if (!utility.line) return;
+                            
+                            // Calculate distance to line
+                            const distance = this.distanceToPolyline(userLocation, utility.line.getLatLngs());
+                            const distanceFeet = distance * 3.28084; // Convert to feet
+                            
+                            // Store utility with its distance
+                            nearbyUtilities.push({
+                                utility: utility,
+                                distance: distanceFeet
+                            });
+                            
+                            // Apply appropriate highlight based on distance
+                            this.updateUtilityHighlight(utility, distanceFeet);
+                        });
+                    }
+                    
+                    // Sort by distance (closest first)
+                    nearbyUtilities.sort((a, b) => a.distance - b.distance);
+                    
+                    // Update proximity alerts
+                    this.updateProximityAlerts(nearbyUtilities);
+                },
+                
+                // Update utility highlight based on distance
+                updateUtilityHighlight: function(utility, distanceFeet) {
+                    if (!utility.line) return;
+                    
+                    // Reset existing proximity classes
+                    utility.line.getElement().classList.remove(
+                        'proximity-warning',
+                        'proximity-caution',
+                        'proximity-danger',
+                        'proximity-critical'
+                    );
+                    
+                    // Apply appropriate class based on distance thresholds
+                    if (distanceFeet <= AppState.distanceThresholds.critical) {
+                        utility.line.getElement().classList.add('proximity-critical');
+                    } else if (distanceFeet <= AppState.distanceThresholds.danger) {
+                        utility.line.getElement().classList.add('proximity-danger');
+                    } else if (distanceFeet <= AppState.distanceThresholds.caution) {
+                        utility.line.getElement().classList.add('proximity-caution');
+                    } else if (distanceFeet <= AppState.distanceThresholds.warning) {
+                        utility.line.getElement().classList.add('proximity-warning');
+                    }
+                },
+                
+                // Reset all utility highlights
+                resetAllUtilityHighlights: function() {
+                    for (const type in DataStore.utilities) {
+                        DataStore.utilities[type].forEach(utility => {
+                            if (utility.line && utility.line.getElement()) {
+                                utility.line.getElement().classList.remove(
+                                    'proximity-warning',
+                                    'proximity-caution',
+                                    'proximity-danger',
+                                    'proximity-critical'
+                                );
+                            }
+                        });
+                    }
+                },
+                
+                // Update proximity alerts based on nearby utilities
+                updateProximityAlerts: function(nearbyUtilities) {
+                    // Get utilities within critical distance
+                    const criticalUtilities = nearbyUtilities.filter(
+                        item => item.distance <= AppState.distanceThresholds.critical
+                    );
+                    
+                    // Process critical utilities
+                    criticalUtilities.forEach(item => {
+                        const utility = item.utility;
+                        const distance = item.distance;
+                        
+                        // Check if we already have an alert for this utility
+                        const existingAlert = AppState.activeAlerts.find(
+                            alert => alert.utilityId === utility.id
+                        );
+                        
+                        if (!existingAlert) {
+                            // Create new alert
+                            const alert = {
+                                utilityId: utility.id,
+                                utility: utility,
+                                distance: distance,
+                                timestamp: new Date().getTime(),
+                                element: null
+                            };
+                            
+                            // Add to active alerts
+                            AppState.activeAlerts.push(alert);
+                            
+                            // Create alert UI
+                            UI.createProximityAlert(alert);
+                            
+                            // Provide haptic feedback if available
+                            if (navigator.vibrate) {
+                                navigator.vibrate([200, 100, 200]);
+                            }
+                        } else {
+                            // Update existing alert
+                            existingAlert.distance = distance;
+                            UI.updateProximityAlert(existingAlert);
+                        }
                     });
-
-                    // Add excavation mode active indicator
-                    const excavationModeIndicator = document.getElementById('excavation-mode-indicator');
-                    excavationModeIndicator.classList.add('animate-fade-in');
-
-                    // Add safety overlay
-                    const safetyOverlay = document.getElementById('safety-overlay');
-                    safetyOverlay.classList.add('animate-fade-in');
-
-                    // Add proximity warning
-                    const proximityWarning = document.getElementById('proximity-warning');
-                    proximityWarning.classList.add('animate-fade-in');
-
-                    // Add danger radar
-                    const dangerRadar = document.getElementById('danger-radar');
-                    dangerRadar.classList.add('animate-fade-in');
+                    
+                    // Check if any alerts need to be removed (utilities no longer in critical range)
+                    const alertsToRemove = [];
+                    AppState.activeAlerts.forEach(alert => {
+                        const stillCritical = criticalUtilities.some(
+                            item => item.utility.id === alert.utilityId
+                        );
+                        
+                        if (!stillCritical) {
+                            alertsToRemove.push(alert);
+                        }
+                    });
+                    
+                    // Remove alerts for utilities no longer in critical range
+                    alertsToRemove.forEach(alert => {
+                        const index = AppState.activeAlerts.findIndex(
+                            a => a.utilityId === alert.utilityId
+                        );
+                        
+                        if (index >= 0) {
+                            AppState.activeAlerts.splice(index, 1);
+                            UI.removeProximityAlert(alert);
+                        }
+                    });
+                    
+                    // Limit active alerts to 3
+                    if (AppState.activeAlerts.length > 3) {
+                        // Sort by timestamp (oldest first)
+                        AppState.activeAlerts.sort((a, b) => a.timestamp - b.timestamp);
+                        
+                        // Remove oldest
+                        const oldestAlert = AppState.activeAlerts.shift();
+                        UI.removeProximityAlert(oldestAlert);
+                    }
                 },
             };
             
@@ -5176,28 +5387,6 @@
                         btn.classList.remove('active');
                     });
                     document.querySelector(`#line-type-selector .line-type-button[data-type="${AppState.activeLineType}"]`).classList.add('active');
-
-                    // Excavation Mode event handlers
-                    document.getElementById('excavation-mode-btn').addEventListener('click', () => {
-                        if (!AppState.excavationModeActive) {
-                            this.showSafetyOverlay();
-                        } else {
-                            this.confirmExitExcavationMode();
-                        }
-                    });
-
-                    document.getElementById('cancel-excavation-mode').addEventListener('click', () => {
-                        this.hideSafetyOverlay();
-                    });
-
-                    document.getElementById('confirm-excavation-mode').addEventListener('click', () => {
-                        this.hideSafetyOverlay();
-                        this.activateExcavationMode();
-                    });
-
-                    document.getElementById('exit-proximity-warning').addEventListener('click', () => {
-                        document.getElementById('proximity-warning').classList.remove('visible');
-                    });
                 },
                 
                 // Update UI based on current app state
@@ -5890,105 +6079,174 @@
                     }
                 },
 
-                // Toggle excavation mode
-                toggleExcavationMode: function() {
-                    AppState.excavationModeActive = !AppState.excavationModeActive;
-                    if (AppState.excavationModeActive) {
-                        this.showExcavationModeUI();
-                    } else {
-                        this.hideExcavationModeUI();
-                    }
-                },
+                // Add these methods just before the end of the UI object
 
-                // Show excavation mode UI
-                showExcavationModeUI: function() {
-                    const excavationModeBtn = document.getElementById('excavation-mode-btn');
-                    excavationModeBtn.classList.add('active');
-                    const excavationModeIndicator = document.getElementById('excavation-mode-indicator');
-                    excavationModeIndicator.classList.add('animate-fade-in');
-                    const safetyOverlay = document.getElementById('safety-overlay');
-                    safetyOverlay.classList.add('animate-fade-in');
-                    const proximityWarning = document.getElementById('proximity-warning');
-                    proximityWarning.classList.add('animate-fade-in');
-                    const dangerRadar = document.getElementById('danger-radar');
-                    dangerRadar.classList.add('animate-fade-in');
-                },
-
-                // Hide excavation mode UI
-                hideExcavationModeUI: function() {
-                    const excavationModeBtn = document.getElementById('excavation-mode-btn');
-                    excavationModeBtn.classList.remove('active');
-                    const excavationModeIndicator = document.getElementById('excavation-mode-indicator');
-                    excavationModeIndicator.classList.remove('animate-fade-in');
-                    const safetyOverlay = document.getElementById('safety-overlay');
-                    safetyOverlay.classList.remove('animate-fade-in');
-                    const proximityWarning = document.getElementById('proximity-warning');
-                    proximityWarning.classList.remove('animate-fade-in');
-                    const dangerRadar = document.getElementById('danger-radar');
-                    dangerRadar.classList.remove('animate-fade-in');
-                },
-
-                // Show safety overlay
-                showSafetyOverlay: function() {
-                    const safetyOverlay = document.getElementById('safety-overlay');
-                    safetyOverlay.classList.add('visible');
-                },
-
-                // Hide safety overlay
-                hideSafetyOverlay: function() {
-                    const safetyOverlay = document.getElementById('safety-overlay');
-                    safetyOverlay.classList.remove('visible');
-                },
-
-                // Activate excavation mode
-                activateExcavationMode: function() {
-                    // Set app state
-                    AppState.excavationModeActive = true;
-                    
-                    // Show excavation mode active indicator
-                    document.getElementById('excavation-mode-indicator').classList.add('visible');
-                    
-                    // Mark the excavation button as active
-                    document.getElementById('excavation-mode-btn').classList.add('active');
-                    
-                    // Show the danger radar
-                    document.getElementById('danger-radar').classList.add('visible');
-                    
-                    // Apply MapController excavation mode
-                    MapController.activateExcavationMode();
-                    
-                    // Show toast message
-                    this.showToast('Excavation Safety Mode activated', 'info');
+                // Show excavation mode indicator
+                showExcavationModeIndicator: function() {
+                    const indicator = document.getElementById('excavation-indicator');
+                    indicator.classList.add('visible');
                 },
                 
-                // Confirm exit from excavation mode
-                confirmExitExcavationMode: function() {
-                    // Implement confirmation dialog for exit
-                    if (confirm('Are you sure you want to exit Excavation Safety Mode?')) {
-                        this.deactivateExcavationMode();
+                // Hide excavation mode indicator
+                hideExcavationModeIndicator: function() {
+                    const indicator = document.getElementById('excavation-indicator');
+                    indicator.classList.remove('visible');
+                },
+                
+                // Show exit excavation button
+                showExitExcavationButton: function() {
+                    const button = document.getElementById('exit-excavation-btn');
+                    button.classList.add('visible');
+                },
+                
+                // Hide exit excavation button
+                hideExitExcavationButton: function() {
+                    const button = document.getElementById('exit-excavation-btn');
+                    button.classList.remove('visible');
+                },
+                
+                // Show exit confirmation dialog
+                showExitConfirmation: function() {
+                    const modal = document.getElementById('exit-excavation-modal');
+                    modal.classList.add('visible');
+                },
+                
+                // Hide exit confirmation dialog
+                hideExitConfirmation: function() {
+                    const modal = document.getElementById('exit-excavation-modal');
+                    modal.classList.remove('visible');
+                },
+                
+                // Disable drawing controls
+                disableDrawingControls: function() {
+                    document.getElementById('add-utility-btn').style.display = 'none';
+                    document.getElementById('measure-btn').style.display = 'none';
+                    document.getElementById('layers-btn').style.display = 'none';
+                },
+                
+                // Enable drawing controls
+                enableDrawingControls: function() {
+                    document.getElementById('add-utility-btn').style.display = 'flex';
+                    document.getElementById('measure-btn').style.display = 'flex';
+                    document.getElementById('layers-btn').style.display = 'flex';
+                },
+                
+                // Create a proximity alert
+                createProximityAlert: function(alert) {
+                    const container = document.getElementById('proximity-alerts');
+                    const utility = alert.utility;
+                    const distance = alert.distance;
+                    
+                    // Create alert element
+                    const alertElement = document.createElement('div');
+                    alertElement.className = 'proximity-alert danger';
+                    alertElement.id = `alert-${utility.id}`;
+                    
+                    // Get utility type icon
+                    const icons = {
+                        water: 'tint',
+                        gas: 'fire',
+                        electric: 'bolt',
+                        sewer: 'toilet',
+                        telecom: 'phone'
+                    };
+                    
+                    // Get utility type name
+                    const typeNames = {
+                        water: 'Water',
+                        gas: 'Gas',
+                        electric: 'Electric',
+                        sewer: 'Sewer',
+                        telecom: 'Telecom'
+                    };
+                    
+                    // Utility type color
+                    const typeColors = {
+                        water: 'var(--water-color)',
+                        gas: 'var(--gas-color)',
+                        electric: 'var(--electric-color)',
+                        sewer: 'var(--sewer-color)',
+                        telecom: 'var(--telecom-color)'
+                    };
+                    
+                    // Create HTML content
+                    alertElement.innerHTML = `
+                        <div class="proximity-alert-header" style="background-color: ${typeColors[utility.type]}">
+                            <div class="proximity-alert-title">
+                                <i class="fas fa-${icons[utility.type]}"></i>
+                                <span>${typeNames[utility.type]} Line Nearby</span>
+                            </div>
+                            <button class="proximity-alert-dismiss" data-utility-id="${utility.id}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="proximity-alert-body">
+                            <div class="proximity-alert-info">
+                                <div class="proximity-info-item">
+                                    <div class="proximity-info-label">Line Type</div>
+                                    <div class="proximity-info-value">${utility.lineType === 'main' ? 'Main Line' : 'Service Line'}</div>
+                                </div>
+                                <div class="proximity-info-item">
+                                    <div class="proximity-info-label">Size</div>
+                                    <div class="proximity-info-value">${utility.size ? utility.size + ' in' : 'UNKNOWN'}</div>
+                                </div>
+                                <div class="proximity-info-item">
+                                    <div class="proximity-info-label">Depth</div>
+                                    <div class="proximity-info-value">${utility.depth ? utility.depth + ' ft' : 'UNKNOWN'}</div>
+                                </div>
+                                <div class="proximity-info-item">
+                                    <div class="proximity-info-label">Material</div>
+                                    <div class="proximity-info-value">${utility.material || 'UNKNOWN'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="proximity-alert-footer">
+                            <div class="proximity-distance">
+                                <i class="fas fa-ruler-horizontal"></i>
+                                <span id="distance-${utility.id}">${distance.toFixed(1)} ft</span>
+                            </div>
+                            <div class="proximity-timer" id="timer-${utility.id}">15:00</div>
+                        </div>
+                    `;
+                    
+                    // Add to container
+                    container.appendChild(alertElement);
+                    
+                    // Add dismiss handler
+                    alertElement.querySelector('.proximity-alert-dismiss').addEventListener('click', function() {
+                        const utilityId = this.getAttribute('data-utility-id');
+                        UI.dismissProximityAlert(utilityId);
+                    });
+                    
+                    // Store element reference
+                    alert.element = alertElement;
+                    
+                    // Start timer
+                    this.startAlertTimer(alert);
+                    
+                    // Show with animation
+                    setTimeout(() => {
+                        alertElement.classList.add('visible');
+                    }, 10);
+                },
+                
+                // Update a proximity alert
+                updateProximityAlert: function(alert) {
+                    const distance = alert.distance;
+                    const distanceElement = document.getElementById(`distance-${alert.utilityId}`);
+                    
+                    if (distanceElement) {
+                        distanceElement.textContent = `${distance.toFixed(1)} ft`;
+                        
+                        // Update color based on distance
+                        let color = 'var(--danger)';
+                        if (distance < 5) color = 'var(--danger)';
+                        else if (distance < 10) color = 'var(--warning)';
+                        
+                        distanceElement.parentElement.style.color = color;
                     }
                 },
                 
-                // Deactivate excavation mode
-                deactivateExcavationMode: function() {
-                    // Reset app state
-                    AppState.excavationModeActive = false;
-                    
-                    // Hide excavation mode active indicator
-                    document.getElementById('excavation-mode-indicator').classList.remove('visible');
-                    
-                    // Unmark the excavation button
-                    document.getElementById('excavation-mode-btn').classList.remove('active');
-                    
-                    // Hide the danger radar
-                    document.getElementById('danger-radar').classList.remove('visible');
-                    
-                    // Apply MapController excavation mode deactivation
-                    MapController.deactivateExcavationMode();
-                    
-                    // Show toast message
-                    this.showToast('Excavation Safety Mode deactivated', 'info');
-                },
             };
             
             /*********************************
@@ -6969,7 +7227,25 @@
                     
                     // Show toast
                     UI.showToast(`Selected ${type} line type`, 'info');
-                }
+                },
+
+                // Add these methods to the EventHandlers object
+                
+                // Handle exit excavation button click
+                handleExitExcavation: function() {
+                    UI.showExitConfirmation();
+                },
+                
+                // Confirm exit from excavation mode
+                confirmExitExcavation: function() {
+                    UI.hideExitConfirmation();
+                    this.setMode('discovery');
+                },
+                
+                // Cancel exit from excavation mode
+                cancelExitExcavation: function() {
+                    UI.hideExitConfirmation();
+                },
             };
             
             /*********************************
@@ -7120,5 +7396,37 @@
             }
         });
     </script>
+
+    <!-- Add these elements just before the closing body tag -->
+    <!-- Excavation Mode Indicator -->
+    <div class="excavation-mode-indicator" id="excavation-indicator">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>EXCAVATION MODE ACTIVE</span>
+    </div>
+
+    <!-- Proximity Alert Container -->
+    <div class="proximity-alert-container" id="proximity-alerts"></div>
+
+    <!-- Exit Excavation Button -->
+    <button class="exit-excavation-btn" id="exit-excavation-btn">
+        <i class="fas fa-times-circle"></i>
+        <span>Exit Excavation Mode</span>
+    </button>
+
+    <!-- Exit Confirmation Dialog -->
+    <div class="modal-overlay" id="exit-excavation-modal">
+        <div class="exit-confirmation">
+            <div class="exit-confirmation-title">
+                <i class="fas fa-exclamation-triangle"></i> Exit Excavation Mode?
+            </div>
+            <div class="exit-confirmation-message">
+                Are you sure you want to exit excavation mode? This will disable real-time proximity alerts.
+            </div>
+            <div class="exit-confirmation-buttons">
+                <button class="btn btn-secondary" id="cancel-exit-excavation">Cancel</button>
+                <button class="btn btn-danger" id="confirm-exit-excavation">Exit Mode</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
