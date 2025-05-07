@@ -4955,23 +4955,32 @@
                 updateUtilityHighlight: function(utility, distanceFeet) {
                     if (!utility.line) return;
                     
-                    // Reset existing proximity classes
-                    utility.line.getElement().classList.remove(
-                        'proximity-warning',
-                        'proximity-caution',
-                        'proximity-danger',
-                        'proximity-critical'
-                    );
-                    
-                    // Apply appropriate class based on distance thresholds
-                    if (distanceFeet <= AppState.distanceThresholds.critical) {
-                        utility.line.getElement().classList.add('proximity-critical');
-                    } else if (distanceFeet <= AppState.distanceThresholds.danger) {
-                        utility.line.getElement().classList.add('proximity-danger');
-                    } else if (distanceFeet <= AppState.distanceThresholds.caution) {
-                        utility.line.getElement().classList.add('proximity-caution');
-                    } else if (distanceFeet <= AppState.distanceThresholds.warning) {
-                        utility.line.getElement().classList.add('proximity-warning');
+                    try {
+                        // Get the DOM element safely
+                        const lineElement = utility.line._path || utility.line.getElement();
+                        
+                        if (!lineElement) return;
+                        
+                        // Reset existing proximity classes
+                        lineElement.classList.remove(
+                            'proximity-warning',
+                            'proximity-caution',
+                            'proximity-danger',
+                            'proximity-critical'
+                        );
+                        
+                        // Apply appropriate class based on distance thresholds
+                        if (distanceFeet <= AppState.distanceThresholds.critical) {
+                            lineElement.classList.add('proximity-critical');
+                        } else if (distanceFeet <= AppState.distanceThresholds.danger) {
+                            lineElement.classList.add('proximity-danger');
+                        } else if (distanceFeet <= AppState.distanceThresholds.caution) {
+                            lineElement.classList.add('proximity-caution');
+                        } else if (distanceFeet <= AppState.distanceThresholds.warning) {
+                            lineElement.classList.add('proximity-warning');
+                        }
+                    } catch (error) {
+                        console.error('Error updating utility highlight:', error);
                     }
                 },
                 
@@ -4979,13 +4988,20 @@
                 resetAllUtilityHighlights: function() {
                     for (const type in DataStore.utilities) {
                         DataStore.utilities[type].forEach(utility => {
-                            if (utility.line && utility.line.getElement()) {
-                                utility.line.getElement().classList.remove(
-                                    'proximity-warning',
-                                    'proximity-caution',
-                                    'proximity-danger',
-                                    'proximity-critical'
-                                );
+                            if (utility.line) {
+                                try {
+                                    const lineElement = utility.line._path || utility.line.getElement();
+                                    if (lineElement) {
+                                        lineElement.classList.remove(
+                                            'proximity-warning',
+                                            'proximity-caution',
+                                            'proximity-danger',
+                                            'proximity-critical'
+                                        );
+                                    }
+                                } catch (error) {
+                                    console.error('Error resetting utility highlight:', error);
+                                }
                             }
                         });
                     }
@@ -5387,6 +5403,22 @@
                         btn.classList.remove('active');
                     });
                     document.querySelector(`#line-type-selector .line-type-button[data-type="${AppState.activeLineType}"]`).classList.add('active');
+                    
+                    // Add these event listeners for excavation mode
+                    
+                    // Exit Excavation Button
+                    document.getElementById('exit-excavation-btn').addEventListener('click', () => {
+                        EventHandlers.handleExitExcavation();
+                    });
+                    
+                    // Exit Confirmation Dialog
+                    document.getElementById('cancel-exit-excavation').addEventListener('click', () => {
+                        EventHandlers.cancelExitExcavation();
+                    });
+                    
+                    document.getElementById('confirm-exit-excavation').addEventListener('click', () => {
+                        EventHandlers.confirmExitExcavation();
+                    });
                 },
                 
                 // Update UI based on current app state
@@ -5421,9 +5453,13 @@
                     if (AppState.mode === 'discovery') {
                         addBtn.innerHTML = '<i class="fas fa-plus"></i>';
                         addBtn.title = 'Add Utility';
-                    } else {
+                        addBtn.style.display = AppState.isExcavationMode ? 'none' : 'flex';
+                    } else if (AppState.mode === 'mapping') {
                         addBtn.innerHTML = '<i class="fas fa-draw-polygon"></i>';
                         addBtn.title = 'Draw Utility';
+                        addBtn.style.display = AppState.isExcavationMode ? 'none' : 'flex';
+                    } else if (AppState.mode === 'excavation') {
+                        addBtn.style.display = 'none';
                     }
                 },
                 
@@ -6247,6 +6283,85 @@
                     }
                 },
                 
+                // Remove a proximity alert
+                removeProximityAlert: function(alert) {
+                    const element = alert.element;
+                    
+                    if (element) {
+                        element.classList.remove('visible');
+                        
+                        setTimeout(() => {
+                            const container = document.getElementById('proximity-alerts');
+                            if (container.contains(element)) {
+                                container.removeChild(element);
+                            }
+                        }, 300);
+                    }
+                },
+                
+                // Dismiss a proximity alert by utility ID
+                dismissProximityAlert: function(utilityId) {
+                    const alertIndex = AppState.activeAlerts.findIndex(a => a.utilityId === utilityId);
+                    
+                    if (alertIndex >= 0) {
+                        const alert = AppState.activeAlerts[alertIndex];
+                        this.removeProximityAlert(alert);
+                        
+                        // Remove from active alerts but don't add it again for 15 minutes
+                        AppState.activeAlerts.splice(alertIndex, 1);
+                        
+                        // Store in dismissed alerts with timeout
+                        const dismissedAlert = {
+                            utilityId: utilityId,
+                            dismissedUntil: new Date().getTime() + (15 * 60 * 1000) // 15 minutes
+                        };
+                        
+                        if (!AppState.dismissedAlerts) AppState.dismissedAlerts = [];
+                        AppState.dismissedAlerts.push(dismissedAlert);
+                    }
+                },
+                
+                // Start alert timer for 15 minutes
+                startAlertTimer: function(alert) {
+                    const timerElement = document.getElementById(`timer-${alert.utilityId}`);
+                    const startTime = new Date().getTime();
+                    const duration = 15 * 60 * 1000; // 15 minutes in milliseconds
+                    
+                    alert.timer = setInterval(() => {
+                        const now = new Date().getTime();
+                        const elapsed = now - startTime;
+                        const remaining = duration - elapsed;
+                        
+                        if (remaining <= 0) {
+                            // Timer expired
+                            clearInterval(alert.timer);
+                            this.dismissProximityAlert(alert.utilityId);
+                            return;
+                        }
+                        
+                        // Update timer display
+                        const minutes = Math.floor(remaining / 60000);
+                        const seconds = Math.floor((remaining % 60000) / 1000);
+                        
+                        if (timerElement) {
+                            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        }
+                    }, 1000);
+                },
+                
+                // Close all proximity alerts
+                closeAllProximityAlerts: function() {
+                    const container = document.getElementById('proximity-alerts');
+                    container.innerHTML = '';
+                    
+                    AppState.activeAlerts.forEach(alert => {
+                        if (alert.timer) {
+                            clearInterval(alert.timer);
+                        }
+                    });
+                    
+                    AppState.activeAlerts = [];
+                },
             };
             
             /*********************************
@@ -6362,11 +6477,20 @@
                     if (mode === AppState.mode) return;
                     
                     // Update state
+                    const previousMode = AppState.mode;
                     AppState.mode = mode;
                     
                     // Cancel any active drawing or measurement
                     this.cancelDrawing();
                     this.cancelMeasurement();
+                    
+                    // Handle excavation mode separately
+                    if (mode === 'excavation') {
+                        MapController.enableExcavationMode();
+                    } else if (previousMode === 'excavation') {
+                        // Exiting excavation mode
+                        MapController.disableExcavationMode();
+                    }
                     
                     // Update UI
                     UI.updateButtons();
@@ -6375,19 +6499,18 @@
                     if (mode === 'discovery') {
                         UI.showToast('Switched to Discovery Mode', 'info');
                         UI.showStatusBar('Discovery Mode: Mark utilities as you find them');
-                    } else {
+                        UI.hideLineTypeSelector();
+                    } else if (mode === 'mapping') {
                         UI.showToast('Switched to Mapping Mode', 'info');
                         UI.showStatusBar('Mapping Mode: Draw complete utility lines');
+                        UI.showLineTypeSelector();
+                    } else if (mode === 'excavation') {
+                        UI.showToast('Excavation Mode Activated', 'warning');
+                        UI.showStatusBar('CAUTION: Excavation Mode - Monitoring utility proximity');
+                        UI.hideLineTypeSelector();
                     }
                     
                     setTimeout(() => UI.hideStatusBar(), 3000);
-
-                    // Show or hide line type selector based on mode
-                    if (mode === 'mapping') {
-                        UI.showLineTypeSelector();
-                    } else {
-                        UI.hideLineTypeSelector();
-                    }
                 },
                 
                 // Set active utility type
