@@ -311,7 +311,7 @@
         /* Utility Toolbar */
         .utility-toolbar {
             position: absolute;
-            top: var(--space-lg);
+            top: calc(var(--space-lg) + 50px); /* Move below header and any notifications */
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -453,7 +453,7 @@
         .tool-options {
             position: absolute;
             left: var(--space-md);
-            top: var(--space-lg);
+            top: calc(var(--space-lg) + 50px); /* Align with other controls */
             display: flex;
             flex-direction: column;
             gap: var(--space-sm);
@@ -951,7 +951,7 @@
         .map-controls {
             position: absolute;
             right: var(--space-md);
-            top: var(--space-lg);
+            top: calc(var(--space-lg) + 50px); /* Move below the layer control */
             display: flex;
             flex-direction: column;
             gap: var(--space-sm);
@@ -1250,7 +1250,7 @@
         *********************************/
         .notification-container {
             position: fixed;
-            top: var(--space-lg);
+            top: calc(var(--space-lg) + 10px);
             left: 50%;
             transform: translateX(-50%);
             z-index: var(--z-toast);
@@ -1438,7 +1438,7 @@
         /* Add styles for the zoom warning */
         .zoom-warning {
             position: absolute;
-            top: var(--space-xl);
+            top: calc(var(--space-xl) + 10px);
             left: 50%;
             transform: translateX(-50%);
             background-color: var(--warning);
@@ -1448,7 +1448,7 @@
             box-shadow: var(--shadow-md);
             font-size: 0.875rem;
             font-weight: 500;
-            z-index: var(--z-fixed);
+            z-index: var(--z-toast); /* Ensure it's above other elements */
             display: flex;
             align-items: center;
             gap: var(--space-sm);
@@ -1456,6 +1456,7 @@
             visibility: hidden;
             transition: opacity var(--transition-normal),
                         visibility var(--transition-normal);
+            max-width: 80%;
         }
         
         .zoom-warning.visible {
@@ -1821,6 +1822,18 @@
             .structure-option {
                 padding: var(--space-xs);
             }
+            
+            .utility-toolbar {
+                top: calc(var(--space-lg) + 40px);
+            }
+            
+            .map-controls {
+                top: calc(var(--space-lg) + 40px);
+            }
+            
+            .tool-options {
+                top: calc(var(--space-lg) + 40px);
+            }
         }
         
         @media (min-width: 768px) {
@@ -1851,12 +1864,24 @@
                 height: 60px;
                 font-size: 1.5rem;
             }
+            
+            .utility-toolbar {
+                top: calc(var(--space-lg) + 60px);
+            }
+            
+            .map-controls {
+                top: calc(var(--space-lg) + 60px);
+            }
+            
+            .tool-options {
+                top: calc(var(--space-lg) + 60px);
+            }
         }
 
         /* Add styles for confirm buttons and layer control */
         .confirm-drawing-btn {
             position: absolute;
-            bottom: calc(100px + var(--space-xl) + 50px);
+            bottom: calc(100px + var(--space-xl) + 60px); /* Ensure it's well above navbar */
             left: 50%;
             transform: translateX(-50%);
             background-color: var(--success);
@@ -1878,6 +1903,8 @@
         .leaflet-control-layers {
             border-radius: var(--radius-md) !important;
             box-shadow: var(--shadow-md) !important;
+            z-index: var(--z-fixed) !important;
+            position: relative !important;
         }
 
         .leaflet-control-layers-toggle {
@@ -2836,30 +2863,39 @@
                     this.map = L.map('map', {
                         zoomControl: false,
                         attributionControl: true,
-                        maxZoom: 22  // Increased from default to allow deeper zoom
+                        maxZoom: 22,  // Increased from default to allow deeper zoom
+                        preferCanvas: true // Better performance for high detail rendering
                     }).setView([40.7128, -74.0060], 16); // Default to NYC
                     
-                    // Add multiple tile layers for different map views
+                    // Add multiple tile layers for different map views with high zoom support
                     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                        maxZoom: 22
+                        maxZoom: 22,
+                        maxNativeZoom: 19, // Max zoom where original tiles exist (then they'll be scaled)
+                        keepBuffer: 8 // Increased buffer to prevent tile disappearance during panning
                     });
                     
                     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                        maxZoom: 22
+                        maxZoom: 22,
+                        maxNativeZoom: 19,
+                        keepBuffer: 8
                     });
                     
                     const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
                         attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
-                        maxZoom: 18
+                        maxZoom: 22,
+                        maxNativeZoom: 17, // OpenTopoMap has more limited zoom levels
+                        keepBuffer: 8
                     });
                     
-                    // Add streets with labels layer for hybrid view
-                    const streetsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', {
+                    // High-detail street map for very high zoom levels
+                    const streetsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                         subdomains: 'abcd',
-                        maxZoom: 22
+                        maxZoom: 22,
+                        maxNativeZoom: 19,
+                        keepBuffer: 8
                     });
                     
                     // Store base layers
@@ -2867,7 +2903,7 @@
                         "Standard Map": osmLayer,
                         "Satellite": satelliteLayer,
                         "Topographic": topoLayer,
-                        "Streets": streetsLayer
+                        "Streets (Detailed)": streetsLayer
                     };
                     
                     // Add default layer to map
@@ -2915,6 +2951,14 @@
                         } else {
                             UI.hideZoomWarning();
                         }
+                        
+                        // Update UI positions when zoom changes
+                        UI.updateUIPositions();
+                    });
+                    
+                    // Listen for map move events to ensure UI stays positioned correctly
+                    this.map.on('moveend', function() {
+                        UI.updateUIPositions();
                     });
                 },
                 
@@ -3646,6 +3690,11 @@
                 init: function() {
                     this.setupEventListeners();
                     this.updateButtons();
+                    
+                    // Initialize element positions
+                    setTimeout(() => {
+                        this.updateUIPositions();
+                    }, 500);
                 },
                 
                 // Set up UI event listeners
@@ -4453,6 +4502,104 @@
                 hideZoomWarning: function() {
                     const warning = document.getElementById('zoom-warning');
                     warning.classList.remove('visible');
+                },
+                
+                // Update UI positions based on current view
+                updateUIPositions: function() {
+                    // Update position of floating elements based on current view
+                    const navBar = document.getElementById('nav-bar');
+                    const navHeight = navBar ? navBar.offsetHeight : 60;
+                    
+                    // Update confirm button position
+                    const confirmBtn = document.getElementById('confirm-drawing-btn');
+                    if (confirmBtn) {
+                        confirmBtn.style.bottom = `${navHeight + 60}px`;
+                    }
+                    
+                    // Update reposition panel position
+                    const repositionPanel = document.getElementById('reposition-panel');
+                    if (repositionPanel) {
+                        repositionPanel.style.bottom = `${navHeight + 20}px`;
+                    }
+                    
+                    // Update mode toggle position to avoid overlap
+                    const modeToggle = document.getElementById('mode-toggle');
+                    if (modeToggle) {
+                        modeToggle.style.bottom = `${navHeight + 20}px`;
+                    }
+                    
+                    // Adjust action buttons position
+                    const actionButtons = document.getElementById('action-buttons');
+                    if (actionButtons) {
+                        actionButtons.style.bottom = `${navHeight + 20}px`;
+                        
+                        // Ensure action buttons don't overlap with mode toggle
+                        if (modeToggle && modeToggle.offsetParent !== null) {
+                            // Get mode toggle position
+                            const toggleRect = modeToggle.getBoundingClientRect();
+                            const actionRect = actionButtons.getBoundingClientRect();
+                            
+                            // If overlapping horizontally, adjust position
+                            if (Math.abs(toggleRect.left + toggleRect.width/2 - actionRect.left) < 80) {
+                                // Use a fixed value instead of CSS variable in JS
+                                const minMargin = 16; // equivalent to var(--space-md)
+                                actionButtons.style.right = `${Math.max(minMargin, (window.innerWidth - toggleRect.left) + 20)}px`;
+                            }
+                        }
+                    }
+                    
+                    // Position utility toolbar to avoid overlap with other controls
+                    const toolbar = document.querySelector('.utility-toolbar');
+                    const mapControls = document.querySelector('.map-controls');
+                    const layerControl = document.querySelector('.leaflet-control-layers');
+                    
+                    if (toolbar && mapControls && layerControl) {
+                        // Check if layer control is expanded
+                        const isExpanded = layerControl.classList.contains('leaflet-control-layers-expanded');
+                        
+                        if (isExpanded) {
+                            // Move toolbar down to avoid overlap
+                            const defaultTop = 80; // equivalent to calc(var(--space-lg) + 50px)
+                            toolbar.style.top = `${Math.max(defaultTop, layerControl.getBoundingClientRect().bottom + 10)}px`;
+                        }
+                    }
+                    
+                    // Check for other UI elements that might need positioning adjustments
+                    this.adjustOverlappingElements();
+                },
+                
+                // Method to check for and fix any overlapping elements
+                adjustOverlappingElements: function() {
+                    // Get all major UI elements that could overlap
+                    const elements = [
+                        document.querySelector('.utility-toolbar'),
+                        document.querySelector('.map-controls'),
+                        document.querySelector('.tool-options'),
+                        document.querySelector('.leaflet-control-layers'),
+                        document.querySelector('.zoom-warning'),
+                        document.querySelector('.status-bar'),
+                        document.getElementById('mode-toggle'),
+                        document.getElementById('action-buttons')
+                    ].filter(el => el && el.offsetParent !== null); // Only visible elements
+                    
+                    // Check current positions and adjust if needed
+                    // This is a simplistic approach - in a real app you'd do more sophisticated collision detection
+                    const positions = {};
+                    elements.forEach(el => {
+                        const rect = el.getBoundingClientRect();
+                        const key = `${Math.floor(rect.top / 50)}-${Math.floor(rect.left / 50)}`;
+                        
+                        if (positions[key]) {
+                            // Potential overlap detected, adjust position
+                            if (el.classList.contains('tool-options') || el.classList.contains('map-controls')) {
+                                // Adjust vertical position slightly
+                                const currentTop = parseInt(el.style.top || '0');
+                                el.style.top = `${currentTop + 10}px`;
+                            }
+                        } else {
+                            positions[key] = el;
+                        }
+                    });
                 }
             };
             
@@ -5450,6 +5597,22 @@
                     MapController.disableRepositioning(true);
                 }
             }
+        });
+    </script>
+
+    <!-- Add these at the end of the file, just before the closing body tag -->
+
+    <!-- Call updateUIPositions when window is resized -->
+    <script>
+        window.addEventListener('resize', function() {
+            UI.updateUIPositions();
+        });
+
+        // Initialize UI positions when map finishes loading
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                UI.updateUIPositions();
+            }, 1000);
         });
     </script>
 </body>
