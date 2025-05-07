@@ -1821,6 +1821,57 @@
                 font-size: 1.5rem;
             }
         }
+        
+        /* Drawing Control Panel */
+        .drawing-control-panel {
+            position: absolute;
+            bottom: var(--space-lg);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+            z-index: var(--z-fixed);
+            width: 90%;
+            max-width: 320px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-normal),
+                        visibility var(--transition-normal);
+        }
+        
+        .drawing-control-panel.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .drawing-panel-heading {
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-align: center;
+            color: var(--primary);
+        }
+        
+        .drawing-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+        
+        .drawing-hint {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        
+        .drawing-point-count {
+            font-weight: 600;
+            color: var(--primary);
+        }
     </style>
 </head>
 
@@ -1962,6 +2013,25 @@
                     </button>
                     <button class="btn btn-primary" id="save-reposition-btn">
                         Save Position
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Drawing Control Panel -->
+            <div class="drawing-control-panel" id="drawing-panel">
+                <div class="drawing-panel-heading">
+                    <i class="fas fa-draw-polygon"></i> Drawing Utility Line
+                </div>
+                <div class="drawing-hint">
+                    Points: <span class="drawing-point-count" id="drawing-point-count">0</span>
+                    <br>Click on the map to add points
+                </div>
+                <div class="drawing-buttons">
+                    <button class="btn btn-secondary" id="cancel-drawing-btn">
+                        Cancel
+                    </button>
+                    <button class="btn btn-primary" id="finish-drawing-btn">
+                        Finish Drawing
                     </button>
                 </div>
             </div>
@@ -2746,10 +2816,19 @@
                         maxZoom: 22
                     }).setView([40.7128, -74.0060], 16); // Default to NYC
                     
-                    // Add tile layer (OpenStreetMap)
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                        maxZoom: 22
+                    // Replace OpenStreetMap with higher detail provider that supports high zoom
+                    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">HOT</a>',
+                        maxZoom: 22,
+                        maxNativeZoom: 19  // This is what OSM provides natively
+                    }).addTo(this.map);
+                    
+                    // Add a fallback layer for very high zoom levels
+                    L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+                        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                        attribution: '&copy; Google Maps',
+                        maxZoom: 22,
+                        minZoom: 18
                     }).addTo(this.map);
                     
                     // Initialize utility layers for each type
@@ -3139,14 +3218,10 @@
                     // Get the original points
                     const points = utility.line.getLatLngs();
                     
-                    // Calculate control point spacing
-                    const totalSegments = points.length + 1;
-                    const segmentStep = Math.max(1, Math.floor(totalSegments / 10));
-                    
                     // Create control points (handles) for each point in the line
                     AppState.controlPoints = [];
                     
-                    for (let i = 0; i < points.length; i += segmentStep) {
+                    for (let i = 0; i < points.length; i++) {
                         const point = points[i];
                         
                         // Create marker for control point
@@ -3173,6 +3248,52 @@
                         
                         // Store control point
                         AppState.controlPoints.push(handle);
+                    }
+                    
+                    // If there are too few points, add intermediate points
+                    if (points.length < 3) {
+                        // Add midpoints between existing points for more detailed control
+                        for (let i = 0; i < points.length - 1; i++) {
+                            const p1 = points[i];
+                            const p2 = points[i + 1];
+                            
+                            // Calculate midpoint
+                            const midPoint = L.latLng(
+                                (p1.lat + p2.lat) / 2,
+                                (p1.lng + p2.lng) / 2
+                            );
+                            
+                            // Insert midpoint into points array
+                            points.splice(i + 1, 0, midPoint);
+                            
+                            // Create handle for midpoint
+                            const handle = L.marker(midPoint, {
+                                draggable: true,
+                                icon: L.divIcon({
+                                    className: 'edit-control-point',
+                                    iconSize: [12, 12],
+                                    iconAnchor: [6, 6]
+                                })
+                            }).addTo(this.map);
+                            
+                            // Store point index (now shifted because we inserted a point)
+                            handle.pointIndex = i + 1;
+                            
+                            // Add drag events
+                            handle.on('drag', function(e) {
+                                // Update point position
+                                points[this.pointIndex] = e.latlng;
+                                
+                                // Update line on the map
+                                utility.line.setLatLngs(points);
+                            });
+                            
+                            // Store control point
+                            AppState.controlPoints.push(handle);
+                        }
+                        
+                        // Update the line with the new points including midpoints
+                        utility.line.setLatLngs(points);
                     }
                     
                     // Show repositioning panel
@@ -4255,6 +4376,30 @@
                     document.querySelectorAll('.modal-overlay').forEach(modal => {
                         modal.classList.remove('visible');
                     });
+                },
+                
+                // Show drawing panel
+                showDrawingPanel: function() {
+                    const panel = document.getElementById('drawing-panel');
+                    panel.classList.add('visible');
+                    document.getElementById('drawing-point-count').textContent = '0';
+                },
+                
+                // Hide drawing panel
+                hideDrawingPanel: function() {
+                    const panel = document.getElementById('drawing-panel');
+                    panel.classList.remove('visible');
+                },
+                
+                // Update drawing point count
+                updateDrawingPointCount: function(count) {
+                    document.getElementById('drawing-point-count').textContent = count.toString();
+                },
+                
+                // Show repositioning panel
+                showRepositionPanel: function() {
+                    const panel = document.getElementById('reposition-panel');
+                    panel.classList.add('visible');
                 }
             };
             
@@ -4418,23 +4563,12 @@
                     // Add point to drawing
                     AppState.drawingPoints.push(e.latlng);
                     
+                    // Update point count in UI
+                    UI.updateDrawingPointCount(AppState.drawingPoints.length);
+                    
                     // Update status
                     const count = AppState.drawingPoints.length;
-                    UI.showStatusBar(`Point ${count} added. Click to add more points, or double-click to finish.`);
-                    
-                    // Check for double click (end drawing)
-                    if (count >= 2) {
-                        const lastPoint = AppState.drawingPoints[count - 1];
-                        const prevPoint = AppState.drawingPoints[count - 2];
-                        
-                        const distance = MapController.map.distance(lastPoint, prevPoint);
-                        
-                        if (distance < 3) { // Double click threshold (3 meters)
-                            // Remove the last point (duplicate from double click)
-                            AppState.drawingPoints.pop();
-                            this.finishUtilityDrawing();
-                        }
-                    }
+                    UI.showStatusBar(`Point ${count} added. Click to add more points, or use Finish button to complete.`);
                 },
                 
                 // Start utility mapping
@@ -4449,7 +4583,10 @@
                     AppState.drawingPoints = [];
                     
                     // Update status
-                    UI.showStatusBar('Click on the map to start drawing a utility line. Double-click to finish.');
+                    UI.showStatusBar('Click on the map to start drawing a utility line');
+                    
+                    // Show drawing panel with confirm/cancel buttons
+                    UI.showDrawingPanel();
                     
                     // Update UI
                     document.body.style.cursor = 'crosshair';
@@ -4506,6 +4643,9 @@
                         MapController.map.removeLayer(AppState.tempLine);
                         AppState.tempLine = null;
                     }
+                    
+                    // Hide drawing panel
+                    UI.hideDrawingPanel();
                     
                     // Update UI
                     document.body.style.cursor = '';
