@@ -112,6 +112,7 @@
             overflow: hidden;
             background-color: var(--bg-main);
             color: var(--text-primary);
+            touch-action: pan-x pan-y; /* Prevent double-tap zoom on UI elements */
         }
         
         button, 
@@ -311,7 +312,7 @@
         /* Utility Toolbar */
         .utility-toolbar {
             position: absolute;
-            top: calc(var(--space-lg) + 50px);
+            top: 10px; /* Moved up from calc(var(--space-lg) + 50px) */
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -321,7 +322,7 @@
             padding: var(--space-xs);
             z-index: var(--z-fixed);
             overflow-x: auto;
-            max-width: 85%;
+            max-width: 70%; /* Reduced from 85% */
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
@@ -335,14 +336,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: var(--space-xs) var(--space-sm);
+            padding: 2px 6px; /* Reduced from var(--space-xs) var(--space-sm) */
             color: var(--gray-600);
             border-radius: var(--radius-full);
             transition: background-color var(--transition-fast),
                         color var(--transition-fast),
                         transform var(--transition-fast);
-            gap: 2px;
-            min-width: 48px; /* Reduced from 60px */
+            gap: 1px; /* Reduced from 2px */
+            min-width: 40px; /* Reduced from 48px */
         }
         
         .utility-button:active {
@@ -350,11 +351,11 @@
         }
         
         .utility-button i {
-            font-size: 1rem; /* Reduced from 1.25rem */
+            font-size: 0.85rem; /* Reduced from 1rem */
         }
         
         .utility-label {
-            font-size: 0.6rem; /* Reduced from 0.65rem */
+            font-size: 0.5rem; /* Reduced from 0.6rem */
             font-weight: 500;
         }
         
@@ -1042,14 +1043,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 36px;
-            height: 36px;
+            width: 26px; /* Reduced from 36px */
+            height: 26px; /* Reduced from 36px */
             border-radius: 50%;
             background-color: white;
             color: var(--primary);
             border: 2px solid currentColor;
             box-shadow: var(--shadow-md);
-            font-size: 1rem;
+            font-size: 0.8rem; /* Reduced from 1rem */
             position: relative;
         }
         
@@ -1058,8 +1059,8 @@
             position: absolute;
             top: 100%;
             left: 50%;
-            margin-left: -8px;
-            border-width: 8px;
+            margin-left: -6px; /* Reduced from -8px */
+            border-width: 6px; /* Reduced from 8px */
             border-style: solid;
             border-color: white transparent transparent transparent;
         }
@@ -1191,6 +1192,26 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            position: relative;
+        }
+        
+        .annotation-delete-btn {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            z-index: 1;
         }
         
         /*********************************
@@ -2070,14 +2091,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 36px;
-            height: 36px;
+            width: 26px; /* Reduced from 36px */
+            height: 26px; /* Reduced from 36px */
             border-radius: 50%;
             background-color: white;
             color: var(--primary);
             border: 2px solid currentColor;
             box-shadow: var(--shadow-md);
-            font-size: 1rem;
+            font-size: 0.8rem; /* Reduced from 1rem */
             position: relative;
         }
 
@@ -2087,8 +2108,8 @@
             position: absolute;
             top: 100%;
             left: 50%;
-            margin-left: -8px;
-            border-width: 8px;
+            margin-left: -6px; /* Reduced from -8px */
+            border-width: 6px; /* Reduced from 8px */
             border-style: solid;
             border-color: white transparent transparent transparent;
         }
@@ -3515,7 +3536,8 @@
                         zoomControl: false,
                         attributionControl: true,
                         maxZoom: 22,  // Increased from default to allow deeper zoom
-                        preferCanvas: true // Better performance for high detail rendering
+                        preferCanvas: true, // Better performance for high detail rendering
+                        doubleClickZoom: false // Disable double-click zoom
                     }).setView([40.7128, -74.0060], 16); // Default to NYC
                     
                     // Add multiple tile layers for different map views with high zoom support
@@ -4503,10 +4525,13 @@
                 addAnnotation: function(annotation) {
                     if (!annotation || !annotation.latlng || !annotation.text) return;
                     
-                    // Create custom HTML icon
+                    // Create custom HTML icon with delete button
                     const markerHtml = `
                         <div class="annotation-marker">
                             ${annotation.text}
+                            <button class="annotation-delete-btn" data-annotation-id="${annotation.id}">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     `;
                     
@@ -4529,11 +4554,46 @@
                     // Add to annotation layer
                     marker.addTo(this.annotationLayer);
                     
+                    // Add click handler for delete button
+                    setTimeout(() => {
+                        const deleteBtn = document.querySelector(`.annotation-delete-btn[data-annotation-id="${annotation.id}"]`);
+                        if (deleteBtn) {
+                            deleteBtn.addEventListener('click', (e) => {
+                                e.stopPropagation(); // Prevent event from bubbling to marker
+                                this.deleteAnnotation(annotation.id);
+                            });
+                        }
+                    }, 100);
+                    
                     // Store reference to the marker
                     annotation.marker = marker;
                     
                     // Return the created marker
                     return marker;
+                },
+
+                // Add method to delete an annotation
+                deleteAnnotation: function(annotationId) {
+                    // Find the annotation
+                    const index = DataStore.annotations.findIndex(a => a.id === annotationId);
+                    
+                    if (index >= 0) {
+                        const annotation = DataStore.annotations[index];
+                        
+                        // Remove marker from map
+                        if (annotation.marker) {
+                            this.annotationLayer.removeLayer(annotation.marker);
+                        }
+                        
+                        // Remove from data store
+                        DataStore.annotations.splice(index, 1);
+                        
+                        // Save data
+                        DataStore.saveData();
+                        
+                        // Show confirmation
+                        UI.showToast('Annotation deleted', 'success');
+                    }
                 },
 
                 // Show temporary drawing line during mapping
@@ -4742,7 +4802,7 @@
                     UI.showExitExcavationButton();
                     
                     // Set a more focused zoom level and follow user
-                    this.map.setZoom(18);
+                    this.map.setZoom(21); // Increased from 18 for much closer zoom
                     
                     // Go to user's location if available
                     if (this.userLocationMarker) {
