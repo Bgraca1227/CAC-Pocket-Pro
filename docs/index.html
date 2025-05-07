@@ -2171,7 +2171,7 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background-color: rgba(33, 150, 243, 0.2);
+            background-color: rgba(33, 150, 243, 0.4);
             opacity: 0;
             animation: location-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
         }
@@ -2183,10 +2183,43 @@
             left: 10%;
             top: 10%;
             border-radius: 50%;
-            background-color: rgba(33, 150, 243, 0.3);
+            background-color: rgba(33, 150, 243, 0.6);
             opacity: 0;
             animation: location-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
             animation-delay: 0.5s;
+        }
+
+        .location-center {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            left: 25%;
+            top: 25%;
+            border-radius: 50%;
+            background-color: rgb(33, 150, 243);
+            border: 2px solid white;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+            z-index: 1;
+        }
+
+        .location-heading {
+            position: absolute;
+            width: 0;
+            height: 0;
+            left: 50%;
+            top: -2px;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 16px solid rgb(33, 150, 243);
+            transform-origin: center bottom;
+            transform: translateX(-50%) rotate(0deg);
+            opacity: 1; /* Always visible */
+            transition: transform 0.3s ease;
+            z-index: 2; /* Ensure arrow is above the pulse animations */
+        }
+
+        .user-location-marker.with-heading .location-heading {
+            opacity: 1;
         }
 
         @keyframes location-pulse {
@@ -2197,6 +2230,44 @@
             100% {
                 transform: scale(1.5);
                 opacity: 0;
+            }
+        }
+
+        /* Replace the existing user location marker CSS with this more professional design */
+        .user-location-marker {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        /* Remove the separate elements in favor of a single SVG */
+        .location-pulse, .location-pulse-inner, .location-center, .location-heading {
+            display: none;
+        }
+
+        /* New SVG-based marker animation */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.5);
+                opacity: 0.8;
+            }
+            50% {
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulse-dot {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
             }
         }
     </style>
@@ -3329,36 +3400,56 @@
                         this.map.removeLayer(this.userLocationMarker);
                     }
                     
-                    // Create SVG-based professional marker
-                    const svgSize = 48;
+                    // Create a professional SVG marker with integrated direction indicator
+                    // The SVG uses a teardrop/pin design that naturally shows direction
+                    const markerSvg = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 54" width="54" height="54">
+                            <!-- Outer pulse animation -->
+                            <circle class="pulse-ring" cx="27" cy="27" r="14" 
+                                fill="rgba(33, 150, 243, 0.2)" 
+                                style="transform-origin: center; animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"
+                            />
+                            
+                            <!-- Inner pulse animation -->
+                            <circle class="pulse-ring-inner" cx="27" cy="27" r="10" 
+                                fill="rgba(33, 150, 243, 0.3)" 
+                                style="transform-origin: center; animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; animation-delay: 0.5s;"
+                            />
+                            
+                            <!-- Main teardrop/navigation marker that shows direction -->
+                            <g class="marker-container" style="transform-origin: center; animation: pulse-dot 1.5s ease infinite;">
+                                <!-- Background glow/shadow for better visibility -->
+                                <path d="M27,14 c-7,0 -13,5 -13,13 c0,5 3,9 6,12 l7,7 l7,-7 c3,-3 6,-7 6,-12 c0,-8 -6,-13 -13,-13z" 
+                                    fill="rgba(33, 150, 243, 0.6)" 
+                                    filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.5))" 
+                                />
+                                
+                                <!-- Main teardrop shape -->
+                                <path class="main-marker" d="M27,16 c-6,0 -11,4 -11,11 c0,4 2,8 5,10 l6,6 l6,-6 c3,-2 5,-6 5,-10 c0,-7 -5,-11 -11,-11z" 
+                                    fill="#2196F3" 
+                                    stroke="white" 
+                                    stroke-width="1.5"
+                                />
+                                
+                                <!-- Direction indicator (internal to the teardrop) -->
+                                <path d="M27,19 l-5,9 h10 z" 
+                                    fill="white" 
+                                    style="transform-origin: center;" 
+                                    class="direction-arrow"
+                                />
+                                
+                                <!-- Center dot -->
+                                <circle cx="27" cy="27" r="2" fill="white" />
+                            </g>
+                        </svg>
+                    `;
+                    
+                    // Create a custom divIcon with our SVG
                     const userLocationIcon = L.divIcon({
                         className: 'user-location-marker',
-                        html: `
-                            <div class="location-pulse"></div>
-                            <div class="location-pulse-inner"></div>
-                            <svg width="${svgSize}" height="${svgSize}" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <!-- Glow effect -->
-                                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feGaussianBlur stdDeviation="2" result="blur" />
-                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                </filter>
-                                
-                                <!-- Arrow/teardrop shape pointing upward (will be rotated by JS) -->
-                                <g class="direction-indicator" style="transform-origin: center; transform: rotate(0deg);">
-                                    <!-- Outer shadow/stroke -->
-                                    <path d="M24 4L36 36H12L24 4Z" fill="#1565C0" filter="url(#glow)" />
-                                    <!-- Main arrow -->
-                                    <path d="M24 6L35 34H13L24 6Z" fill="#2196F3" />
-                                    <!-- Inner highlight -->
-                                    <path d="M24 10L32 32H16L24 10Z" fill="#64B5F6" />
-                                    <!-- Center dot -->
-                                    <circle cx="24" cy="24" r="6" fill="white" />
-                                    <circle cx="24" cy="24" r="4" fill="#2196F3" />
-                                </g>
-                            </svg>
-                        `,
-                        iconSize: [svgSize, svgSize],
-                        iconAnchor: [svgSize/2, svgSize/2]
+                        html: markerSvg,
+                        iconSize: [54, 54],
+                        iconAnchor: [27, 40]  // Anchor point should be below center to make teardrop point to exact location
                     });
                     
                     // Add marker to map
@@ -3376,36 +3467,62 @@
                     // Store reference to marker
                     this.userLocationMarker = marker;
                     
-                    // Start watching position if not already
+                    // Start watching position with improved accuracy
                     this.startWatchingPosition();
                     
                     return marker;
                 },
 
-                // Start watching user position
+                // Enhance position watching with better accuracy and filtering
                 startWatchingPosition: function() {
                     if (this.watchPositionId) return; // Already watching
                     
                     // Store initial heading
                     this.currentHeading = 0;
                     
+                    // Initialize position filter
+                    this.lastPosition = null;
+                    this.positionHistory = [];
+                    this.positionAccuracyThreshold = 25; // meters
+                    
                     // Start watching device orientation for compass heading
                     this.setupOrientationTracking();
                     
                     if (navigator.geolocation) {
+                        const options = {
+                            enableHighAccuracy: true,  // Request the most accurate position available
+                            timeout: 15000,            // Wait up to 15 seconds for a position
+                            maximumAge: 0,             // Don't use cached positions
+                            frequency: 1000            // Try to update every second
+                        };
+                        
                         this.watchPositionId = navigator.geolocation.watchPosition(
-                            // Success callback
+                            // Success callback with enhanced filtering
                             (position) => {
                                 const lat = position.coords.latitude;
                                 const lng = position.coords.longitude;
+                                const accuracy = position.coords.accuracy;
                                 
-                                // Update marker position
-                                if (this.userLocationMarker) {
-                                    this.userLocationMarker.setLatLng([lat, lng]);
+                                // Apply filtering for better accuracy
+                                if (this.shouldUpdatePosition(lat, lng, accuracy)) {
+                                    // Update marker position
+                                    if (this.userLocationMarker) {
+                                        this.userLocationMarker.setLatLng([lat, lng]);
+                                    }
+                                    
+                                    // Store for filtering
+                                    this.lastPosition = {lat, lng, accuracy, timestamp: Date.now()};
+                                    this.positionHistory.push(this.lastPosition);
+                                    
+                                    // Keep history limited to last 5 positions
+                                    if (this.positionHistory.length > 5) {
+                                        this.positionHistory.shift();
+                                    }
                                 }
                                 
                                 // Update heading indicator if available from GPS
-                                if (position.coords.heading !== null && position.coords.heading !== undefined) {
+                                if (position.coords.heading !== null && position.coords.heading !== undefined && position.coords.speed > 0.5) {
+                                    // If we're moving more than 0.5 m/s, use GPS heading
                                     this.updateHeading(position.coords.heading);
                                 }
                             },
@@ -3414,17 +3531,89 @@
                                 console.error('Error watching position:', error);
                                 // Don't stop watching on error - just log it
                             },
-                            // Options
-                            {
-                                enableHighAccuracy: true,
-                                timeout: 10000,
-                                maximumAge: 0
-                            }
+                            options
                         );
                     }
                 },
 
-                // Stop watching user position
+                // Improved position filtering algorithm
+                shouldUpdatePosition: function(lat, lng, accuracy) {
+                    // Always accept first position
+                    if (!this.lastPosition) return true;
+                    
+                    // Filter out low-accuracy positions (unless it's been too long since last update)
+                    const timeSinceLastUpdate = Date.now() - this.lastPosition.timestamp;
+                    if (accuracy > this.positionAccuracyThreshold && timeSinceLastUpdate < 10000) {
+                        return false;
+                    }
+                    
+                    // Calculate distance from last position
+                    const lastLat = this.lastPosition.lat;
+                    const lastLng = this.lastPosition.lng;
+                    const distance = this.map.distance([lastLat, lastLng], [lat, lng]);
+                    
+                    // Accept if we've moved a significant distance (more than 2 meters)
+                    if (distance > 2) return true;
+                    
+                    // Accept if the new position is more accurate
+                    if (accuracy < this.lastPosition.accuracy) return true;
+                    
+                    // Accept if it's been more than 3 seconds since last update
+                    if (timeSinceLastUpdate > 3000) return true;
+                    
+                    // Otherwise don't update
+                    return false;
+                },
+
+                // Update the heading indicator with SVG rotation
+                updateHeading: function(heading) {
+                    if (isNaN(heading)) return;
+                    
+                    // Smooth the heading changes
+                    this.currentHeading = this.smoothHeading(heading, this.currentHeading || 0);
+                    
+                    // Apply to the marker
+                    if (this.userLocationMarker) {
+                        const markerElement = this.userLocationMarker.getElement();
+                        
+                        if (markerElement) {
+                            // Find the SVG group containing the marker and rotate it
+                            const markerContainer = markerElement.querySelector('.marker-container');
+                            if (markerContainer) {
+                                markerContainer.style.transform = `rotate(${this.currentHeading}deg)`;
+                            }
+                        }
+                    }
+                },
+
+                // Enhanced compass handling for device orientation
+                handleOrientation: function(event) {
+                    // Check if we have compass heading data
+                    if (event.webkitCompassHeading) {
+                        // iOS uses webkitCompassHeading (degrees from north, clockwise)
+                        this.updateHeading(event.webkitCompassHeading);
+                        this.compassAccuracy = event.webkitCompassAccuracy || 10; // iOS compass accuracy
+                    } else if (event.alpha !== null) {
+                        // Most browsers use alpha (degrees from west, counter-clockwise)
+                        
+                        // Get device orientation
+                        let heading = 360 - event.alpha; // Convert to clockwise from north
+                        
+                        // Apply calibration if device has magnetometer
+                        if (event.absolute) {
+                            // Check for screen orientation and adjust heading if needed
+                            if (window.screen && window.screen.orientation) {
+                                const screenOrientation = window.screen.orientation.angle || 0;
+                                heading = (heading + screenOrientation) % 360;
+                            }
+                            
+                            this.updateHeading(heading);
+                            this.compassAccuracy = 15; // Estimated accuracy for most devices
+                        }
+                    }
+                },
+
+                // Stop watching user position with cleanup
                 stopWatchingPosition: function() {
                     if (this.watchPositionId) {
                         navigator.geolocation.clearWatch(this.watchPositionId);
@@ -3436,6 +3625,10 @@
                         window.removeEventListener('deviceorientation', this.handleOrientation.bind(this), false);
                         this.orientationListenerAdded = false;
                     }
+                    
+                    // Clear any stored data
+                    this.positionHistory = [];
+                    this.lastPosition = null;
                 },
                 
                 // Add a utility line to the map
@@ -4315,25 +4508,6 @@
                         // Apply calibration if device has magnetometer
                         if (event.absolute) {
                             this.updateHeading(heading);
-                        }
-                    }
-                },
-
-                updateHeading: function(heading) {
-                    if (isNaN(heading)) return;
-                    
-                    // Smooth the heading changes
-                    this.currentHeading = this.smoothHeading(heading, this.currentHeading || 0);
-                    
-                    // Apply to the marker
-                    if (this.userLocationMarker) {
-                        const markerElement = this.userLocationMarker.getElement();
-                        
-                        if (markerElement) {
-                            const directionElement = markerElement.querySelector('.direction-indicator');
-                            if (directionElement) {
-                                directionElement.style.transform = `rotate(${this.currentHeading}deg)`;
-                            }
                         }
                     }
                 },
@@ -6487,7 +6661,7 @@
                         const latlng = MapController.userLocationMarker.getLatLng();
                         MapController.map.setView(latlng, MapController.map.getZoom());
                         UI.showToast('Centered on your location', 'info');
-                    } else {
+                            } else {
                         // Otherwise try to get location
                         MapController.getUserLocation();
                     }
