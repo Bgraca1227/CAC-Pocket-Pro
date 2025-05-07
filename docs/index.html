@@ -2171,7 +2171,7 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background-color: rgba(33, 150, 243, 0.4);
+            background-color: rgba(33, 150, 243, 0.2);
             opacity: 0;
             animation: location-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
         }
@@ -2183,43 +2183,10 @@
             left: 10%;
             top: 10%;
             border-radius: 50%;
-            background-color: rgba(33, 150, 243, 0.6);
+            background-color: rgba(33, 150, 243, 0.3);
             opacity: 0;
             animation: location-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
             animation-delay: 0.5s;
-        }
-
-        .location-center {
-            position: absolute;
-            width: 50%;
-            height: 50%;
-            left: 25%;
-            top: 25%;
-            border-radius: 50%;
-            background-color: rgb(33, 150, 243);
-            border: 2px solid white;
-            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
-            z-index: 1;
-        }
-
-        .location-heading {
-            position: absolute;
-            width: 0;
-            height: 0;
-            left: 50%;
-            top: -2px;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-bottom: 16px solid rgb(33, 150, 243);
-            transform-origin: center bottom;
-            transform: translateX(-50%) rotate(0deg);
-            opacity: 1; /* Always visible */
-            transition: transform 0.3s ease;
-            z-index: 2; /* Ensure arrow is above the pulse animations */
-        }
-
-        .user-location-marker.with-heading .location-heading {
-            opacity: 1;
         }
 
         @keyframes location-pulse {
@@ -3362,17 +3329,36 @@
                         this.map.removeLayer(this.userLocationMarker);
                     }
                     
-                    // Create pulsing marker style with clearer direction arrow
+                    // Create SVG-based professional marker
+                    const svgSize = 48;
                     const userLocationIcon = L.divIcon({
                         className: 'user-location-marker',
                         html: `
                             <div class="location-pulse"></div>
                             <div class="location-pulse-inner"></div>
-                            <div class="location-center"></div>
-                            <div class="location-heading"></div>
+                            <svg width="${svgSize}" height="${svgSize}" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Glow effect -->
+                                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="2" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                                
+                                <!-- Arrow/teardrop shape pointing upward (will be rotated by JS) -->
+                                <g class="direction-indicator" style="transform-origin: center; transform: rotate(0deg);">
+                                    <!-- Outer shadow/stroke -->
+                                    <path d="M24 4L36 36H12L24 4Z" fill="#1565C0" filter="url(#glow)" />
+                                    <!-- Main arrow -->
+                                    <path d="M24 6L35 34H13L24 6Z" fill="#2196F3" />
+                                    <!-- Inner highlight -->
+                                    <path d="M24 10L32 32H16L24 10Z" fill="#64B5F6" />
+                                    <!-- Center dot -->
+                                    <circle cx="24" cy="24" r="6" fill="white" />
+                                    <circle cx="24" cy="24" r="4" fill="#2196F3" />
+                                </g>
+                            </svg>
                         `,
-                        iconSize: [40, 40], // Increased size
-                        iconAnchor: [20, 20]
+                        iconSize: [svgSize, svgSize],
+                        iconAnchor: [svgSize/2, svgSize/2]
                     });
                     
                     // Add marker to map
@@ -4344,10 +4330,9 @@
                         const markerElement = this.userLocationMarker.getElement();
                         
                         if (markerElement) {
-                            const headingElement = markerElement.querySelector('.location-heading');
-                            if (headingElement) {
-                                headingElement.style.transform = `translateX(-50%) rotate(${this.currentHeading}deg)`;
-                                markerElement.classList.add('with-heading');
+                            const directionElement = markerElement.querySelector('.direction-indicator');
+                            if (directionElement) {
+                                directionElement.style.transform = `rotate(${this.currentHeading}deg)`;
                             }
                         }
                     }
