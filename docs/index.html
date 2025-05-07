@@ -2279,6 +2279,314 @@
             pointer-events: auto;
             cursor: pointer;
         }
+
+        /* Add this CSS after the connection-indicator CSS section */
+        /*********************************
+        * EXCAVATION MODE
+        *********************************/
+        .excavation-mode-active {
+            position: fixed;
+            top: 50px;
+            left: 0;
+            right: 0;
+            background-color: rgba(244, 67, 54, 0.9);
+            color: white;
+            text-align: center;
+            padding: var(--space-sm);
+            font-weight: bold;
+            font-size: 1rem;
+            z-index: var(--z-fixed);
+            box-shadow: var(--shadow-md);
+            display: none;
+        }
+
+        .excavation-mode-active.visible {
+            display: block;
+            animation: pulse-attention 2s infinite;
+        }
+
+        @keyframes pulse-attention {
+            0% { background-color: rgba(244, 67, 54, 0.9); }
+            50% { background-color: rgba(255, 87, 34, 0.9); }
+            100% { background-color: rgba(244, 67, 54, 0.9); }
+        }
+
+        .safety-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: var(--z-splash);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-normal),
+                        visibility var(--transition-normal);
+        }
+
+        .safety-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .safety-content {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            max-width: 90%;
+            width: 350px;
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .safety-icon {
+            font-size: 3rem;
+            color: var(--danger);
+            margin-bottom: var(--space-md);
+        }
+
+        .safety-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+            color: var(--danger);
+        }
+
+        .safety-message {
+            font-size: 1rem;
+            margin-bottom: var(--space-lg);
+            color: var(--text-secondary);
+        }
+
+        .safety-buttons {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-md);
+        }
+
+        .proximity-warning {
+            position: fixed;
+            bottom: 170px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--danger);
+            color: white;
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            width: 90%;
+            max-width: 350px;
+            box-shadow: var(--shadow-lg);
+            z-index: var(--z-fixed);
+            text-align: center;
+            display: none;
+        }
+
+        .proximity-warning.visible {
+            display: block;
+            animation: warning-pulse 1s infinite alternate;
+        }
+
+        @keyframes warning-pulse {
+            from { transform: translateX(-50%) scale(1); }
+            to { transform: translateX(-50%) scale(1.05); }
+        }
+
+        .warning-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-sm);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .warning-icon {
+            font-size: 1.5rem;
+        }
+
+        .warning-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-xs) var(--space-md);
+            margin-bottom: var(--space-sm);
+            text-align: left;
+        }
+
+        .warning-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .warning-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .warning-unknown {
+            color: var(--warning);
+            font-style: italic;
+        }
+
+        .exit-excavation-btn {
+            margin-top: var(--space-sm);
+            padding: var(--space-xs) var(--space-md);
+            background-color: white;
+            color: var(--danger);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .danger-radar {
+            position: fixed;
+            bottom: 170px;
+            right: var(--space-md);
+            width: 120px;
+            height: 120px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            z-index: var(--z-fixed);
+            border: 2px solid white;
+            display: none;
+        }
+
+        .danger-radar.visible {
+            display: block;
+        }
+
+        .radar-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background-color: white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .radar-heading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 50%;
+            background-color: rgba(255, 255, 255, 0.7);
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(0deg);
+        }
+
+        .radar-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transform: translate(-50%, -50%);
+        }
+
+        .radar-ring-inner {
+            width: 40px;
+            height: 40px;
+        }
+
+        .radar-ring-middle {
+            width: 70px;
+            height: 70px;
+        }
+
+        .radar-ring-outer {
+            width: 100px;
+            height: 100px;
+        }
+
+        .radar-blip {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: var(--danger);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .radar-blip.yellow {
+            background-color: var(--warning);
+        }
+
+        .radar-blip.orange {
+            background-color: var(--secondary);
+        }
+
+        .radar-blip.red {
+            background-color: var(--danger);
+            animation: radar-pulse 1s infinite;
+        }
+
+        @keyframes radar-pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        /* Utility danger zone styling */
+        .utility-danger-zone {
+            stroke-opacity: 0.3;
+            fill-opacity: 0.1;
+            pointer-events: none;
+        }
+
+        .utility-danger-zone.yellow {
+            stroke: var(--warning);
+            fill: var(--warning);
+        }
+
+        .utility-danger-zone.orange {
+            stroke: var(--secondary);
+            fill: var(--secondary);
+        }
+
+        .utility-danger-zone.red {
+            stroke: var(--danger);
+            fill: var(--danger);
+            animation: danger-pulse 1s infinite alternate;
+        }
+
+        @keyframes danger-pulse {
+            from { stroke-opacity: 0.3; fill-opacity: 0.1; }
+            to { stroke-opacity: 0.6; fill-opacity: 0.2; }
+        }
+
+        /* Excavation mode button styling */
+        .nav-button[data-screen="excavation"] {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-button[data-screen="excavation"]::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, rgba(244,67,54,0.2) 0%, rgba(0,0,0,0) 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-button[data-screen="excavation"]:hover::before {
+            opacity: 1;
+        }
+
+        .nav-button[data-screen="excavation"].active {
+            background-color: var(--danger);
+        }
     </style>
 </head>
 
@@ -2490,6 +2798,10 @@
                 <button class="nav-button" data-screen="utilities">
                     <i class="fas fa-list"></i>
                     <span class="nav-label">Utilities</span>
+                </button>
+                <button class="nav-button" id="excavation-mode-btn" data-screen="excavation">
+                    <i class="fas fa-hard-hat"></i>
+                    <span class="nav-label">Excavation</span>
                 </button>
                 <button class="nav-button" data-screen="settings">
                     <i class="fas fa-cog"></i>
@@ -2943,6 +3255,71 @@
         </button>
     </div>
 
+    <!-- Excavation Mode UI Elements -->
+    <!-- Excavation Mode Active Indicator -->
+    <div class="excavation-mode-active" id="excavation-mode-indicator">
+        <i class="fas fa-exclamation-triangle"></i> EXCAVATION MODE ACTIVE
+    </div>
+
+    <!-- Safety Reminder Overlay -->
+    <div class="safety-overlay" id="safety-overlay">
+        <div class="safety-content">
+            <div class="safety-icon">
+                <i class="fas fa-hard-hat"></i>
+            </div>
+            <div class="safety-title">Excavation Safety Mode</div>
+            <div class="safety-message">
+                This mode is designed to help prevent accidental utility strikes. 
+                Always follow proper excavation procedures and use this app as a 
+                supplementary tool only.
+            </div>
+            <div class="safety-buttons">
+                <button class="btn btn-secondary" id="cancel-excavation-mode">Cancel</button>
+                <button class="btn btn-danger" id="confirm-excavation-mode">Activate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proximity Warning Panel -->
+    <div class="proximity-warning" id="proximity-warning">
+        <div class="warning-header">
+            <i class="fas fa-exclamation-triangle warning-icon"></i>
+            <span>UTILITY DETECTED NEARBY</span>
+        </div>
+        <div class="warning-details">
+            <div class="warning-label">Type:</div>
+            <div class="warning-value" id="warning-type">Gas</div>
+            
+            <div class="warning-label">Size:</div>
+            <div class="warning-value" id="warning-size">4 inches</div>
+            
+            <div class="warning-label">Depth:</div>
+            <div class="warning-value" id="warning-depth">3 feet</div>
+            
+            <div class="warning-label">Line Type:</div>
+            <div class="warning-value" id="warning-line-type">Main</div>
+            
+            <div class="warning-label">Distance:</div>
+            <div class="warning-value" id="warning-distance">8.2 feet</div>
+            
+            <div class="warning-label">Direction:</div>
+            <div class="warning-value" id="warning-direction">Ahead</div>
+        </div>
+        <button class="exit-excavation-btn" id="exit-proximity-warning">
+            <i class="fas fa-check"></i> Acknowledge
+        </button>
+    </div>
+
+    <!-- Danger Radar -->
+    <div class="danger-radar" id="danger-radar">
+        <div class="radar-ring radar-ring-inner"></div>
+        <div class="radar-ring radar-ring-middle"></div>
+        <div class="radar-ring radar-ring-outer"></div>
+        <div class="radar-center"></div>
+        <div class="radar-heading" id="radar-heading"></div>
+        <!-- Radar blips will be added dynamically -->
+    </div>
+
     <!-- Line type selector for mapping mode -->
     <div class="line-type-selector" id="line-type-selector">
         <button class="line-type-button active" data-type="service">
@@ -2996,6 +3373,8 @@
                 measureLine: null, // Current measurement line
                 repositioningUtility: null, // Utility being repositioned
                 controlPoints: [], // Control points for repositioning
+                excavationModeActive: false, // Whether excavation mode is active
+                audioAlertsEnabled: true, // Whether audio alerts are enabled for excavation mode
             };
             
             // Data Collections
@@ -3337,6 +3716,9 @@
                     this.map.on('moveend', function() {
                         UI.updateUIPositions();
                     });
+
+                    // Initialize excavation mode
+                    this.initExcavationMode();
                 },
                 
                 // Set up map event listeners
@@ -4451,6 +4833,31 @@
                     
                     return smoothedHeading;
                 },
+
+                // Initialize excavation mode
+                initExcavationMode: function() {
+                    // Add excavation mode UI elements
+                    const excavationModeBtn = document.getElementById('excavation-mode-btn');
+                    excavationModeBtn.addEventListener('click', () => {
+                        UI.toggleExcavationMode();
+                    });
+
+                    // Add excavation mode active indicator
+                    const excavationModeIndicator = document.getElementById('excavation-mode-indicator');
+                    excavationModeIndicator.classList.add('animate-fade-in');
+
+                    // Add safety overlay
+                    const safetyOverlay = document.getElementById('safety-overlay');
+                    safetyOverlay.classList.add('animate-fade-in');
+
+                    // Add proximity warning
+                    const proximityWarning = document.getElementById('proximity-warning');
+                    proximityWarning.classList.add('animate-fade-in');
+
+                    // Add danger radar
+                    const dangerRadar = document.getElementById('danger-radar');
+                    dangerRadar.classList.add('animate-fade-in');
+                },
             };
             
             /*********************************
@@ -4769,6 +5176,28 @@
                         btn.classList.remove('active');
                     });
                     document.querySelector(`#line-type-selector .line-type-button[data-type="${AppState.activeLineType}"]`).classList.add('active');
+
+                    // Excavation Mode event handlers
+                    document.getElementById('excavation-mode-btn').addEventListener('click', () => {
+                        if (!AppState.excavationModeActive) {
+                            this.showSafetyOverlay();
+                        } else {
+                            this.confirmExitExcavationMode();
+                        }
+                    });
+
+                    document.getElementById('cancel-excavation-mode').addEventListener('click', () => {
+                        this.hideSafetyOverlay();
+                    });
+
+                    document.getElementById('confirm-excavation-mode').addEventListener('click', () => {
+                        this.hideSafetyOverlay();
+                        this.activateExcavationMode();
+                    });
+
+                    document.getElementById('exit-proximity-warning').addEventListener('click', () => {
+                        document.getElementById('proximity-warning').classList.remove('visible');
+                    });
                 },
                 
                 // Update UI based on current app state
@@ -5459,6 +5888,106 @@
                         indicator.style.left = `${point.x + 20}px`;
                         indicator.style.top = `${point.y - 20}px`;
                     }
+                },
+
+                // Toggle excavation mode
+                toggleExcavationMode: function() {
+                    AppState.excavationModeActive = !AppState.excavationModeActive;
+                    if (AppState.excavationModeActive) {
+                        this.showExcavationModeUI();
+                    } else {
+                        this.hideExcavationModeUI();
+                    }
+                },
+
+                // Show excavation mode UI
+                showExcavationModeUI: function() {
+                    const excavationModeBtn = document.getElementById('excavation-mode-btn');
+                    excavationModeBtn.classList.add('active');
+                    const excavationModeIndicator = document.getElementById('excavation-mode-indicator');
+                    excavationModeIndicator.classList.add('animate-fade-in');
+                    const safetyOverlay = document.getElementById('safety-overlay');
+                    safetyOverlay.classList.add('animate-fade-in');
+                    const proximityWarning = document.getElementById('proximity-warning');
+                    proximityWarning.classList.add('animate-fade-in');
+                    const dangerRadar = document.getElementById('danger-radar');
+                    dangerRadar.classList.add('animate-fade-in');
+                },
+
+                // Hide excavation mode UI
+                hideExcavationModeUI: function() {
+                    const excavationModeBtn = document.getElementById('excavation-mode-btn');
+                    excavationModeBtn.classList.remove('active');
+                    const excavationModeIndicator = document.getElementById('excavation-mode-indicator');
+                    excavationModeIndicator.classList.remove('animate-fade-in');
+                    const safetyOverlay = document.getElementById('safety-overlay');
+                    safetyOverlay.classList.remove('animate-fade-in');
+                    const proximityWarning = document.getElementById('proximity-warning');
+                    proximityWarning.classList.remove('animate-fade-in');
+                    const dangerRadar = document.getElementById('danger-radar');
+                    dangerRadar.classList.remove('animate-fade-in');
+                },
+
+                // Show safety overlay
+                showSafetyOverlay: function() {
+                    const safetyOverlay = document.getElementById('safety-overlay');
+                    safetyOverlay.classList.add('visible');
+                },
+
+                // Hide safety overlay
+                hideSafetyOverlay: function() {
+                    const safetyOverlay = document.getElementById('safety-overlay');
+                    safetyOverlay.classList.remove('visible');
+                },
+
+                // Activate excavation mode
+                activateExcavationMode: function() {
+                    // Set app state
+                    AppState.excavationModeActive = true;
+                    
+                    // Show excavation mode active indicator
+                    document.getElementById('excavation-mode-indicator').classList.add('visible');
+                    
+                    // Mark the excavation button as active
+                    document.getElementById('excavation-mode-btn').classList.add('active');
+                    
+                    // Show the danger radar
+                    document.getElementById('danger-radar').classList.add('visible');
+                    
+                    // Apply MapController excavation mode
+                    MapController.activateExcavationMode();
+                    
+                    // Show toast message
+                    this.showToast('Excavation Safety Mode activated', 'info');
+                },
+                
+                // Confirm exit from excavation mode
+                confirmExitExcavationMode: function() {
+                    // Implement confirmation dialog for exit
+                    if (confirm('Are you sure you want to exit Excavation Safety Mode?')) {
+                        this.deactivateExcavationMode();
+                    }
+                },
+                
+                // Deactivate excavation mode
+                deactivateExcavationMode: function() {
+                    // Reset app state
+                    AppState.excavationModeActive = false;
+                    
+                    // Hide excavation mode active indicator
+                    document.getElementById('excavation-mode-indicator').classList.remove('visible');
+                    
+                    // Unmark the excavation button
+                    document.getElementById('excavation-mode-btn').classList.remove('active');
+                    
+                    // Hide the danger radar
+                    document.getElementById('danger-radar').classList.remove('visible');
+                    
+                    // Apply MapController excavation mode deactivation
+                    MapController.deactivateExcavationMode();
+                    
+                    // Show toast message
+                    this.showToast('Excavation Safety Mode deactivated', 'info');
                 },
             };
             
