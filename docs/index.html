@@ -2199,6 +2199,7 @@
             background-color: rgb(33, 150, 243);
             border: 2px solid white;
             box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+            z-index: 1;
         }
 
         .location-heading {
@@ -2206,14 +2207,15 @@
             width: 0;
             height: 0;
             left: 50%;
-            top: 0;
+            top: -2px;
             border-left: 8px solid transparent;
             border-right: 8px solid transparent;
             border-bottom: 16px solid rgb(33, 150, 243);
             transform-origin: center bottom;
             transform: translateX(-50%) rotate(0deg);
-            opacity: 0;
-            transition: opacity 0.5s;
+            opacity: 1; /* Always visible */
+            transition: transform 0.3s ease;
+            z-index: 2; /* Ensure arrow is above the pulse animations */
         }
 
         .user-location-marker.with-heading .location-heading {
@@ -3360,7 +3362,7 @@
                         this.map.removeLayer(this.userLocationMarker);
                     }
                     
-                    // Create pulsing marker style
+                    // Create pulsing marker style with clearer direction arrow
                     const userLocationIcon = L.divIcon({
                         className: 'user-location-marker',
                         html: `
@@ -3369,8 +3371,8 @@
                             <div class="location-center"></div>
                             <div class="location-heading"></div>
                         `,
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
+                        iconSize: [40, 40], // Increased size
+                        iconAnchor: [20, 20]
                     });
                     
                     // Add marker to map
@@ -3398,6 +3400,12 @@
                 startWatchingPosition: function() {
                     if (this.watchPositionId) return; // Already watching
                     
+                    // Store initial heading
+                    this.currentHeading = 0;
+                    
+                    // Start watching device orientation for compass heading
+                    this.setupOrientationTracking();
+                    
                     if (navigator.geolocation) {
                         this.watchPositionId = navigator.geolocation.watchPosition(
                             // Success callback
@@ -3410,25 +3418,15 @@
                                     this.userLocationMarker.setLatLng([lat, lng]);
                                 }
                                 
-                                // Update heading indicator if available
-                                if (position.coords.heading && this.userLocationMarker) {
-                                    const heading = position.coords.heading;
-                                    const markerElement = this.userLocationMarker.getElement();
-                                    
-                                    if (markerElement) {
-                                        const headingElement = markerElement.querySelector('.location-heading');
-                                        if (headingElement) {
-                                            headingElement.style.transform = `translateX(-50%) rotate(${heading}deg)`;
-                                            markerElement.classList.add('with-heading');
-                                        }
-                                    }
+                                // Update heading indicator if available from GPS
+                                if (position.coords.heading !== null && position.coords.heading !== undefined) {
+                                    this.updateHeading(position.coords.heading);
                                 }
                             },
                             // Error callback
                             (error) => {
                                 console.error('Error watching position:', error);
-                                // Stop watching on error
-                                this.stopWatchingPosition();
+                                // Don't stop watching on error - just log it
                             },
                             // Options
                             {
@@ -3445,6 +3443,12 @@
                     if (this.watchPositionId) {
                         navigator.geolocation.clearWatch(this.watchPositionId);
                         this.watchPositionId = null;
+                    }
+                    
+                    // Remove orientation listener if added
+                    if (this.orientationListenerAdded) {
+                        window.removeEventListener('deviceorientation', this.handleOrientation.bind(this), false);
+                        this.orientationListenerAdded = false;
                     }
                 },
                 
@@ -4275,6 +4279,96 @@
                             }
                         }
                     }
+                },
+
+                // Add device orientation tracking methods
+                setupOrientationTracking: function() {
+                    if (window.DeviceOrientationEvent) {
+                        // For iOS 13+ we need to request permission
+                        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                            this.orientationPermissionRequested = true;
+                            
+                            // Add a button to request permission on first user interaction
+                            document.getElementById('locate-btn').addEventListener('click', () => {
+                                if (this.orientationPermissionRequested && !this.orientationPermissionGranted) {
+                                    DeviceOrientationEvent.requestPermission()
+                                        .then(permissionState => {
+                                            if (permissionState === 'granted') {
+                                                this.orientationPermissionGranted = true;
+                                                this.addOrientationListener();
+                                                UI.showToast('Compass access granted', 'success');
+                                            } else {
+                                                UI.showToast('Compass access denied', 'warning');
+                                            }
+                                        })
+                                        .catch(console.error);
+                                }
+                            });
+                        } else {
+                            // For non-iOS devices, just add the listener
+                            this.addOrientationListener();
+                        }
+                    }
+                },
+
+                addOrientationListener: function() {
+                    window.addEventListener('deviceorientation', this.handleOrientation.bind(this), false);
+                    this.orientationListenerAdded = true;
+                },
+
+                handleOrientation: function(event) {
+                    // Check if we have compass heading data
+                    if (event.webkitCompassHeading) {
+                        // iOS uses webkitCompassHeading (degrees from north, clockwise)
+                        this.updateHeading(event.webkitCompassHeading);
+                    } else if (event.alpha !== null) {
+                        // Most browsers use alpha (degrees from west, counter-clockwise)
+                        // Convert alpha to compass heading (degrees from north, clockwise)
+                        let heading = 360 - event.alpha;
+                        
+                        // Apply calibration if device has magnetometer
+                        if (event.absolute) {
+                            this.updateHeading(heading);
+                        }
+                    }
+                },
+
+                updateHeading: function(heading) {
+                    if (isNaN(heading)) return;
+                    
+                    // Smooth the heading changes
+                    this.currentHeading = this.smoothHeading(heading, this.currentHeading || 0);
+                    
+                    // Apply to the marker
+                    if (this.userLocationMarker) {
+                        const markerElement = this.userLocationMarker.getElement();
+                        
+                        if (markerElement) {
+                            const headingElement = markerElement.querySelector('.location-heading');
+                            if (headingElement) {
+                                headingElement.style.transform = `translateX(-50%) rotate(${this.currentHeading}deg)`;
+                                markerElement.classList.add('with-heading');
+                            }
+                        }
+                    }
+                },
+
+                smoothHeading: function(newHeading, oldHeading) {
+                    // If the difference is more than 180 degrees, take the shorter path
+                    let diff = newHeading - oldHeading;
+                    if (diff > 180) diff -= 360;
+                    if (diff < -180) diff += 360;
+                    
+                    // Apply a smoothing factor (0.1 = very smooth, 1.0 = no smoothing)
+                    const smoothingFactor = 0.3;
+                    
+                    let smoothedHeading = oldHeading + (diff * smoothingFactor);
+                    
+                    // Normalize to 0-360 range
+                    if (smoothedHeading >= 360) smoothedHeading -= 360;
+                    if (smoothedHeading < 0) smoothedHeading += 360;
+                    
+                    return smoothedHeading;
                 },
             };
             
