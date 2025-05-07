@@ -1968,6 +1968,268 @@
             background-color: var(--primary);
             color: white;
         }
+
+        /* Enhance utility line styling to better differentiate between main and service lines */
+        .utility-line.main {
+            stroke-width: 6px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .utility-line.service {
+            stroke-width: 4px;
+            stroke-dasharray: none;
+            stroke-linecap: butt;
+        }
+
+        /* Add connector styling */
+        .connector-point {
+            fill: white;
+            stroke-width: 2px;
+        }
+
+        .connector-point.water {
+            stroke: var(--water-color);
+        }
+
+        .connector-point.gas {
+            stroke: var(--gas-color);
+        }
+
+        .connector-point.electric {
+            stroke: var(--electric-color);
+        }
+
+        .connector-point.sewer {
+            stroke: var(--sewer-color);
+        }
+
+        .connector-point.telecom {
+            stroke: var(--telecom-color);
+        }
+
+        /* Connection indicator */
+        .connection-indicator {
+            position: absolute;
+            background-color: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm) var(--space-md);
+            box-shadow: var(--shadow-md);
+            z-index: var(--z-tooltip);
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: 0.875rem;
+            font-weight: 500;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity var(--transition-normal),
+                        visibility var(--transition-normal),
+                        transform var(--transition-normal);
+        }
+
+        .connection-indicator.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .connection-indicator-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            color: white;
+        }
+
+        .connection-indicator-icon.water {
+            background-color: var(--water-color);
+        }
+
+        .connection-indicator-icon.gas {
+            background-color: var(--gas-color);
+        }
+
+        .connection-indicator-icon.electric {
+            background-color: var(--electric-color);
+        }
+
+        .connection-indicator-icon.sewer {
+            background-color: var(--sewer-color);
+        }
+
+        .connection-indicator-icon.telecom {
+            background-color: var(--telecom-color);
+        }
+
+        /* Add styles for utility marker with main indicator */
+        .utility-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: white;
+            color: var(--primary);
+            border: 2px solid currentColor;
+            box-shadow: var(--shadow-md);
+            font-size: 1rem;
+            position: relative;
+        }
+
+        /* Add main indicator badge */
+        .utility-marker::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -8px;
+            border-width: 8px;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+        }
+
+        .utility-marker.main::before {
+            content: "M";
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            background-color: var(--primary-dark);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Custom styles for each utility type main indicator */
+        .utility-marker.main.water::before {
+            background-color: var(--water-color);
+        }
+
+        .utility-marker.main.gas::before {
+            background-color: var(--gas-color);
+        }
+
+        .utility-marker.main.electric::before {
+            background-color: var(--electric-color);
+            color: black;
+        }
+
+        .utility-marker.main.sewer::before {
+            background-color: var(--sewer-color);
+        }
+
+        .utility-marker.main.telecom::before {
+            background-color: var(--telecom-color);
+        }
+
+        /* Update the utility line styling to be more distinct */
+        .utility-line.service {
+            stroke-width: 4px;
+            stroke-dasharray: 8, 8;
+        }
+
+        /* Add an animation for potential connection */
+        @keyframes pulse-connection {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.3);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        .connection-point-indicator {
+            animation: pulse-connection 1.5s ease-in-out infinite;
+            opacity: 0.8;
+        }
+
+        /* Add this CSS after the connector-point CSS section around line 1380 */
+        .user-location-marker {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .location-pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: rgba(33, 150, 243, 0.4);
+            opacity: 0;
+            animation: location-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+
+        .location-pulse-inner {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            left: 10%;
+            top: 10%;
+            border-radius: 50%;
+            background-color: rgba(33, 150, 243, 0.6);
+            opacity: 0;
+            animation: location-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+            animation-delay: 0.5s;
+        }
+
+        .location-center {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            left: 25%;
+            top: 25%;
+            border-radius: 50%;
+            background-color: rgb(33, 150, 243);
+            border: 2px solid white;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .location-heading {
+            position: absolute;
+            width: 0;
+            height: 0;
+            left: 50%;
+            top: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 16px solid rgb(33, 150, 243);
+            transform-origin: center bottom;
+            transform: translateX(-50%) rotate(0deg);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .user-location-marker.with-heading .location-heading {
+            opacity: 1;
+        }
+
+        @keyframes location-pulse {
+            0% {
+                transform: scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
@@ -2621,6 +2883,17 @@
         <span>Zoom in closer to see more map details</span>
     </div>
 
+    <!-- Connection indicator -->
+    <div class="connection-indicator" id="connection-indicator">
+        <div class="connection-indicator-icon" id="connection-indicator-icon">
+            <i class="fas fa-plug"></i>
+        </div>
+        <span id="connection-indicator-text">Connect to Main</span>
+        <button class="btn btn-sm btn-primary" id="confirm-connection-btn">
+            <i class="fas fa-check"></i>
+        </button>
+    </div>
+
     <!-- Line type selector for mapping mode -->
     <div class="line-type-selector" id="line-type-selector">
         <button class="line-type-button active" data-type="service">
@@ -3082,12 +3355,22 @@
                 
                 // Add user location marker
                 addUserLocationMarker: function(lat, lng) {
+                    // Remove existing marker if any
+                    if (this.userLocationMarker) {
+                        this.map.removeLayer(this.userLocationMarker);
+                    }
+                    
                     // Create pulsing marker style
                     const userLocationIcon = L.divIcon({
                         className: 'user-location-marker',
-                        html: '<div class="location-pulse"></div><div class="location-center"></div>',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
+                        html: `
+                            <div class="location-pulse"></div>
+                            <div class="location-pulse-inner"></div>
+                            <div class="location-center"></div>
+                            <div class="location-heading"></div>
+                        `,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
                     });
                     
                     // Add marker to map
@@ -3096,8 +3379,73 @@
                         zIndexOffset: 1000
                     }).addTo(this.map);
                     
+                    // Add click handler to center map on user location
+                    marker.on('click', () => {
+                        this.map.setView([lat, lng], this.map.getZoom());
+                        UI.showToast('Centered on your location', 'info');
+                    });
+                    
                     // Store reference to marker
                     this.userLocationMarker = marker;
+                    
+                    // Start watching position if not already
+                    this.startWatchingPosition();
+                    
+                    return marker;
+                },
+
+                // Start watching user position
+                startWatchingPosition: function() {
+                    if (this.watchPositionId) return; // Already watching
+                    
+                    if (navigator.geolocation) {
+                        this.watchPositionId = navigator.geolocation.watchPosition(
+                            // Success callback
+                            (position) => {
+                                const lat = position.coords.latitude;
+                                const lng = position.coords.longitude;
+                                
+                                // Update marker position
+                                if (this.userLocationMarker) {
+                                    this.userLocationMarker.setLatLng([lat, lng]);
+                                }
+                                
+                                // Update heading indicator if available
+                                if (position.coords.heading && this.userLocationMarker) {
+                                    const heading = position.coords.heading;
+                                    const markerElement = this.userLocationMarker.getElement();
+                                    
+                                    if (markerElement) {
+                                        const headingElement = markerElement.querySelector('.location-heading');
+                                        if (headingElement) {
+                                            headingElement.style.transform = `translateX(-50%) rotate(${heading}deg)`;
+                                            markerElement.classList.add('with-heading');
+                                        }
+                                    }
+                                }
+                            },
+                            // Error callback
+                            (error) => {
+                                console.error('Error watching position:', error);
+                                // Stop watching on error
+                                this.stopWatchingPosition();
+                            },
+                            // Options
+                            {
+                                enableHighAccuracy: true,
+                                timeout: 10000,
+                                maximumAge: 0
+                            }
+                        );
+                    }
+                },
+
+                // Stop watching user position
+                stopWatchingPosition: function() {
+                    if (this.watchPositionId) {
+                        navigator.geolocation.clearWatch(this.watchPositionId);
+                        this.watchPositionId = null;
+                    }
                 },
                 
                 // Add a utility line to the map
@@ -3113,14 +3461,22 @@
                         telecom: 'var(--telecom-color)'
                     };
                     
-                    // Create polyline
-                    const line = L.polyline(utility.points, {
+                    // Create line style options based on line type
+                    const lineOptions = {
                         color: colors[utility.type],
                         weight: utility.lineType === 'main' ? 6 : 4,
                         opacity: 1,
                         lineJoin: 'round',
                         className: `utility-line ${utility.type} ${utility.lineType}`
-                    });
+                    };
+                    
+                    // Add dash style for service lines
+                    if (utility.lineType === 'service') {
+                        lineOptions.dashArray = '8, 8';
+                    }
+                    
+                    // Create polyline
+                    const line = L.polyline(utility.points, lineOptions);
                     
                     // Store reference to the utility ID
                     line.utilityId = utility.id;
@@ -3135,176 +3491,21 @@
                         utility.id
                     );
                     
+                    // Add connector marker if this is a service line with connections
+                    if (utility.lineType === 'service' && utility.connections && utility.connections.length > 0) {
+                        const mainConnection = utility.connections.find(c => c.type === 'main');
+                        if (mainConnection && mainConnection.point) {
+                            // Add a connector marker at the connection point
+                            utility.connector = this.addConnectorMarker(mainConnection.point, utility.type);
+                        }
+                    }
+                    
                     // Store reference to the line in the utility object
                     utility.line = line;
                     utility.marker = startMarker;
                     
                     // Return the created line
                     return line;
-                },
-                
-                // Add a utility marker to the map
-                addUtilityMarker: function(latlng, utilityType, utilityId) {
-                    // Get icon for utility type
-                    const icons = {
-                        water: 'tint',
-                        gas: 'fire',
-                        electric: 'bolt',
-                        sewer: 'toilet',
-                        telecom: 'phone'
-                    };
-                    
-                    // Create custom HTML icon
-                    const markerHtml = `
-                        <div class="utility-marker ${utilityType}">
-                            <i class="fas fa-${icons[utilityType]}"></i>
-                        </div>
-                    `;
-                    
-                    const icon = L.divIcon({
-                        html: markerHtml,
-                        className: '',
-                        iconSize: [36, 36],
-                        iconAnchor: [18, 36]
-                    });
-                    
-                    // Create marker
-                    const marker = L.marker(latlng, {
-                        icon: icon,
-                        draggable: false
-                    });
-                    
-                    // Store reference to utility ID
-                    marker.utilityId = utilityId;
-                    
-                    // Add to appropriate layer
-                    marker.addTo(this.utilityLayers[utilityType]);
-                    
-                    // Return the created marker
-                    return marker;
-                },
-                
-                // Add a structure marker to the map
-                addStructureMarker: function(structure) {
-                    if (!structure || !structure.latlng) return;
-                    
-                    // Get icon for structure type
-                    const icons = {
-                        valve: 'tint-slash',
-                        meter: 'tachometer-alt',
-                        hydrant: 'fire-extinguisher',
-                        regulator: 'compress-alt',
-                        transformer: 'car-battery',
-                        junction: 'box',
-                        manhole: 'circle',
-                        catchbasin: 'water',
-                        handhole: 'box-open'
-                    };
-                    
-                    // Create custom HTML icon
-                    const markerHtml = `
-                        <div class="structure-marker ${structure.type}">
-                            <i class="fas fa-${icons[structure.structureType] || 'question'}"></i>
-                        </div>
-                    `;
-                    
-                    const icon = L.divIcon({
-                        html: markerHtml,
-                        className: '',
-                        iconSize: [40, 40],
-                        iconAnchor: [20, 20]
-                    });
-                    
-                    // Create marker
-                    const marker = L.marker(structure.latlng, {
-                        icon: icon,
-                        draggable: false
-                    });
-                    
-                    // Store reference to structure ID
-                    marker.structureId = structure.id;
-                    
-                    // Add to appropriate layer
-                    marker.addTo(this.structureLayers[structure.type]);
-                    
-                    // Store reference to the marker
-                    structure.marker = marker;
-                    
-                    // Return the created marker
-                    return marker;
-                },
-                
-                // Add an annotation to the map
-                addAnnotation: function(annotation) {
-                    if (!annotation || !annotation.latlng || !annotation.text) return;
-                    
-                    // Create custom HTML icon
-                    const markerHtml = `
-                        <div class="annotation-marker">
-                            ${annotation.text}
-                        </div>
-                    `;
-                    
-                    const icon = L.divIcon({
-                        html: markerHtml,
-                        className: '',
-                        iconSize: [120, 30],
-                        iconAnchor: [60, 15]
-                    });
-                    
-                    // Create marker
-                    const marker = L.marker(annotation.latlng, {
-                        icon: icon,
-                        draggable: true
-                    });
-                    
-                    // Store reference to annotation ID
-                    marker.annotationId = annotation.id;
-                    
-                    // Add to annotation layer
-                    marker.addTo(this.annotationLayer);
-                    
-                    // Store reference to the marker
-                    annotation.marker = marker;
-                    
-                    // Return the created marker
-                    return marker;
-                },
-                
-                // Show temporary drawing line during mapping
-                showTempLine: function(points) {
-                    // Remove existing temp line if any
-                    if (AppState.tempLine) {
-                        this.map.removeLayer(AppState.tempLine);
-                        AppState.tempLine = null;
-                    }
-                    
-                    if (!points || points.length < 2) return;
-                    
-                    // Get color based on selected utility type
-                    const colors = {
-                        water: 'var(--water-color)',
-                        gas: 'var(--gas-color)',
-                        electric: 'var(--electric-color)',
-                        sewer: 'var(--sewer-color)',
-                        telecom: 'var(--telecom-color)'
-                    };
-                    
-                    // Adjust line weight based on line type
-                    const lineWeight = AppState.activeLineType === 'main' ? 6 : 4;
-                    
-                    // Create temporary polyline
-                    AppState.tempLine = L.polyline(points, {
-                        color: colors[AppState.activeUtilityType],
-                        weight: lineWeight,
-                        opacity: 0.7,
-                        dashArray: '5, 10',
-                        lineJoin: 'round'
-                    }).addTo(this.map);
-                    
-                    // Show current line type in the status bar
-                    const lineTypeText = AppState.activeLineType === 'main' ? 'Main Line' : 'Service Line';
-                    UI.showStatusBar(`Drawing ${AppState.activeUtilityType} ${lineTypeText}. Click to add more points or use Finish Drawing button.`);
                 },
                 
                 // Add measurement line to the map
@@ -3742,7 +3943,339 @@
                         measurement.line = line;
                         measurement.label = marker;
                     });
-                }
+                },
+
+                // Add this to MapController object to find nearby mains of the same type
+                findNearbyMains: function(latlng, utilityType, maxDistance = 20) {
+                    let nearestMain = null;
+                    let minDistance = maxDistance;
+                    
+                    // Check utilities of the same type
+                    DataStore.utilities[utilityType].forEach(utility => {
+                        if (!utility.line || utility.lineType !== 'main') return;
+                        
+                        // Calculate distance to line
+                        const distance = this.distanceToPolyline(latlng, utility.line.getLatLngs());
+                        
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            nearestMain = utility;
+                            
+                            // Also find the closest point on the main line for connection
+                            nearestMain.connectionPoint = this.findClosestPointOnLine(latlng, utility.line.getLatLngs());
+                        }
+                    });
+                    
+                    return nearestMain;
+                },
+
+                // Add this to MapController to find exact connection point on a line
+                findClosestPointOnLine: function(point, polyline) {
+                    let minDistance = Infinity;
+                    let closestPoint = null;
+                    let segmentIndex = -1;
+                    
+                    for (let i = 0; i < polyline.length - 1; i++) {
+                        const p1 = polyline[i];
+                        const p2 = polyline[i + 1];
+                        
+                        // Calculate closest point using vector projection
+                        const distance = this.distanceToSegment(point, p1, p2);
+                        
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            
+                            // Calculate the actual point on the line
+                            closestPoint = this.projectPointOnSegment(point, p1, p2);
+                            segmentIndex = i;
+                        }
+                    }
+                    
+                    return {
+                        point: closestPoint,
+                        distance: minDistance,
+                        segmentIndex: segmentIndex
+                    };
+                },
+
+                // Add this to MapController to project a point onto a line segment
+                projectPointOnSegment: function(point, segmentStart, segmentEnd) {
+                    const p = L.latLng(point);
+                    const p1 = L.latLng(segmentStart);
+                    const p2 = L.latLng(segmentEnd);
+                    
+                    // Calculate the closest point on the segment
+                    const x = p.lng;
+                    const y = p.lat;
+                    const x1 = p1.lng;
+                    const y1 = p1.lat;
+                    const x2 = p2.lng;
+                    const y2 = p2.lat;
+                    
+                    const A = x - x1;
+                    const B = y - y1;
+                    const C = x2 - x1;
+                    const D = y2 - y1;
+                    
+                    const dot = A * C + B * D;
+                    const lenSq = C * C + D * D;
+                    let param = -1;
+                    
+                    if (lenSq !== 0) {
+                        param = dot / lenSq;
+                    }
+                    
+                    let xx, yy;
+                    
+                    if (param < 0) {
+                        xx = x1;
+                        yy = y1;
+                    } else if (param > 1) {
+                        xx = x2;
+                        yy = y2;
+                    } else {
+                        xx = x1 + param * C;
+                        yy = y1 + param * D;
+                    }
+                    
+                    return L.latLng(yy, xx);
+                },
+
+                // Add new method to add a connector marker at the connection point 
+                addConnectorMarker: function(latlng, utilityType) {
+                    const markerHtml = `<svg width="12" height="12" viewBox="0 0 12 12">
+                        <circle cx="6" cy="6" r="5" class="connector-point ${utilityType}" />
+                    </svg>`;
+                    
+                    const icon = L.divIcon({
+                        html: markerHtml,
+                        className: '',
+                        iconSize: [12, 12],
+                        iconAnchor: [6, 6]
+                    });
+                    
+                    return L.marker(latlng, {
+                        icon: icon,
+                        interactive: false
+                    }).addTo(this.map);
+                },
+
+                // Add utility marker to the map
+                addUtilityMarker: function(latlng, utilityType, utilityId, lineType) {
+                    // Get icon for utility type
+                    const icons = {
+                        water: 'tint',
+                        gas: 'fire',
+                        electric: 'bolt',
+                        sewer: 'toilet',
+                        telecom: 'phone'
+                    };
+                    
+                    // Create custom HTML icon with main indicator if needed
+                    const markerHtml = `
+                        <div class="utility-marker ${utilityType} ${lineType}">
+                            <i class="fas fa-${icons[utilityType]}"></i>
+                        </div>
+                    `;
+                    
+                    const icon = L.divIcon({
+                        html: markerHtml,
+                        className: '',
+                        iconSize: [36, 36],
+                        iconAnchor: [18, 36]
+                    });
+                    
+                    // Create marker
+                    const marker = L.marker(latlng, {
+                        icon: icon,
+                        draggable: false
+                    });
+                    
+                    // Store reference to utility ID
+                    marker.utilityId = utilityId;
+                    
+                    // Add to appropriate layer
+                    marker.addTo(this.utilityLayers[utilityType]);
+                    
+                    // Return the created marker
+                    return marker;
+                },
+
+                // Add structure marker to the map
+                addStructureMarker: function(structure) {
+                    if (!structure || !structure.latlng) return;
+                    
+                    // Get icon for structure type
+                    const icons = {
+                        valve: 'tint-slash',
+                        meter: 'tachometer-alt',
+                        hydrant: 'fire-extinguisher',
+                        regulator: 'compress-alt',
+                        transformer: 'car-battery',
+                        junction: 'box',
+                        manhole: 'circle',
+                        catchbasin: 'water',
+                        handhole: 'box-open'
+                    };
+                    
+                    // Create custom HTML icon
+                    const markerHtml = `
+                        <div class="structure-marker ${structure.type}">
+                            <i class="fas fa-${icons[structure.structureType] || 'question'}"></i>
+                        </div>
+                    `;
+                    
+                    const icon = L.divIcon({
+                        html: markerHtml,
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    });
+                    
+                    // Create marker
+                    const marker = L.marker(structure.latlng, {
+                        icon: icon,
+                        draggable: false
+                    });
+                    
+                    // Store reference to structure ID
+                    marker.structureId = structure.id;
+                    
+                    // Add to appropriate layer
+                    marker.addTo(this.structureLayers[structure.type]);
+                    
+                    // Store reference to the marker
+                    structure.marker = marker;
+                    
+                    // Return the created marker
+                    return marker;
+                },
+
+                // Add an annotation to the map
+                addAnnotation: function(annotation) {
+                    if (!annotation || !annotation.latlng || !annotation.text) return;
+                    
+                    // Create custom HTML icon
+                    const markerHtml = `
+                        <div class="annotation-marker">
+                            ${annotation.text}
+                        </div>
+                    `;
+                    
+                    const icon = L.divIcon({
+                        html: markerHtml,
+                        className: '',
+                        iconSize: [120, 30],
+                        iconAnchor: [60, 15]
+                    });
+                    
+                    // Create marker
+                    const marker = L.marker(annotation.latlng, {
+                        icon: icon,
+                        draggable: true
+                    });
+                    
+                    // Store reference to annotation ID
+                    marker.annotationId = annotation.id;
+                    
+                    // Add to annotation layer
+                    marker.addTo(this.annotationLayer);
+                    
+                    // Store reference to the marker
+                    annotation.marker = marker;
+                    
+                    // Return the created marker
+                    return marker;
+                },
+
+                // Show temporary drawing line during mapping
+                showTempLine: function(points) {
+                    // Remove existing temp line if any
+                    if (AppState.tempLine) {
+                        this.map.removeLayer(AppState.tempLine);
+                        AppState.tempLine = null;
+                    }
+                    
+                    if (!points || points.length < 2) return;
+                    
+                    // Get color based on selected utility type
+                    const colors = {
+                        water: 'var(--water-color)',
+                        gas: 'var(--gas-color)',
+                        electric: 'var(--electric-color)',
+                        sewer: 'var(--sewer-color)',
+                        telecom: 'var(--telecom-color)'
+                    };
+                    
+                    // Create line options based on line type
+                    const lineOptions = {
+                        color: colors[AppState.activeUtilityType],
+                        weight: AppState.activeLineType === 'main' ? 6 : 4,
+                        opacity: 0.7,
+                        lineJoin: 'round'
+                    };
+                    
+                    // Add dash style for service lines
+                    if (AppState.activeLineType === 'service') {
+                        lineOptions.dashArray = '8, 8';
+                        lineOptions.lineCap = 'butt';
+                    } else {
+                        lineOptions.lineCap = 'round';
+                    }
+                    
+                    // Create temporary polyline
+                    AppState.tempLine = L.polyline(points, lineOptions).addTo(this.map);
+                    
+                    // Show current line type in the status bar
+                    const lineTypeText = AppState.activeLineType === 'main' ? 'Main Line' : 'Service Line';
+                    UI.showStatusBar(`Drawing ${AppState.activeUtilityType} ${lineTypeText}. Click to add more points or use Finish Drawing button.`);
+                    
+                    // If this is a service line, check for nearby mains to connect to
+                    if (AppState.activeLineType === 'service' && points.length >= 2) {
+                        const lastPoint = points[points.length - 1];
+                        const nearbyMain = this.findNearbyMains(lastPoint, AppState.activeUtilityType, 30);
+                        
+                        // If a main line is found nearby
+                        if (nearbyMain && nearbyMain.connectionPoint) {
+                            // Store the potential connection
+                            AppState.potentialConnection = {
+                                mainLine: nearbyMain,
+                                connectionPoint: nearbyMain.connectionPoint.point
+                            };
+                            
+                            // Show connection indicator
+                            UI.showConnectionIndicator(nearbyMain.connectionPoint.point, AppState.activeUtilityType);
+                            
+                            // Add visual indicator at connection point
+                            if (AppState.connectionPointMarker) {
+                                this.map.removeLayer(AppState.connectionPointMarker);
+                            }
+                            
+                            // Create pulsing marker for connection point
+                            const pulseIcon = L.divIcon({
+                                html: `<div class="connection-point-indicator" style="width:10px;height:10px;background-color:${colors[AppState.activeUtilityType]};border-radius:50%;"></div>`,
+                                className: '',
+                                iconSize: [10, 10],
+                                iconAnchor: [5, 5]
+                            });
+                            
+                            AppState.connectionPointMarker = L.marker(nearbyMain.connectionPoint.point, {
+                                icon: pulseIcon,
+                                interactive: false
+                            }).addTo(this.map);
+                        } else {
+                            // No nearby main, clear potential connection
+                            AppState.potentialConnection = null;
+                            UI.hideConnectionIndicator();
+                            
+                            // Remove connection point marker if it exists
+                            if (AppState.connectionPointMarker) {
+                                this.map.removeLayer(AppState.connectionPointMarker);
+                                AppState.connectionPointMarker = null;
+                            }
+                        }
+                    }
+                },
             };
             
             /*********************************
@@ -4664,6 +5197,14 @@
                         const toolbarRect = utilityToolbar.getBoundingClientRect();
                         lineTypeSelector.style.top = `${toolbarRect.bottom + 10}px`;
                     }
+                    
+                    // Position connection indicator when it's visible
+                    const connectionIndicator = document.getElementById('connection-indicator');
+                    if (connectionIndicator && connectionIndicator.classList.contains('visible') && AppState.potentialConnection) {
+                        const point = MapController.map.latLngToContainerPoint(AppState.potentialConnection.connectionPoint);
+                        connectionIndicator.style.left = `${point.x + 20}px`;
+                        connectionIndicator.style.top = `${point.y - 20}px`;
+                    }
                 },
                 
                 // Method to check for and fix any overlapping elements
@@ -4710,7 +5251,40 @@
                 hideLineTypeSelector: function() {
                     const selector = document.getElementById('line-type-selector');
                     selector.classList.remove('visible');
-                }
+                },
+
+                // Add to UI object to handle connection indicators
+                showConnectionIndicator: function(latlng, utilityType) {
+                    const indicator = document.getElementById('connection-indicator');
+                    const icon = document.getElementById('connection-indicator-icon');
+                    
+                    // Position indicator at connection point
+                    const point = MapController.map.latLngToContainerPoint(latlng);
+                    indicator.style.left = `${point.x + 20}px`;
+                    indicator.style.top = `${point.y - 20}px`;
+                    
+                    // Update indicator styling based on utility type
+                    icon.className = `connection-indicator-icon ${utilityType}`;
+                    document.getElementById('connection-indicator-text').textContent = `Connect to ${utilityType} Main`;
+                    
+                    // Show indicator
+                    indicator.classList.add('visible');
+                },
+
+                hideConnectionIndicator: function() {
+                    const indicator = document.getElementById('connection-indicator');
+                    indicator.classList.remove('visible');
+                },
+
+                // Add method to update connection indicator position
+                updateConnectionIndicatorPosition: function(latlng) {
+                    const indicator = document.getElementById('connection-indicator');
+                    if (indicator && indicator.classList.contains('visible')) {
+                        const point = MapController.map.latLngToContainerPoint(latlng);
+                        indicator.style.left = `${point.x + 20}px`;
+                        indicator.style.top = `${point.y - 20}px`;
+                    }
+                },
             };
             
             /*********************************
@@ -4813,6 +5387,11 @@
                                 dashArray: '5, 5'
                             }
                         ).addTo(MapController.map);
+                    }
+                    
+                    // Update connection indicator position if active
+                    if (AppState.isDrawing && AppState.activeLineType === 'service' && AppState.potentialConnection) {
+                        UI.updateConnectionIndicatorPosition(AppState.potentialConnection.connectionPoint);
                     }
                 },
                 
@@ -4938,6 +5517,41 @@
                         connections: []
                     };
                     
+                    // Handle connection to main if available
+                    if (AppState.activeLineType === 'service' && AppState.potentialConnection) {
+                        const mainLine = AppState.potentialConnection.mainLine;
+                        const connectionPoint = AppState.potentialConnection.connectionPoint;
+                        
+                        // Update the last point to connect precisely to the main
+                        utility.points[utility.points.length - 1] = connectionPoint;
+                        
+                        // Record the connection in both utilities
+                        utility.connections.push({
+                            type: 'main',
+                            targetId: mainLine.id,
+                            point: connectionPoint,
+                            date: new Date().toISOString()
+                        });
+                        
+                        mainLine.connections.push({
+                            type: 'service',
+                            targetId: utility.id,
+                            point: connectionPoint,
+                            date: new Date().toISOString()
+                        });
+                        
+                        // Add a connector marker at the connection point
+                        const connector = MapController.addConnectorMarker(connectionPoint, utility.type);
+                        
+                        // Store reference to the connector
+                        utility.connector = connector;
+                        
+                        UI.showToast('Service connected to main line', 'success');
+                    } else {
+                        // No connection, just a regular utility line
+                        UI.showToast('Utility line added successfully', 'success');
+                    }
+                    
                     // Add to data store
                     DataStore.utilities[AppState.activeUtilityType].push(utility);
                     
@@ -4946,9 +5560,6 @@
                     
                     // Clean up drawing state
                     this.cancelDrawing();
-                    
-                    // Show success message
-                    UI.showToast('Utility line added successfully', 'success');
                     
                     // Save data
                     DataStore.saveData();
@@ -4959,6 +5570,7 @@
                     // Reset drawing state
                     AppState.isDrawing = false;
                     AppState.drawingPoints = [];
+                    AppState.potentialConnection = null;
                     
                     // Remove temp line if exists
                     if (AppState.tempLine) {
@@ -4966,10 +5578,17 @@
                         AppState.tempLine = null;
                     }
                     
+                    // Remove connection point marker if exists
+                    if (AppState.connectionPointMarker) {
+                        MapController.map.removeLayer(AppState.connectionPointMarker);
+                        AppState.connectionPointMarker = null;
+                    }
+                    
                     // Update UI
                     document.body.style.cursor = '';
                     UI.hideStatusBar();
                     UI.hideConfirmDrawingButton();
+                    UI.hideConnectionIndicator();
                 },
                 
                 // Handle add utility form submission
@@ -5742,6 +6361,59 @@
             setTimeout(() => {
                 UI.updateUIPositions();
             }, 1000);
+        });
+    </script>
+
+    <!-- Add event listener for the connection confirmation button -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmConnectionBtn = document.getElementById('confirm-connection-btn');
+            if (confirmConnectionBtn) {
+                confirmConnectionBtn.addEventListener('click', function() {
+                    if (AppState.isDrawing && AppState.potentialConnection) {
+                        EventHandlers.finishUtilityDrawing();
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Add this to the end of the file, just before the closing </body> tag -->
+    <script>
+        // Add window unload event to clean up resources
+        window.addEventListener('beforeunload', function() {
+            // Stop watching position when page is closed
+            if (MapController && typeof MapController.stopWatchingPosition === 'function') {
+                MapController.stopWatchingPosition();
+            }
+        });
+        
+        // Add recenter button in the Map Controls section
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add recenter button after the locate button
+            const locateBtn = document.getElementById('locate-btn');
+            if (locateBtn && locateBtn.parentNode) {
+                const recenterBtn = document.createElement('button');
+                recenterBtn.className = 'map-control-button';
+                recenterBtn.id = 'recenter-btn';
+                recenterBtn.innerHTML = '<i class="fas fa-location-arrow"></i>';
+                recenterBtn.title = 'Center on your location';
+                
+                locateBtn.parentNode.insertBefore(recenterBtn, locateBtn.nextSibling);
+                
+                // Add click handler
+                recenterBtn.addEventListener('click', function() {
+                    // If we have a user location marker, center on it
+                    if (MapController.userLocationMarker) {
+                        const latlng = MapController.userLocationMarker.getLatLng();
+                        MapController.map.setView(latlng, MapController.map.getZoom());
+                        UI.showToast('Centered on your location', 'info');
+                    } else {
+                        // Otherwise try to get location
+                        MapController.getUserLocation();
+                    }
+                });
+            }
         });
     </script>
 </body>
