@@ -310,8 +310,8 @@
         
         /* Utility Toolbar */
         .utility-toolbar {
-            position: fixed; /* Change from absolute to fixed */
-            bottom: 120px; /* Position at bottom instead of top */
+            position: absolute;
+            bottom: calc(100px + var(--space-md)); /* Position above navbar */
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -321,13 +321,9 @@
             padding: var(--space-xs);
             z-index: var(--z-fixed);
             overflow-x: auto;
-            max-width: 90%;
-            scrollbar-width: none; /* Hide scrollbar for Firefox */
-            -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
-        }
-        
-        .utility-toolbar::-webkit-scrollbar {
-            display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+            max-width: 80%; /* Slightly smaller */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
         
         .utility-button {
@@ -335,14 +331,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: var(--space-sm) var(--space-md);
+            padding: var(--space-xs) var(--space-sm); /* Smaller padding */
             color: var(--gray-600);
             border-radius: var(--radius-full);
             transition: background-color var(--transition-fast),
                         color var(--transition-fast),
                         transform var(--transition-fast);
             gap: 2px;
-            min-width: 60px;
+            min-width: 50px; /* Smaller width */
         }
         
         .utility-button:active {
@@ -350,7 +346,7 @@
         }
         
         .utility-button i {
-            font-size: 1.25rem;
+            font-size: 1rem; /* Smaller icons */
         }
         
         .utility-label {
@@ -406,9 +402,10 @@
         
         /* Action Buttons */
         .action-buttons {
-            position: fixed; /* Change from absolute to fixed */
-            right: var(--space-md);
-            bottom: 180px; /* Position above utility toolbar */
+            position: absolute;
+            right: var(--space-md); /* Restore right positioning */
+            bottom: calc(100px + var(--space-xl) + 20px);
+            transform: none; /* Remove the transform */
             display: flex;
             flex-direction: column;
             gap: var(--space-md);
@@ -451,9 +448,9 @@
         
         /* Tool Options Container */
         .tool-options {
-            position: fixed; /* Change from absolute to fixed */
+            position: absolute;
             left: var(--space-md);
-            top: var(--space-lg);
+            top: calc(var(--space-lg) + 50px); /* Align with other controls */
             display: flex;
             flex-direction: column;
             gap: var(--space-sm);
@@ -486,9 +483,9 @@
         
         /* Mode Toggle */
         .mode-toggle {
-            position: fixed; /* Change from absolute to fixed */
+            position: absolute;
+            bottom: calc(100px + var(--space-xl) + 110px); /* Move higher to make room */
             left: 50%;
-            bottom: 180px; /* Position above utility toolbar */
             transform: translateX(-50%);
             display: flex;
             background-color: var(--bg-card);
@@ -949,9 +946,9 @@
         *********************************/
         /* Map Controls */
         .map-controls {
-            position: fixed; /* Change from absolute to fixed */
+            position: absolute;
             right: var(--space-md);
-            top: var(--space-lg);
+            top: calc(var(--space-lg) + 50px); /* Move below the layer control */
             display: flex;
             flex-direction: column;
             gap: var(--space-sm);
@@ -979,8 +976,8 @@
         
         /* Status Bar */
         .status-bar {
-            position: fixed; /* Change from absolute to fixed */
-            bottom: 230px; /* Position above other elements */
+            position: absolute;
+            bottom: calc(100px + var(--space-xl)); /* Above navbar */
             left: 50%;
             transform: translateX(-50%);
             padding: var(--space-sm) var(--space-lg);
@@ -1437,8 +1434,8 @@
         
         /* Add styles for the zoom warning */
         .zoom-warning {
-            position: fixed; /* Change from absolute to fixed */
-            top: var(--space-xl);
+            position: absolute;
+            top: calc(var(--space-xl) + 10px);
             left: 50%;
             transform: translateX(-50%);
             background-color: var(--warning);
@@ -1720,8 +1717,8 @@
         * MEASUREMENT TOOLS
         *********************************/
         .measurement-toolbar {
-            position: fixed; /* Change from absolute to fixed */
-            bottom: 180px; /* Position above utility toolbar */
+            position: absolute;
+            bottom: calc(100px + var(--space-xl)); /* Above navbar */
             left: 50%;
             transform: translateX(-50%);
             background-color: var(--bg-card);
@@ -1880,8 +1877,8 @@
 
         /* Add styles for confirm buttons and layer control */
         .confirm-drawing-btn {
-            position: fixed; /* Change from absolute to fixed */
-            bottom: 230px; /* Position above other elements */
+            position: absolute;
+            bottom: calc(100px + var(--space-xl) + 60px); /* Ensure it's well above navbar */
             left: 50%;
             transform: translateX(-50%);
             background-color: var(--success);
@@ -1926,49 +1923,37 @@
             transform: translate(-50%, -150%);
         }
 
-        /* Fix #3: Add line type toggle for mapping mode */
-        .line-type-toggle {
-            position: fixed;
-            bottom: 180px;
-            right: calc(var(--space-md) + 70px); /* Position to the left of action buttons */
+        /* Add line type selector */
+        .line-type-selector {
+            position: absolute;
+            bottom: calc(100px + var(--space-xl) + 10px); /* Position between utility toolbar and navbar */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
             background-color: var(--bg-card);
             border-radius: var(--radius-full);
             box-shadow: var(--shadow-md);
             padding: var(--space-xs);
             z-index: var(--z-fixed);
-            display: none; /* Hidden by default, shown in mapping mode */
+            display: none; /* Hide by default, show only in mapping mode */
         }
 
-        .line-type-toggle.visible {
+        .line-type-selector.visible {
             display: flex;
         }
 
         .line-type-button {
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: var(--space-xs);
             padding: var(--space-sm) var(--space-md);
             color: var(--gray-600);
+            font-weight: 600;
+            font-size: 0.875rem;
             border-radius: var(--radius-full);
             transition: background-color var(--transition-fast),
-                        color var(--transition-fast),
-                        transform var(--transition-fast);
-            gap: 2px;
-            min-width: 70px;
-        }
-
-        .line-type-button:active {
-            transform: scale(0.95);
-        }
-
-        .line-type-button i {
-            font-size: 1.25rem;
-        }
-
-        .line-type-label {
-            font-size: 0.65rem;
-            font-weight: 500;
+                        color var(--transition-fast);
         }
 
         .line-type-button.active {
@@ -2193,24 +2178,6 @@
                 </button>
             </div>
         </nav>
-    </div>
-    
-    <!-- Add zoom warning message -->
-    <div class="zoom-warning" id="zoom-warning">
-        <i class="fas fa-search-plus"></i>
-        <span>Zoom in closer to see more map details</span>
-    </div>
-    
-    <!-- Add line type toggle for mapping mode -->
-    <div class="line-type-toggle" id="line-type-toggle">
-        <button class="line-type-button active" data-line-type="service">
-            <i class="fas fa-project-diagram"></i>
-            <span class="line-type-label">Service</span>
-        </button>
-        <button class="line-type-button" data-line-type="main">
-            <i class="fas fa-grip-lines"></i>
-            <span class="line-type-label">Main</span>
-        </button>
     </div>
     
     <!-- Notifications Container -->
@@ -2640,6 +2607,24 @@
         <span>Finish Drawing</span>
     </button>
     
+    <!-- Add zoom warning message -->
+    <div class="zoom-warning" id="zoom-warning">
+        <i class="fas fa-search-plus"></i>
+        <span>Zoom in closer to see more map details</span>
+    </div>
+
+    <!-- Add line type selector -->
+    <div class="line-type-selector" id="line-type-selector">
+        <button class="line-type-button active" data-line-type="service">
+            <i class="fas fa-home"></i>
+            <span>Service</span>
+        </button>
+        <button class="line-type-button" data-line-type="main">
+            <i class="fas fa-road"></i>
+            <span>Main</span>
+        </button>
+    </div>
+
     <!-- Leaflet JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     
@@ -4041,8 +4026,8 @@
                         }
                     });
 
-                    // Add listeners for line type toggle
-                    document.querySelectorAll('#line-type-toggle .line-type-button').forEach(btn => {
+                    // Line type buttons
+                    document.querySelectorAll('#line-type-selector .line-type-button').forEach(btn => {
                         btn.addEventListener('click', function() {
                             const lineType = this.getAttribute('data-line-type');
                             EventHandlers.setLineType(lineType);
@@ -4063,6 +4048,20 @@
                         btn.classList.remove('active');
                     });
                     document.querySelector(`#utility-toolbar .utility-button[data-utility="${AppState.activeUtilityType}"]`).classList.add('active');
+                    
+                    // Update line type buttons
+                    document.querySelectorAll('#line-type-selector .line-type-button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    document.querySelector(`#line-type-selector .line-type-button[data-line-type="${AppState.activeLineType}"]`).classList.add('active');
+                    
+                    // Show/hide line type selector based on mode
+                    const lineTypeSelector = document.getElementById('line-type-selector');
+                    if (AppState.mode === 'mapping') {
+                        lineTypeSelector.classList.add('visible');
+                    } else {
+                        lineTypeSelector.classList.remove('visible');
+                    }
                     
                     // Update measurement button
                     if (AppState.isMeasuring) {
@@ -4576,16 +4575,71 @@
                 
                 // Update UI positions based on current view
                 updateUIPositions: function() {
-                    // Only update things that don't change positions but might need visibility updates
-                    const lineTypeToggle = document.getElementById('line-type-toggle');
+                    // Update position of floating elements based on current view
+                    const navBar = document.getElementById('nav-bar');
+                    const navHeight = navBar ? navBar.offsetHeight : 60;
                     
-                    // Show/hide line type toggle based on mode
-                    if (lineTypeToggle) {
-                        if (AppState.mode === 'mapping') {
-                            lineTypeToggle.classList.add('visible');
-                        } else {
-                            lineTypeToggle.classList.remove('visible');
+                    // Update confirm button position
+                    const confirmBtn = document.getElementById('confirm-drawing-btn');
+                    if (confirmBtn) {
+                        confirmBtn.style.bottom = `${navHeight + 60}px`;
+                    }
+                    
+                    // Update reposition panel position
+                    const repositionPanel = document.getElementById('reposition-panel');
+                    if (repositionPanel) {
+                        repositionPanel.style.bottom = `${navHeight + 20}px`;
+                    }
+                    
+                    // Update mode toggle position to avoid overlap
+                    const modeToggle = document.getElementById('mode-toggle');
+                    if (modeToggle) {
+                        modeToggle.style.bottom = `${navHeight + 20}px`;
+                    }
+                    
+                    // Adjust action buttons position
+                    const actionButtons = document.getElementById('action-buttons');
+                    if (actionButtons) {
+                        actionButtons.style.bottom = `${navHeight + 20}px`;
+                        
+                        // Ensure action buttons don't overlap with mode toggle
+                        if (modeToggle && modeToggle.offsetParent !== null) {
+                            // Get mode toggle position
+                            const toggleRect = modeToggle.getBoundingClientRect();
+                            const actionRect = actionButtons.getBoundingClientRect();
+                            
+                            // If overlapping horizontally, adjust position
+                            if (Math.abs(toggleRect.left + toggleRect.width/2 - actionRect.left) < 80) {
+                                // Use a fixed value instead of CSS variable in JS
+                                const minMargin = 16; // equivalent to var(--space-md)
+                                actionButtons.style.right = `${Math.max(minMargin, (window.innerWidth - toggleRect.left) + 20)}px`;
+                            }
                         }
+                    }
+                    
+                    // Position utility toolbar to avoid overlap with other controls
+                    const toolbar = document.querySelector('.utility-toolbar');
+                    const mapControls = document.querySelector('.map-controls');
+                    const layerControl = document.querySelector('.leaflet-control-layers');
+                    
+                    if (toolbar && mapControls && layerControl) {
+                        // Check if layer control is expanded
+                        const isExpanded = layerControl.classList.contains('leaflet-control-layers-expanded');
+                        
+                        if (isExpanded) {
+                            // Move toolbar down to avoid overlap
+                            const defaultTop = 80; // equivalent to calc(var(--space-lg) + 50px)
+                            toolbar.style.top = `${Math.max(defaultTop, layerControl.getBoundingClientRect().bottom + 10)}px`;
+                        }
+                    }
+                    
+                    // Check for other UI elements that might need positioning adjustments
+                    this.adjustOverlappingElements();
+
+                    // Update line type selector position
+                    const lineTypeSelector = document.getElementById('line-type-selector');
+                    if (lineTypeSelector) {
+                        lineTypeSelector.style.bottom = `${navHeight + 40}px`;
                     }
                 },
                 
@@ -4740,16 +4794,6 @@
                     
                     // Update UI
                     UI.updateButtons();
-                    
-                    // Show/hide line type toggle
-                    const lineTypeToggle = document.getElementById('line-type-toggle');
-                    if (lineTypeToggle) {
-                        if (mode === 'mapping') {
-                            lineTypeToggle.classList.add('visible');
-                        } else {
-                            lineTypeToggle.classList.remove('visible');
-                        }
-                    }
                     
                     // Show toast
                     if (mode === 'discovery') {
@@ -5556,10 +5600,7 @@
                     AppState.activeLineType = lineType;
                     
                     // Update UI
-                    document.querySelectorAll('#line-type-toggle .line-type-button').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    document.querySelector(`#line-type-toggle .line-type-button[data-line-type="${lineType}"]`).classList.add('active');
+                    UI.updateButtons();
                     
                     // Show toast
                     UI.showToast(`Selected ${lineType} line type`, 'info');
@@ -5589,21 +5630,13 @@
 
     <!-- Watch for window size changes to better place UI elements -->
     <script>
-        // Replace the old window resize handler with a simpler version that just refreshes visibility states
         window.addEventListener('resize', function() {
-            // Just update UI visibility states without repositioning
-            UI.updateUIPositions();
+            if (AppState.isDrawing && AppState.drawingPoints.length >= 2) {
+                UI.updateConfirmButtonPosition();
+            }
             
-            // If layer control is causing any issues with sizing, refresh it
-            const layerControl = document.querySelector('.leaflet-control-layers');
-            if (layerControl && layerControl.classList.contains('leaflet-control-layers-expanded')) {
-                // Artificially toggle to refresh positioning without moving elements
-                setTimeout(() => {
-                    layerControl.classList.remove('leaflet-control-layers-expanded');
-                    setTimeout(() => {
-                        layerControl.classList.add('leaflet-control-layers-expanded');
-                    }, 10);
-                }, 10);
+            if (AppState.repositioningUtility) {
+                UI.updateRepositionPanelPosition();
             }
         });
 
