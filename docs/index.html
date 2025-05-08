@@ -2197,6 +2197,7 @@
             height: 100%;
             border-radius: 50%;
             background-color: rgba(33, 150, 243, 0.15);
+            transition: transform 0.3s ease, background-color 0.3s ease;
             animation: accuracy-pulse 3s infinite ease-out;
         }
 
@@ -2213,7 +2214,7 @@
             width: 100%;
             height: 100%;
             filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5));
-            transition: transform 0.3s ease;
+            transition: transform 0.15s ease;
             transform-origin: center;
         }
 
@@ -2273,14 +2274,14 @@
             width: 0;
             height: 0;
             left: 50%;
-            top: -2px;
+            top: -3px;
             border-left: 8px solid transparent;
             border-right: 8px solid transparent;
             border-bottom: 16px solid rgb(33, 150, 243);
             transform-origin: center bottom;
             transform: translateX(-50%) rotate(0deg);
-            opacity: 1; /* Always visible */
-            transition: transform 0.3s ease;
+            opacity: 0; /* Initially hidden */
+            transition: transform 0.15s ease, opacity 0.3s ease;
             z-index: 2; /* Ensure arrow is above the pulse animations */
         }
 
@@ -3621,6 +3622,98 @@
                 annotationLayer: null,
                 measurementLayer: null,
                 
+                // Position filtering system
+                locationFilter: {
+                    positions: [],
+                    maxPositions: 5,  // Number of positions to keep for filtering
+                    accuracyThreshold: 20, // Meters - reject positions worse than this
+                    headings: [],
+                    maxHeadings: 8,   // Heading samples to keep
+                    
+                    addPosition(position) {
+                        // Only add positions with good accuracy
+                        if (position.coords.accuracy <= this.accuracyThreshold) {
+                            this.positions.push(position);
+                            
+                            // Keep only the most recent positions
+                            if (this.positions.length > this.maxPositions) {
+                                this.positions.shift();
+                            }
+                        }
+                        
+                        return this.getFilteredPosition();
+                    },
+                    
+                    getFilteredPosition() {
+                        if (this.positions.length === 0) return null;
+                        
+                        // Weight positions by recency and accuracy
+                        let totalWeight = 0;
+                        let weightedLat = 0;
+                        let weightedLng = 0;
+                        
+                        this.positions.forEach((pos, index) => {
+                            // More recent positions get higher weight
+                            const recencyWeight = (index + 1) / this.positions.length;
+                            // More accurate positions get higher weight
+                            const accuracyWeight = 1 / Math.max(1, pos.coords.accuracy);
+                            const weight = recencyWeight * accuracyWeight;
+                            
+                            weightedLat += pos.coords.latitude * weight;
+                            weightedLng += pos.coords.longitude * weight;
+                            totalWeight += weight;
+                        });
+                        
+                        // Return weighted average position
+                        return {
+                            latitude: weightedLat / totalWeight,
+                            longitude: weightedLng / totalWeight
+                        };
+                    },
+                    
+                    addHeading(heading) {
+                        if (isNaN(heading)) return this.getFilteredHeading();
+                        
+                        this.headings.push(heading);
+                        
+                        if (this.headings.length > this.maxHeadings) {
+                            this.headings.shift();
+                        }
+                        
+                        return this.getFilteredHeading();
+                    },
+                    
+                    getFilteredHeading() {
+                        if (this.headings.length === 0) return 0;
+                        
+                        // Special handling for heading values that wrap around 0/360
+                        // Convert headings to vectors, average them, then convert back to angle
+                        let sumSin = 0;
+                        let sumCos = 0;
+                        
+                        this.headings.forEach((heading) => {
+                            // Convert heading to radians
+                            const rad = heading * Math.PI / 180;
+                            sumSin += Math.sin(rad);
+                            sumCos += Math.cos(rad);
+                        });
+                        
+                        // Convert average vector back to degrees
+                        const avgRad = Math.atan2(sumSin, sumCos);
+                        let avgHeading = avgRad * 180 / Math.PI;
+                        
+                        // Normalize to 0-360 range
+                        if (avgHeading < 0) avgHeading += 360;
+                        
+                        return avgHeading;
+                    },
+                    
+                    reset() {
+                        this.positions = [];
+                        this.headings = [];
+                    }
+                },
+                
                 // Initialize the map
                 init: function() {
                     // Create map with default view (centered on user's location if available)
@@ -3801,6 +3894,12 @@
                     // Create a professional map pin SVG with a direction indicator
                     const svgIcon = `
                         <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" class="location-marker-svg">
+                            <defs>
+                                <radialGradient id="accuracy-gradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                                    <stop offset="0%" style="stop-color:#2196F3;stop-opacity:0.6" />
+                                    <stop offset="100%" style="stop-color:#2196F3;stop-opacity:0" />
+                                </radialGradient>
+                            </defs>
                             <path d="M12,2C8.13,2 5,5.13 5,9c0,5.25 7,13 7,13s7,-7.75 7,-13c0,-3.87 -3.13,-7 -7,-7zM12,11.5c-1.38,0 -2.5,-1.12 -2.5,-2.5s1.12,-2.5 2.5,-2.5 2.5,1.12 2.5,2.5 -1.12,2.5 -2.5,2.5z" 
                                 fill="#2196F3" stroke="white" stroke-width="1" />
                             <circle cx="12" cy="9" r="2.5" fill="white" />
@@ -3809,11 +3908,15 @@
                     
                     // Create the icon with accuracy circle
                     const userLocationIcon = L.divIcon({
-                        className: 'user-location-marker',
+                        className: 'user-location-marker with-heading',
                         html: `
                             <div class="location-accuracy-circle"></div>
+                            <div class="location-pulse"></div>
+                            <div class="location-pulse-inner"></div>
                             <div class="location-marker-container">
                                 ${svgIcon}
+                                <div class="location-center"></div>
+                                <div class="location-heading"></div>
                             </div>
                         `,
                         iconSize: [48, 48],
@@ -3878,7 +3981,7 @@
                                 
                                 // Update heading indicator if available from GPS
                                 if (position.coords.heading !== null && position.coords.heading !== undefined) {
-                                    this.updateHeading(position.coords.heading, position.coords.speed);
+                                    this.updateHeading(position.coords.heading);
                                 }
                             },
                             // Error callback
@@ -4779,111 +4882,199 @@
 
                 // Add device orientation tracking methods
                 setupOrientationTracking: function() {
+                    // Store initial settings
+                    this.isOrientationActive = false;
+                    this.motionActive = false;
+                    
+                    // Check for orientation API
                     if (window.DeviceOrientationEvent) {
                         // For iOS 13+ we need to request permission
                         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                            this.orientationPermissionRequested = true;
+                            // Add a request permission function that can be called on user interaction
+                            this.requestOrientationPermission = () => {
+                                DeviceOrientationEvent.requestPermission()
+                                    .then(permissionState => {
+                                        if (permissionState === 'granted') {
+                                            this.addOrientationListener();
+                                            UI.showToast('Compass access granted', 'success');
+                                        } else {
+                                            UI.showToast('Compass access denied - direction indicator may be less accurate', 'warning');
+                                        }
+                                    })
+                                    .catch(console.error);
+                            };
                             
-                            // Add a button to request permission on first user interaction
-                            document.getElementById('locate-btn').addEventListener('click', () => {
-                                if (this.orientationPermissionRequested && !this.orientationPermissionGranted) {
-                                    DeviceOrientationEvent.requestPermission()
-                                        .then(permissionState => {
-                                            if (permissionState === 'granted') {
-                                                this.orientationPermissionGranted = true;
-                                                this.addOrientationListener();
-                                                UI.showToast('Compass access granted', 'success');
-                                            } else {
-                                                UI.showToast('Compass access denied', 'warning');
-                                            }
-                                        })
-                                        .catch(console.error);
-                                }
-                            });
+                            // Add the button listener once
+                            if (!this.orientationPermissionListener) {
+                                const locateBtn = document.getElementById('locate-btn');
+                                locateBtn.addEventListener('click', () => {
+                                    if (!this.isOrientationActive) {
+                                        this.requestOrientationPermission();
+                                    }
+                                });
+                                this.orientationPermissionListener = true;
+                            }
                         } else {
                             // For non-iOS devices, just add the listener
                             this.addOrientationListener();
                         }
                     }
-                },
-
-                addOrientationListener: function() {
-                    window.addEventListener('deviceorientation', this.handleOrientation.bind(this), false);
-                    this.orientationListenerAdded = true;
-                },
-
-                handleOrientation: function(event) {
-                    // Check if we have compass heading data
-                    if (event.webkitCompassHeading) {
-                        // iOS uses webkitCompassHeading (degrees from north, clockwise)
-                        this.updateHeading(event.webkitCompassHeading);
-                    } else if (event.alpha !== null) {
-                        // For Android devices
-                        if (event.absolute === true) {
-                            // If device provides absolute orientation (relative to Earth's coordinate system)
-                            // Convert alpha to compass heading (degrees from north, clockwise)
-                            let heading = 360 - event.alpha;
-                            this.updateHeading(heading);
-                        } else if (window.screen && window.screen.orientation) {
-                            // If we have screen orientation API, try to correct the heading
-                            const screenOrientation = window.screen.orientation.angle || 0;
-                            let heading = 360 - event.alpha;
+                    
+                    // Check for motion API (for better orientation in low GPS signal)
+                    if (window.DeviceMotionEvent) {
+                        // For iOS 13+ we need to request permission
+                        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                            // Add a request permission function that can be called on user interaction
+                            this.requestMotionPermission = () => {
+                                DeviceMotionEvent.requestPermission()
+                                    .then(permissionState => {
+                                        if (permissionState === 'granted') {
+                                            this.addMotionListener();
+                                            UI.showToast('Motion sensors activated for better accuracy', 'success');
+                                        }
+                                    })
+                                    .catch(console.error);
+                            };
                             
-                            // Apply screen orientation correction
-                            heading = (heading + screenOrientation) % 360;
-                            this.updateHeading(heading);
+                            // Add the button listener once
+                            if (!this.motionPermissionListener) {
+                                const locateBtn = document.getElementById('locate-btn');
+                                locateBtn.addEventListener('click', () => {
+                                    if (!this.motionActive) {
+                                        this.requestMotionPermission();
+                                    }
+                                });
+                                this.motionPermissionListener = true;
+                            }
                         } else {
-                            // Fallback to basic alpha conversion
-                            let heading = 360 - event.alpha;
-                            this.updateHeading(heading);
+                            // For non-iOS devices, just add the listener
+                            this.addMotionListener();
                         }
                     }
                 },
 
-                // Replace the existing updateHeading method
-                updateHeading: function(heading, speed) {
-                    if (isNaN(heading)) return;
+                addOrientationListener: function() {
+                    if (!this.isOrientationActive) {
+                        window.addEventListener('deviceorientation', this.handleOrientation.bind(this), false);
+                        this.isOrientationActive = true;
+                        console.log('Orientation tracking activated');
+                    }
+                },
+
+                addMotionListener: function() {
+                    if (!this.motionActive) {
+                        window.addEventListener('devicemotion', this.handleMotion.bind(this), false);
+                        this.motionActive = true;
+                        console.log('Motion tracking activated');
+                    }
+                },
+
+                handleOrientation: function(event) {
+                    // Check if we have compass heading data
+                    if (event.webkitCompassHeading !== undefined) {
+                        // iOS uses webkitCompassHeading (degrees from north, clockwise)
+                        const heading = event.webkitCompassHeading;
+                        this.processHeading(heading, event.webkitCompassAccuracy || 0);
+                    } else if (event.alpha !== null && event.alpha !== undefined) {
+                        // For Android and other devices
+                        // Alpha is a value from 0 to 360, representing the orientation
+                        let heading;
+                        
+                        if (event.absolute === true) {
+                            // If device provides absolute orientation (relative to Earth's coordinate system)
+                            heading = 360 - event.alpha;
+                        } else if (window.screen && window.screen.orientation) {
+                            // If we have screen orientation API, try to correct the heading
+                            const screenOrientation = window.screen.orientation.angle || 0;
+                            heading = 360 - event.alpha;
+                            
+                            // Apply screen orientation correction
+                            heading = (heading + screenOrientation) % 360;
+                        } else {
+                            // Fallback to basic alpha conversion
+                            heading = 360 - event.alpha;
+                        }
+                        
+                        this.processHeading(heading, 0);
+                    }
+                },
+
+                handleMotion: function(event) {
+                    // Extract acceleration data
+                    const acceleration = event.accelerationIncludingGravity;
                     
-                    // Initialize if first heading
-                    if (this.currentHeading === undefined) {
-                        this.currentHeading = heading;
-                        this.headingBuffer = [heading];
+                    if (!acceleration || acceleration.x === null) return;
+                    
+                    // Store motion data for fusion with compass
+                    this.lastMotion = {
+                        x: acceleration.x,
+                        y: acceleration.y,
+                        z: acceleration.z,
+                        timestamp: new Date().getTime()
+                    };
+                    
+                    // If we're in excavation mode and haven't received heading updates,
+                    // attempt to derive heading from motion
+                    if (AppState.isExcavationMode && (!this.lastHeadingUpdate || 
+                        (new Date().getTime() - this.lastHeadingUpdate > 2000))) {
+                        
+                        this.attemptMotionBasedHeading();
+                    }
+                },
+
+                // New method to attempt deriving heading from motion when compass isn't available
+                attemptMotionBasedHeading: function() {
+                    // Need at least two motion samples
+                    if (!this.lastMotion || !this.previousMotion) {
+                        this.previousMotion = this.lastMotion;
                         return;
                     }
                     
-                    // Add to buffer for smoothing
-                    this.headingBuffer.push(heading);
-                    if (this.headingBuffer.length > 8) {
-                        this.headingBuffer.shift();
+                    // Check if we're moving (acceleration significant enough)
+                    const accelMagnitude = Math.sqrt(
+                        Math.pow(this.lastMotion.x, 2) + 
+                        Math.pow(this.lastMotion.y, 2)
+                    );
+                    
+                    if (accelMagnitude > 1.5) { // Threshold to determine movement
+                        // Very simple heading approximation based on acceleration vector
+                        const heading = Math.atan2(this.lastMotion.y, this.lastMotion.x) * 180 / Math.PI;
+                        
+                        // Normalize to 0-360 range
+                        const normalizedHeading = (heading + 360) % 360;
+                        
+                        // Use this heading with low confidence
+                        this.processHeading(normalizedHeading, 45); // Higher value = lower confidence
                     }
                     
-                    // Calculate difference accounting for 0/360 crossing
-                    let diff = heading - this.currentHeading;
-                    if (diff > 180) diff -= 360;
-                    if (diff < -180) diff += 360;
+                    this.previousMotion = this.lastMotion;
+                },
+
+                // Improved heading processing with confidence weighting
+                processHeading: function(heading, uncertainty) {
+                    if (isNaN(heading)) return;
                     
-                    // Adjust smoothing factor based on speed and difference magnitude
-                    // Less smoothing (more responsive) when:
-                    // 1. Speed is higher (user is moving with purpose)
-                    // 2. Heading difference is larger (likely a real change)
-                    const normalizedSpeed = Math.min(1, (speed || 0) / 2); // 0-1 range (2 m/s reference)
-                    const normalizedDiff = Math.min(1, Math.abs(diff) / 45); // 0-1 range (45° reference)
+                    this.lastHeadingUpdate = new Date().getTime();
                     
-                    // Adaptive smoothing factor (lower is more responsive)
-                    const minFactor = 0.1; // Most responsive
-                    const maxFactor = 0.85; // Most stable
-                    const smoothingFactor = maxFactor - (normalizedSpeed * 0.5 + normalizedDiff * 0.5) * (maxFactor - minFactor);
+                    // Filter heading through weighted average
+                    const filteredHeading = this.locationFilter.addHeading(heading);
                     
-                    // Apply smoothing
-                    const newHeading = this.currentHeading + diff * (1 - smoothingFactor);
+                    // Update the marker
+                    this.updateHeading(filteredHeading);
+                },
+
+                updateHeading: function(heading) {
+                    if (isNaN(heading)) return;
                     
-                    // Normalize to 0-360 range
-                    this.currentHeading = ((newHeading % 360) + 360) % 360;
+                    // No need for manual smoothing now - the filter handles it
+                    this.currentHeading = heading;
                     
                     // Apply to the marker
                     if (this.userLocationMarker) {
                         const markerElement = this.userLocationMarker.getElement();
+                        
                         if (markerElement) {
+                            // Update both the SVG icon and the heading arrow
                             const iconElement = markerElement.querySelector('.location-marker-svg');
                             const headingElement = markerElement.querySelector('.location-heading');
                             
@@ -4893,14 +5084,34 @@
                             }
                             
                             if (headingElement) {
-                                headingElement.style.transform = `translateX(-50%) rotate(${this.currentHeading}deg)`;
+                                // Make sure the arrow is visible
                                 headingElement.style.opacity = '1';
+                                // Update arrow rotation
+                                headingElement.style.transform = `translateX(-50%) rotate(${this.currentHeading}deg)`;
                             }
                             
-                            // Add with-heading class to show heading indicator
+                            // Add heading indicator class if not already there
                             markerElement.classList.add('with-heading');
                         }
                     }
+                },
+
+                smoothHeading: function(newHeading, oldHeading) {
+                    // If the difference is more than 180 degrees, take the shorter path
+                    let diff = newHeading - oldHeading;
+                    if (diff > 180) diff -= 360;
+                    if (diff < -180) diff += 360;
+                    
+                    // Apply adaptive smoothing - more smoothing for smaller changes, less for bigger ones
+                    const smoothingFactor = Math.min(0.5, Math.max(0.1, Math.abs(diff) / 180));
+                    
+                    let smoothedHeading = oldHeading + (diff * smoothingFactor);
+                    
+                    // Normalize to 0-360 range
+                    if (smoothedHeading >= 360) smoothedHeading -= 360;
+                    if (smoothedHeading < 0) smoothedHeading += 360;
+                    
+                    return smoothedHeading;
                 },
 
                 // Add these methods just before the end of the MapController object
@@ -4979,65 +5190,226 @@
                     // Stop existing watch if any
                     this.stopHighAccuracyLocationTracking();
                     
+                    // Reset position filter
+                    this.locationFilter.reset();
+                    
                     if (navigator.geolocation) {
-                        AppState.highAccuracyWatchId = navigator.geolocation.watchPosition(
-                            // Success callback
-                            (position) => {
-                                const lat = position.coords.latitude;
-                                const lng = position.coords.longitude;
-                                const accuracy = position.coords.accuracy;
+                        // Initialize position prediction system
+                        this.lastPosition = null;
+                        this.lastPositionTime = null;
+                        this.velocityLat = 0;
+                        this.velocityLng = 0;
+                        
+                        // First get a single high-accuracy position
+                        UI.showStatusBar('Getting precise location...');
+                        
+                        navigator.geolocation.getCurrentPosition(
+                            // Initial position success
+                            (initialPosition) => {
+                                // Store initial position
+                                this.lastPosition = {
+                                    latitude: initialPosition.coords.latitude,
+                                    longitude: initialPosition.coords.longitude,
+                                    accuracy: initialPosition.coords.accuracy
+                                };
+                                this.lastPositionTime = new Date().getTime();
+                                
+                                // Add to filter
+                                this.locationFilter.addPosition(initialPosition);
                                 
                                 // Update marker position
-                                if (this.userLocationMarker) {
-                                    this.userLocationMarker.setLatLng([lat, lng]);
-                                    
-                                    // Update the accuracy circle size based on accuracy
-                                    const markerElement = this.userLocationMarker.getElement();
-                                    if (markerElement) {
-                                        const accuracyCircle = markerElement.querySelector('.location-accuracy-circle');
-                                        if (accuracyCircle && accuracy) {
-                                            // Scale the accuracy circle based on the accuracy value
-                                            const scale = Math.min(2.0, Math.max(0.9, accuracy / 20));
-                                            accuracyCircle.style.transform = `scale(${scale})`;
+                                this.updateLocationMarker(initialPosition);
+                                
+                                // Then start watching position with optimized parameters
+                                AppState.highAccuracyWatchId = navigator.geolocation.watchPosition(
+                                    // Position update success
+                                    (position) => {
+                                        const now = new Date().getTime();
+                                        const timeDelta = (now - this.lastPositionTime) / 1000; // in seconds
+                                        
+                                        // Calculate velocity if we have previous position
+                                        if (this.lastPosition && timeDelta > 0) {
+                                            // Calculate speed in lat/lng per second (simple velocity)
+                                            const latDelta = position.coords.latitude - this.lastPosition.latitude;
+                                            const lngDelta = position.coords.longitude - this.lastPosition.longitude;
+                                            
+                                            // Use exponential smoothing for velocity (alpha = 0.3)
+                                            this.velocityLat = 0.3 * (latDelta / timeDelta) + 0.7 * this.velocityLat;
+                                            this.velocityLng = 0.3 * (lngDelta / timeDelta) + 0.7 * this.velocityLng;
                                         }
+                                        
+                                        // Store position for next calculation
+                                        this.lastPosition = {
+                                            latitude: position.coords.latitude,
+                                            longitude: position.coords.longitude,
+                                            accuracy: position.coords.accuracy
+                                        };
+                                        this.lastPositionTime = now;
+                                        
+                                        // Add to filter and get smoothed position
+                                        const filteredPosition = this.locationFilter.addPosition(position);
+                                        
+                                        // Update marker position with filtered position
+                                        if (filteredPosition) {
+                                            const enhancedPosition = {
+                                                coords: {
+                                                    latitude: filteredPosition.latitude,
+                                                    longitude: filteredPosition.longitude,
+                                                    accuracy: position.coords.accuracy,
+                                                    heading: position.coords.heading || null
+                                                },
+                                                timestamp: position.timestamp
+                                            };
+                                            
+                                            this.updateLocationMarker(enhancedPosition);
+                                        } else {
+                                            this.updateLocationMarker(position);
+                                        }
+                                                        
+                                        // Update heading indicator if available from GPS
+                                        if (position.coords.heading !== null && position.coords.heading !== undefined) {
+                                            const filteredHeading = this.locationFilter.addHeading(position.coords.heading);
+                                            this.updateHeading(filteredHeading);
+                                        }
+                                        
+                                        // Store timestamp for frequency monitoring
+                                        AppState.lastLocationUpdate = now;
+                                        
+                                        // Update proximity calculations
+                                        if (AppState.isExcavationMode) {
+                                            this.updateProximityCalculations();
+                                        }
+                                        
+                                        // Center map on user if following is enabled
+                                        if (AppState.isExcavationMode && this.locationFollowingEnabled) {
+                                            if (filteredPosition) {
+                                                this.map.setView([filteredPosition.latitude, filteredPosition.longitude]);
+                                            } else {
+                                                this.map.setView([position.coords.latitude, position.coords.longitude]);
+                                            }
+                                        }
+                                    },
+                                    // Error callback
+                                    (error) => {
+                                        console.error('Error watching high accuracy position:', error);
+                                        UI.showToast("Location error: " + error.message, "error");
+                                        
+                                        // If there was a previous position, use prediction based on velocity
+                                        if (this.lastPosition && this.lastPositionTime) {
+                                            const now = new Date().getTime();
+                                            const timeDelta = (now - this.lastPositionTime) / 1000; // in seconds
+                                            
+                                            // Only predict for a reasonable time (5 seconds max)
+                                            if (timeDelta < 5) {
+                                                // Predict new position based on velocity
+                                                const predictedLat = this.lastPosition.latitude + (this.velocityLat * timeDelta);
+                                                const predictedLng = this.lastPosition.longitude + (this.velocityLng * timeDelta);
+                                                
+                                                const predictedPosition = {
+                                                    coords: {
+                                                        latitude: predictedLat,
+                                                        longitude: predictedLng,
+                                                        accuracy: this.lastPosition.accuracy * 1.5, // Increase uncertainty
+                                                        heading: null
+                                                    },
+                                                    timestamp: now
+                                                };
+                                                
+                                                // Update with predicted position
+                                                this.updateLocationMarker(predictedPosition);
+                                            }
+                                        }
+                                    },
+                                    // Options for high accuracy with optimized parameters
+                                    {
+                                        enableHighAccuracy: true,
+                                        timeout: 5000,          // Faster timeout for more responsive updates
+                                        maximumAge: 1000        // Allow very recent cached results (1 second)
                                     }
-                                } else {
-                                    // Create a marker if it doesn't exist
-                                    this.addUserLocationMarker(lat, lng);
-                                }
-                                
-                                // Update heading indicator if available from GPS
-                                if (position.coords.heading !== null && position.coords.heading !== undefined) {
-                                    this.updateHeading(position.coords.heading, position.coords.speed);
-                                }
-                                
-                                // Store timestamp for frequency monitoring
-                                AppState.lastLocationUpdate = new Date().getTime();
-                                
-                                // Update proximity calculations
-                                if (AppState.isExcavationMode) {
-                                    this.updateProximityCalculations();
-                                }
-                                
-                                // Center map on user if following is enabled
-                                if (AppState.isExcavationMode && this.locationFollowingEnabled) {
-                                    this.map.setView([lat, lng]);
-                                }
+                                );
                             },
-                            // Error callback
+                            // Initial position error
                             (error) => {
-                                console.error('Error watching high accuracy position:', error);
-                                UI.showToast("Location error: " + error.message, "error");
+                                console.error('Error getting initial high accuracy position:', error);
+                                UI.showToast("Could not get precise location. Using standard accuracy.", "warning");
+                                
+                                // Fall back to standard watch
+                                this.startStandardLocationWatch();
                             },
-                            // Options for high accuracy
+                            // Options for initial position
                             {
                                 enableHighAccuracy: true,
-                                timeout: 10000,
-                                maximumAge: 1000
+                                timeout: 10000,        // Longer timeout for initial position
+                                maximumAge: 0          // No cached position for initial location
                             }
                         );
                     } else {
                         UI.showToast("Geolocation is not supported by your browser", "error");
+                    }
+                },
+
+                // Add helper method for standard location watch
+                startStandardLocationWatch: function() {
+                    AppState.highAccuracyWatchId = navigator.geolocation.watchPosition(
+                        (position) => {
+                            this.updateLocationMarker(position);
+                            
+                            // Update heading if available
+                            if (position.coords.heading !== null) {
+                                this.updateHeading(position.coords.heading);
+                            }
+                            
+                            // Update proximity if in excavation mode
+                            if (AppState.isExcavationMode) {
+                                this.updateProximityCalculations();
+                            }
+                        },
+                        (error) => {
+                            console.error('Error watching position:', error);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 2000
+                        }
+                    );
+                },
+
+                // Add helper method to update the location marker
+                updateLocationMarker: function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    // Create marker if it doesn't exist
+                    if (!this.userLocationMarker) {
+                        this.addUserLocationMarker(lat, lng);
+                    } else {
+                        // Update marker position
+                        this.userLocationMarker.setLatLng([lat, lng]);
+                        
+                        // Update accuracy circle
+                        const markerElement = this.userLocationMarker.getElement();
+                        if (markerElement) {
+                            const accuracyCircle = markerElement.querySelector('.location-accuracy-circle');
+                            if (accuracyCircle && accuracy) {
+                                // Scale the accuracy circle based on the accuracy value (more precise)
+                                // Use a logarithmic scale to prevent too large or too small circles
+                                const scale = Math.min(2.0, Math.max(0.8, 0.7 + (Math.log10(accuracy) / 5)));
+                                accuracyCircle.style.transform = `scale(${scale})`;
+                                
+                                // Color the accuracy circle based on accuracy
+                                if (accuracy < 5) {
+                                    accuracyCircle.style.backgroundColor = 'rgba(76, 175, 80, 0.15)'; // Green for high accuracy
+                                } else if (accuracy < 10) {
+                                    accuracyCircle.style.backgroundColor = 'rgba(33, 150, 243, 0.15)'; // Blue for good accuracy
+                                } else if (accuracy < 20) {
+                                    accuracyCircle.style.backgroundColor = 'rgba(255, 152, 0, 0.15)'; // Orange for moderate accuracy
+                                } else {
+                                    accuracyCircle.style.backgroundColor = 'rgba(244, 67, 54, 0.15)'; // Red for low accuracy
+                                }
+                            }
+                        }
                     }
                 },
                 
