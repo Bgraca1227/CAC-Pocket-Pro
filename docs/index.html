@@ -2615,8 +2615,8 @@
             top: 5px !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
-            max-width: 60% !important;
-            padding: 2px !important;
+            max-width: 70% !important; /* Increased from 60% */
+            padding: 4px !important; /* Increased from 2px */
             z-index: 2000 !important;
         }
         
@@ -2628,18 +2628,27 @@
             z-index: 2000 !important;
         }
         
-        /* Ensure buttons are small */
+        /* Ensure buttons are slightly bigger */
         .utility-button {
-            min-width: 32px !important;
-            padding: 1px 4px !important;
+            min-width: 38px !important; /* Increased from 32px */
+            padding: 2px 6px !important; /* Increased from 1px 4px */
         }
         
         .utility-button i {
-            font-size: 0.75rem !important;
+            font-size: 0.85rem !important; /* Increased from 0.75rem */
         }
         
         .utility-label {
-            font-size: 0.45rem !important;
+            font-size: 0.5rem !important; /* Increased from 0.45rem */
+        }
+
+        /* Move mode toggle lower */
+        .mode-toggle {
+            position: absolute !important;
+            left: 50% !important;
+            bottom: 80px !important; /* Lower position - was calc(100px + var(--space-lg)) */
+            transform: translateX(-50%) !important;
+            z-index: var(--z-fixed) !important;
         }
     </style>
 </head>
@@ -7656,22 +7665,22 @@
                     utilityToolbar.style.top = '5px';
                     utilityToolbar.style.left = '50%';
                     utilityToolbar.style.transform = 'translateX(-50%)';
-                    utilityToolbar.style.maxWidth = '60%';
-                    utilityToolbar.style.padding = '2px';
+                    utilityToolbar.style.maxWidth = '70%';
+                    utilityToolbar.style.padding = '4px';
                     utilityToolbar.style.zIndex = '2000';
                     
                     // Make buttons smaller
                     const buttons = utilityToolbar.querySelectorAll('.utility-button');
                     buttons.forEach(function(btn) {
-                        btn.style.minWidth = '32px';
-                        btn.style.padding = '1px 4px';
+                        btn.style.minWidth = '38px';
+                        btn.style.padding = '2px 6px';
                         btn.style.gap = '0px';
                         
                         const icon = btn.querySelector('i');
-                        if (icon) icon.style.fontSize = '0.75rem';
+                        if (icon) icon.style.fontSize = '0.85rem';
                         
                         const label = btn.querySelector('.utility-label');
-                        if (label) label.style.fontSize = '0.45rem';
+                        if (label) label.style.fontSize = '0.5rem';
                     });
                 }
                 
@@ -7689,6 +7698,16 @@
                 if (lineSelector) {
                     lineSelector.style.top = 'calc(var(--space-lg) + 50px)';
                 }
+                
+                // Position mode toggle lower
+                const modeToggle = document.getElementById('mode-toggle');
+                if (modeToggle) {
+                    modeToggle.style.position = 'absolute';
+                    modeToggle.style.left = '50%';
+                    modeToggle.style.bottom = '80px';
+                    modeToggle.style.transform = 'translateX(-50%)';
+                    modeToggle.style.zIndex = '2000';
+                }
             }, 500);
             
             // Ensure positions are maintained
@@ -7696,7 +7715,7 @@
                 const utilityToolbar = document.getElementById('utility-toolbar');
                 if (utilityToolbar) {
                     utilityToolbar.style.top = '5px';
-                    utilityToolbar.style.maxWidth = '60%';
+                    utilityToolbar.style.maxWidth = '70%';
                 }
                 
                 const actionButtons = document.getElementById('action-buttons');
@@ -7707,6 +7726,11 @@
                 const lineSelector = document.getElementById('line-type-selector');
                 if (lineSelector) {
                     lineSelector.style.top = 'calc(var(--space-lg) + 50px)';
+                }
+                
+                const modeToggle = document.getElementById('mode-toggle');
+                if (modeToggle) {
+                    modeToggle.style.bottom = '80px';
                 }
             }, 1000);
         });
