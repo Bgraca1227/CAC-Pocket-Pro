@@ -313,57 +313,57 @@
         }
         
         /* Utility Toolbar */
-        .utility-toolbar {
-            position: absolute;
-            top: 2px; /* Moved higher from 5px */
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            background-color: var(--bg-card);
-            border-radius: var(--radius-full);
-            box-shadow: var(--shadow-md);
-            padding: 1px; /* Reduced from 2px */
-            z-index: var(--z-fixed);
-            overflow-x: auto;
-            max-width: 55%; /* Reduced from 60% */
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            touch-action: none; /* Prevent dragging UI elements */
+        #utility-toolbar, .utility-toolbar {
+            position: absolute !important;
+            top: 5px !important; /* Moved higher */
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            display: flex !important;
+            background-color: var(--bg-card) !important;
+            border-radius: var(--radius-full) !important;
+            box-shadow: var(--shadow-md) !important;
+            padding: 2px !important; /* Reduced padding */
+            z-index: var(--z-fixed) !important;
+            overflow-x: auto !important;
+            max-width: 60% !important; /* Reduced width */
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+            touch-action: none !important;
         }
         
-        .utility-toolbar::-webkit-scrollbar {
+        #utility-toolbar::-webkit-scrollbar, .utility-toolbar::-webkit-scrollbar {
             display: none; /* Hide scrollbar for Chrome, Safari and Opera */
         }
         
+        /* Make utility buttons smaller */
         .utility-button {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 1px 3px; /* Reduced from 1px 4px */
-            color: var(--gray-600);
-            border-radius: var(--radius-full);
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 1px 4px !important; /* Reduced padding */
+            color: var(--gray-600) !important;
+            border-radius: var(--radius-full) !important;
             transition: background-color var(--transition-fast),
                         color var(--transition-fast),
-                        transform var(--transition-fast);
-            gap: 0px;
-            min-width: 28px; /* Reduced from 32px */
+                        transform var(--transition-fast) !important;
+            gap: 0px !important; /* Remove gap */
+            min-width: 32px !important; /* Smaller width */
+        }
+        
+        .utility-button i {
+            font-size: 0.75rem !important; /* Smaller icon */
+        }
+        
+        .utility-label {
+            font-size: 0.45rem !important; /* Smaller text */
+            font-weight: 500 !important;
         }
         
         .utility-button:active {
             transform: scale(0.95);
         }
         
-        .utility-button i {
-            font-size: 0.65rem; /* Reduced from 0.75rem */
-        }
-        
-        .utility-label {
-            font-size: 0.4rem; /* Reduced from 0.45rem */
-            font-weight: 500;
-        }
-        
-        /* Utility Type Coloring */
         .utility-button.water {
             color: var(--water-color);
         }
@@ -410,14 +410,14 @@
         }
         
         /* Action Buttons */
-        .action-buttons {
-            position: absolute;
-            right: var(--space-md);
-            bottom: 280px; /* Increased from 220px to move it much higher */
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-md);
-            z-index: 1001; /* Higher z-index to ensure it appears above other elements */
+        #action-buttons, .action-buttons {
+            position: absolute !important;
+            right: var(--space-md) !important;
+            bottom: 280px !important; /* Moved much higher */
+            display: flex !important;
+            flex-direction: column !important;
+            gap: var(--space-md) !important;
+            z-index: 1001 !important; /* Ensure high z-index */
         }
         
         .action-button {
@@ -2606,6 +2606,40 @@
             touch-action: pan-x pan-y !important;
             -webkit-touch-action: pan-x pan-y !important;
             -ms-touch-action: pan-x pan-y !important;
+        }
+
+        /* Critical position overrides */
+        /* Force utility toolbar to correct position */
+        #utility-toolbar {
+            position: absolute !important;
+            top: 5px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            max-width: 60% !important;
+            padding: 2px !important;
+            z-index: 2000 !important;
+        }
+        
+        /* Force action buttons position */
+        #action-buttons {
+            position: absolute !important;
+            right: 15px !important;
+            bottom: 280px !important;
+            z-index: 2000 !important;
+        }
+        
+        /* Ensure buttons are small */
+        .utility-button {
+            min-width: 32px !important;
+            padding: 1px 4px !important;
+        }
+        
+        .utility-button i {
+            font-size: 0.75rem !important;
+        }
+        
+        .utility-label {
+            font-size: 0.45rem !important;
         }
     </style>
 </head>
@@ -6066,76 +6100,6 @@
                 
                 // Update UI positions based on current view
                 updateUIPositions: function() {
-                    // Update position of floating elements based on current view
-                    const navBar = document.getElementById('nav-bar');
-                    const navHeight = navBar ? navBar.offsetHeight : 60;
-                    
-                    // Update confirm button position
-                    const confirmBtn = document.getElementById('confirm-drawing-btn');
-                    if (confirmBtn) {
-                        confirmBtn.style.bottom = `${navHeight + 60}px`;
-                    }
-                    
-                    // Update reposition panel position
-                    const repositionPanel = document.getElementById('reposition-panel');
-                    if (repositionPanel) {
-                        repositionPanel.style.bottom = `${navHeight + 20}px`;
-                    }
-                    
-                    // Update mode toggle position to avoid overlap
-                    const modeToggle = document.getElementById('mode-toggle');
-                    if (modeToggle) {
-                        modeToggle.style.bottom = `${navHeight + 20}px`;
-                    }
-                    
-                    // Adjust action buttons position
-                    const actionButtons = document.getElementById('action-buttons');
-                    if (actionButtons) {
-                        actionButtons.style.bottom = `${navHeight + 20}px`;
-                        
-                        // Ensure action buttons don't overlap with mode toggle
-                        if (modeToggle && modeToggle.offsetParent !== null) {
-                            // Get mode toggle position
-                            const toggleRect = modeToggle.getBoundingClientRect();
-                            const actionRect = actionButtons.getBoundingClientRect();
-                            
-                            // If overlapping horizontally, adjust position
-                            if (Math.abs(toggleRect.left + toggleRect.width/2 - actionRect.left) < 80) {
-                                // Use a fixed value instead of CSS variable in JS
-                                const minMargin = 16; // equivalent to var(--space-md)
-                                actionButtons.style.right = `${Math.max(minMargin, (window.innerWidth - toggleRect.left) + 20)}px`;
-                            }
-                        }
-                    }
-                    
-                    // Position utility toolbar to avoid overlap with other controls
-                    const toolbar = document.querySelector('.utility-toolbar');
-                    const mapControls = document.querySelector('.map-controls');
-                    const layerControl = document.querySelector('.leaflet-control-layers');
-                    
-                    if (toolbar && mapControls && layerControl) {
-                        // Check if layer control is expanded
-                        const isExpanded = layerControl.classList.contains('leaflet-control-layers-expanded');
-                        
-                        if (isExpanded) {
-                            // Move toolbar down to avoid overlap
-                            const defaultTop = 80; // equivalent to calc(var(--space-lg) + 50px)
-                            toolbar.style.top = `${Math.max(defaultTop, layerControl.getBoundingClientRect().bottom + 10)}px`;
-                        }
-                    }
-                    
-                    // Check for other UI elements that might need positioning adjustments
-                    this.adjustOverlappingElements();
-                    
-                    // Position line type selector
-                    const lineTypeSelector = document.getElementById('line-type-selector');
-                    const utilityToolbar = document.querySelector('.utility-toolbar');
-                    
-                    if (lineTypeSelector && utilityToolbar) {
-                        const toolbarRect = utilityToolbar.getBoundingClientRect();
-                        lineTypeSelector.style.top = `${toolbarRect.bottom + 10}px`;
-                    }
-                    
                     // Position connection indicator when it's visible
                     const connectionIndicator = document.getElementById('connection-indicator');
                     if (connectionIndicator && connectionIndicator.classList.contains('visible') && AppState.potentialConnection) {
@@ -6143,6 +6107,12 @@
                         connectionIndicator.style.left = `${point.x + 20}px`;
                         connectionIndicator.style.top = `${point.y - 20}px`;
                     }
+                    
+                    // Skip repositioning for elements we've fixed with !important styles
+                    // DO NOT modify the position of these elements:
+                    // - utility-toolbar
+                    // - action-buttons
+                    // - line-type-selector
                 },
                 
                 // Method to check for and fix any overlapping elements
@@ -7511,6 +7481,8 @@
             if (AppState.repositioningUtility) {
                 UI.updateRepositionPanelPosition();
             }
+            
+            // Don't update positions of fixed elements
         });
 
         // Update position of floating buttons based on window size and navbar position
@@ -7530,6 +7502,17 @@
             panel.style.bottom = `${navHeight + 20}px`;
         };
 
+        // Call updateUIPositions when window is resized
+        window.addEventListener('resize', function() {
+            // Only update positioning for non-fixed elements
+            const connectionIndicator = document.getElementById('connection-indicator');
+            if (connectionIndicator && connectionIndicator.classList.contains('visible') && AppState.potentialConnection) {
+                const point = MapController.map.latLngToContainerPoint(AppState.potentialConnection.connectionPoint);
+                connectionIndicator.style.left = `${point.x + 20}px`;
+                connectionIndicator.style.top = `${point.y - 20}px`;
+            }
+        });
+        
         // Ensure drawing can be canceled with escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -7660,5 +7643,73 @@
             </div>
         </div>
     </div>
+
+    <!-- Force element positioning script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Force positions immediately after DOM loads
+            setTimeout(function() {
+                // Position utility toolbar
+                const utilityToolbar = document.getElementById('utility-toolbar');
+                if (utilityToolbar) {
+                    utilityToolbar.style.position = 'absolute';
+                    utilityToolbar.style.top = '5px';
+                    utilityToolbar.style.left = '50%';
+                    utilityToolbar.style.transform = 'translateX(-50%)';
+                    utilityToolbar.style.maxWidth = '60%';
+                    utilityToolbar.style.padding = '2px';
+                    utilityToolbar.style.zIndex = '2000';
+                    
+                    // Make buttons smaller
+                    const buttons = utilityToolbar.querySelectorAll('.utility-button');
+                    buttons.forEach(function(btn) {
+                        btn.style.minWidth = '32px';
+                        btn.style.padding = '1px 4px';
+                        btn.style.gap = '0px';
+                        
+                        const icon = btn.querySelector('i');
+                        if (icon) icon.style.fontSize = '0.75rem';
+                        
+                        const label = btn.querySelector('.utility-label');
+                        if (label) label.style.fontSize = '0.45rem';
+                    });
+                }
+                
+                // Position action buttons
+                const actionButtons = document.getElementById('action-buttons');
+                if (actionButtons) {
+                    actionButtons.style.position = 'absolute';
+                    actionButtons.style.right = '15px';
+                    actionButtons.style.bottom = '280px';
+                    actionButtons.style.zIndex = '2000';
+                }
+                
+                // Position line type selector higher
+                const lineSelector = document.getElementById('line-type-selector');
+                if (lineSelector) {
+                    lineSelector.style.top = 'calc(var(--space-lg) + 50px)';
+                }
+            }, 500);
+            
+            // Ensure positions are maintained
+            setInterval(function() {
+                const utilityToolbar = document.getElementById('utility-toolbar');
+                if (utilityToolbar) {
+                    utilityToolbar.style.top = '5px';
+                    utilityToolbar.style.maxWidth = '60%';
+                }
+                
+                const actionButtons = document.getElementById('action-buttons');
+                if (actionButtons) {
+                    actionButtons.style.bottom = '280px';
+                }
+                
+                const lineSelector = document.getElementById('line-type-selector');
+                if (lineSelector) {
+                    lineSelector.style.top = 'calc(var(--space-lg) + 50px)';
+                }
+            }, 1000);
+        });
+    </script>
 </body>
 </html>
