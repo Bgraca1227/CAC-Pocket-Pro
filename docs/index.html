@@ -3878,7 +3878,7 @@
                                 
                                 // Update heading indicator if available from GPS
                                 if (position.coords.heading !== null && position.coords.heading !== undefined) {
-                                    this.updateHeading(position.coords.heading);
+                                    this.updateHeading(position.coords.heading, position.coords.speed);
                                 }
                             },
                             // Error callback
@@ -4840,42 +4840,67 @@
                     }
                 },
 
-                updateHeading: function(heading) {
+                // Replace the existing updateHeading method
+                updateHeading: function(heading, speed) {
                     if (isNaN(heading)) return;
                     
-                    // Smooth the heading changes
-                    this.currentHeading = this.smoothHeading(heading, this.currentHeading || 0);
+                    // Initialize if first heading
+                    if (this.currentHeading === undefined) {
+                        this.currentHeading = heading;
+                        this.headingBuffer = [heading];
+                        return;
+                    }
+                    
+                    // Add to buffer for smoothing
+                    this.headingBuffer.push(heading);
+                    if (this.headingBuffer.length > 8) {
+                        this.headingBuffer.shift();
+                    }
+                    
+                    // Calculate difference accounting for 0/360 crossing
+                    let diff = heading - this.currentHeading;
+                    if (diff > 180) diff -= 360;
+                    if (diff < -180) diff += 360;
+                    
+                    // Adjust smoothing factor based on speed and difference magnitude
+                    // Less smoothing (more responsive) when:
+                    // 1. Speed is higher (user is moving with purpose)
+                    // 2. Heading difference is larger (likely a real change)
+                    const normalizedSpeed = Math.min(1, (speed || 0) / 2); // 0-1 range (2 m/s reference)
+                    const normalizedDiff = Math.min(1, Math.abs(diff) / 45); // 0-1 range (45° reference)
+                    
+                    // Adaptive smoothing factor (lower is more responsive)
+                    const minFactor = 0.1; // Most responsive
+                    const maxFactor = 0.85; // Most stable
+                    const smoothingFactor = maxFactor - (normalizedSpeed * 0.5 + normalizedDiff * 0.5) * (maxFactor - minFactor);
+                    
+                    // Apply smoothing
+                    const newHeading = this.currentHeading + diff * (1 - smoothingFactor);
+                    
+                    // Normalize to 0-360 range
+                    this.currentHeading = ((newHeading % 360) + 360) % 360;
                     
                     // Apply to the marker
                     if (this.userLocationMarker) {
                         const markerElement = this.userLocationMarker.getElement();
-                        
                         if (markerElement) {
                             const iconElement = markerElement.querySelector('.location-marker-svg');
+                            const headingElement = markerElement.querySelector('.location-heading');
+                            
                             if (iconElement) {
                                 // Rotate the SVG icon to match the heading
                                 iconElement.style.transform = `rotate(${this.currentHeading}deg)`;
                             }
+                            
+                            if (headingElement) {
+                                headingElement.style.transform = `translateX(-50%) rotate(${this.currentHeading}deg)`;
+                                headingElement.style.opacity = '1';
+                            }
+                            
+                            // Add with-heading class to show heading indicator
+                            markerElement.classList.add('with-heading');
                         }
                     }
-                },
-
-                smoothHeading: function(newHeading, oldHeading) {
-                    // If the difference is more than 180 degrees, take the shorter path
-                    let diff = newHeading - oldHeading;
-                    if (diff > 180) diff -= 360;
-                    if (diff < -180) diff += 360;
-                    
-                    // Apply adaptive smoothing - more smoothing for smaller changes, less for bigger ones
-                    const smoothingFactor = Math.min(0.5, Math.max(0.1, Math.abs(diff) / 180));
-                    
-                    let smoothedHeading = oldHeading + (diff * smoothingFactor);
-                    
-                    // Normalize to 0-360 range
-                    if (smoothedHeading >= 360) smoothedHeading -= 360;
-                    if (smoothedHeading < 0) smoothedHeading += 360;
-                    
-                    return smoothedHeading;
                 },
 
                 // Add these methods just before the end of the MapController object
@@ -4982,8 +5007,8 @@
                                 }
                                 
                                 // Update heading indicator if available from GPS
-                                if (position.coords.heading !== null) {
-                                    this.updateHeading(position.coords.heading);
+                                if (position.coords.heading !== null && position.coords.heading !== undefined) {
+                                    this.updateHeading(position.coords.heading, position.coords.speed);
                                 }
                                 
                                 // Store timestamp for frequency monitoring
