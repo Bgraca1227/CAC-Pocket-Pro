@@ -2363,7 +2363,7 @@
 
         .proximity-alert {
             width: 100%;
-            max-width: 400px;
+            max-width: 300px; /* Reduced from 400px */
             background-color: var(--bg-card);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-xl);
@@ -2373,6 +2373,8 @@
             transform: translateY(-20px);
             transition: opacity var(--transition-normal),
                         transform var(--transition-normal);
+            margin-bottom: var(--space-sm); /* Add margin between alerts */
+            font-size: 0.85rem; /* Smaller text */
         }
 
         .proximity-alert.visible {
@@ -2385,7 +2387,7 @@
         }
 
         .proximity-alert-header {
-            padding: var(--space-md);
+            padding: var(--space-sm); /* Reduced padding */
             background-color: var(--danger);
             color: white;
             display: flex;
@@ -2396,8 +2398,8 @@
         .proximity-alert-title {
             display: flex;
             align-items: center;
-            gap: var(--space-sm);
-            font-size: 1.25rem;
+            gap: var(--space-xs); /* Smaller gap */
+            font-size: 1rem; /* Reduced from 1.25rem */
             font-weight: 700;
         }
 
@@ -2413,7 +2415,7 @@
         }
 
         .proximity-alert-body {
-            padding: var(--space-md);
+            padding: var(--space-sm); /* Reduced padding */
         }
 
         .proximity-alert-info {
@@ -2424,24 +2426,24 @@
 
         .proximity-info-item {
             background-color: var(--gray-100);
-            padding: var(--space-sm);
+            padding: var(--space-xs); /* Reduced padding */
             border-radius: var(--radius-md);
         }
 
         .proximity-info-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem; /* Smaller text */
             color: var(--gray-600);
             font-weight: 500;
         }
 
         .proximity-info-value {
-            font-size: 1.25rem;
+            font-size: 1rem; /* Reduced from 1.25rem */
             font-weight: 700;
             color: var(--text-primary);
         }
 
         .proximity-alert-footer {
-            padding: var(--space-sm) var(--space-md);
+            padding: var(--space-xs) var(--space-sm); /* Reduced padding */
             background-color: var(--gray-100);
             display: flex;
             justify-content: space-between;
@@ -2449,7 +2451,7 @@
         }
 
         .proximity-distance {
-            font-size: 1.125rem;
+            font-size: 1rem; /* Reduced from 1.125rem */
             font-weight: 700;
             color: var(--danger);
             display: flex;
@@ -5563,10 +5565,22 @@
                         item => item.distance <= AppState.distanceThresholds.critical
                     );
                     
+                    // Current time for checking dismissed alerts
+                    const currentTime = new Date().getTime();
+                    
                     // Process critical utilities
                     criticalUtilities.forEach(item => {
                         const utility = item.utility;
                         const distance = item.distance;
+                        
+                        // Check if this utility alert was dismissed and is still in timeout
+                        const isDismissed = AppState.dismissedAlerts && 
+                                          AppState.dismissedAlerts.some(alert => 
+                                              alert.utilityId === utility.id && 
+                                              alert.dismissedUntil > currentTime);
+                        
+                        // Skip if dismissed
+                        if (isDismissed) return;
                         
                         // Check if we already have an alert for this utility
                         const existingAlert = AppState.activeAlerts.find(
@@ -5579,7 +5593,7 @@
                                 utilityId: utility.id,
                                 utility: utility,
                                 distance: distance,
-                                timestamp: new Date().getTime(),
+                                timestamp: currentTime,
                                 element: null
                             };
                             
@@ -5624,14 +5638,23 @@
                         }
                     });
                     
-                    // Limit active alerts to 3
-                    if (AppState.activeAlerts.length > 3) {
-                        // Sort by timestamp (oldest first)
-                        AppState.activeAlerts.sort((a, b) => a.timestamp - b.timestamp);
+                    // Clean up expired dismissed alerts
+                    if (AppState.dismissedAlerts && AppState.dismissedAlerts.length > 0) {
+                        AppState.dismissedAlerts = AppState.dismissedAlerts.filter(
+                            alert => alert.dismissedUntil > currentTime
+                        );
+                    }
+                    
+                    // Limit active alerts to 5 (increased from 3)
+                    if (AppState.activeAlerts.length > 5) {
+                        // Sort by distance (closest first)
+                        AppState.activeAlerts.sort((a, b) => a.distance - b.distance);
                         
-                        // Remove oldest
-                        const oldestAlert = AppState.activeAlerts.shift();
-                        UI.removeProximityAlert(oldestAlert);
+                        // Keep only the 5 closest alerts
+                        while (AppState.activeAlerts.length > 5) {
+                            const removedAlert = AppState.activeAlerts.pop();
+                            UI.removeProximityAlert(removedAlert);
+                        }
                     }
                 },
             };
@@ -6795,43 +6818,41 @@
                         // Remove from active alerts but don't add it again for 15 minutes
                         AppState.activeAlerts.splice(alertIndex, 1);
                         
-                        // Store in dismissed alerts with timeout
-                        const dismissedAlert = {
-                            utilityId: utilityId,
-                            dismissedUntil: new Date().getTime() + (15 * 60 * 1000) // 15 minutes
-                        };
+                        // Initialize dismissedAlerts array if it doesn't exist
+                        if (!AppState.dismissedAlerts) {
+                            AppState.dismissedAlerts = [];
+                        }
                         
-                        if (!AppState.dismissedAlerts) AppState.dismissedAlerts = [];
-                        AppState.dismissedAlerts.push(dismissedAlert);
+                        // Add to dismissed alerts with 5-minute timeout (300,000 ms)
+                        const dismissedUntil = new Date().getTime() + (5 * 60 * 1000);
+                        
+                        // Store in dismissed alerts
+                        AppState.dismissedAlerts.push({
+                            utilityId: utilityId,
+                            dismissedUntil: dismissedUntil
+                        });
+                        
+                        // Show toast confirming dismissal
+                        this.showToast(`Alert dismissed for 5 minutes`, 'info');
                     }
                 },
                 
                 // Start alert timer for 15 minutes
                 startAlertTimer: function(alert) {
                     const timerElement = document.getElementById(`timer-${alert.utilityId}`);
-                    const startTime = new Date().getTime();
-                    const duration = 15 * 60 * 1000; // 15 minutes in milliseconds
                     
-                    alert.timer = setInterval(() => {
-                        const now = new Date().getTime();
-                        const elapsed = now - startTime;
-                        const remaining = duration - elapsed;
-                        
-                        if (remaining <= 0) {
-                            // Timer expired
-                            clearInterval(alert.timer);
-                            this.dismissProximityAlert(alert.utilityId);
-                            return;
-                        }
-                        
-                        // Update timer display
-                        const minutes = Math.floor(remaining / 60000);
-                        const seconds = Math.floor((remaining % 60000) / 1000);
-                        
-                        if (timerElement) {
-                            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                        }
-                    }, 1000);
+                    // No countdown timer needed anymore - we're using dismissal timeout instead
+                    if (timerElement) {
+                        timerElement.textContent = "Tap × to dismiss";
+                    }
+                    
+                    // Clear any existing timer
+                    if (alert.timer) {
+                        clearInterval(alert.timer);
+                    }
+                    
+                    // We don't need to set a timer anymore
+                    alert.timer = null;
                 },
                 
                 // Close all proximity alerts
@@ -6846,6 +6867,7 @@
                     });
                     
                     AppState.activeAlerts = [];
+                    AppState.dismissedAlerts = []; // Clear dismissed alerts too
                 },
             };
             
