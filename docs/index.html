@@ -315,17 +315,17 @@
         /* Utility Toolbar */
         .utility-toolbar {
             position: absolute;
-            top: 10px; /* Moved up from calc(var(--space-lg) + 50px) */
+            top: 5px; /* Moved higher from 10px */
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             background-color: var(--bg-card);
             border-radius: var(--radius-full);
             box-shadow: var(--shadow-md);
-            padding: var(--space-xs);
+            padding: 2px; /* Reduced from var(--space-xs) */
             z-index: var(--z-fixed);
             overflow-x: auto;
-            max-width: 70%; /* Reduced from 85% */
+            max-width: 60%; /* Reduced from 70% */
             scrollbar-width: none;
             -ms-overflow-style: none;
             touch-action: none; /* Prevent dragging UI elements */
@@ -340,14 +340,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 2px 6px; /* Reduced from var(--space-xs) var(--space-sm) */
+            padding: 1px 4px; /* Reduced from 2px 6px */
             color: var(--gray-600);
             border-radius: var(--radius-full);
             transition: background-color var(--transition-fast),
                         color var(--transition-fast),
                         transform var(--transition-fast);
-            gap: 1px; /* Reduced from 2px */
-            min-width: 40px; /* Reduced from 48px */
+            gap: 0px; /* Removed gap */
+            min-width: 32px; /* Reduced from 40px */
         }
         
         .utility-button:active {
@@ -355,11 +355,11 @@
         }
         
         .utility-button i {
-            font-size: 0.85rem; /* Reduced from 1rem */
+            font-size: 0.75rem; /* Reduced from 0.85rem */
         }
         
         .utility-label {
-            font-size: 0.5rem; /* Reduced from 0.6rem */
+            font-size: 0.45rem; /* Reduced from 0.5rem */
             font-weight: 500;
         }
         
@@ -413,11 +413,11 @@
         .action-buttons {
             position: absolute;
             right: var(--space-md);
-            bottom: 160px; /* Increased from 100px to avoid overlap with excavation tab */
+            bottom: 220px; /* Increased significantly to ensure it's above the excavation tab */
             display: flex;
             flex-direction: column;
             gap: var(--space-md);
-            z-index: var(--z-fixed);
+            z-index: 1001; /* Higher z-index to ensure it appears above other elements */
         }
         
         .action-button {
@@ -1956,12 +1956,12 @@
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            top: calc(var(--space-lg) + 110px); /* Position below utility toolbar */
+            top: calc(var(--space-lg) + 70px); /* Moved up from 110px */
             display: flex;
             background-color: var(--bg-card);
             border-radius: var(--radius-full);
             box-shadow: var(--shadow-md);
-            padding: var(--space-xs);
+            padding: 2px; /* Reduced from var(--space-xs) */
             z-index: var(--z-fixed);
             overflow: hidden;
             opacity: 0;
@@ -1979,11 +1979,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: var(--space-xs);
-            padding: var(--space-xs) var(--space-md);
+            gap: 3px; /* Reduced from var(--space-xs) */
+            padding: 4px 8px; /* Reduced from var(--space-xs) var(--space-md) */
             color: var(--gray-600);
             font-weight: 500;
-            font-size: 0.8rem;
+            font-size: 0.7rem; /* Reduced from 0.8rem */
             border-radius: var(--radius-full);
             transition: background-color var(--transition-fast),
                         color var(--transition-fast);
