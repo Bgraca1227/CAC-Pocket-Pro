@@ -1952,17 +1952,17 @@
         }
 
         /* Line type selector for mapping mode */
-        .line-type-selector {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            top: calc(var(--space-lg) + 70px); /* Moved up from 110px */
+        #line-type-selector, .line-type-selector {
+            position: absolute !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            top: calc(var(--space-lg) + 120px) !important; /* Ensures it's in the right position */
+            z-index: var(--z-fixed) !important;
             display: flex;
             background-color: var(--bg-card);
             border-radius: var(--radius-full);
             box-shadow: var(--shadow-md);
-            padding: 2px; /* Reduced from var(--space-xs) */
-            z-index: var(--z-fixed);
+            padding: 2px;
             overflow: hidden;
             opacity: 0;
             visibility: hidden;
@@ -1970,7 +1970,7 @@
                         visibility var(--transition-normal);
         }
 
-        .line-type-selector.visible {
+        #line-type-selector.visible, .line-type-selector.visible {
             opacity: 1;
             visibility: visible;
         }
@@ -7693,10 +7693,10 @@
                     actionButtons.style.zIndex = '2000';
                 }
                 
-                // Position line type selector higher
+                // Position line type selector lower
                 const lineSelector = document.getElementById('line-type-selector');
                 if (lineSelector) {
-                    lineSelector.style.top = 'calc(var(--space-lg) + 50px)';
+                    lineSelector.style.top = 'calc(var(--space-lg) + 120px)';
                 }
                 
                 // Position mode toggle lower
@@ -7725,7 +7725,7 @@
                 
                 const lineSelector = document.getElementById('line-type-selector');
                 if (lineSelector) {
-                    lineSelector.style.top = 'calc(var(--space-lg) + 50px)';
+                    lineSelector.style.top = 'calc(var(--space-lg) + 120px)';
                 }
                 
                 const modeToggle = document.getElementById('mode-toggle');
