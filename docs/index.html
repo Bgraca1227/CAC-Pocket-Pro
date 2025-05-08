@@ -412,12 +412,12 @@
         /* Action Buttons */
         #action-buttons, .action-buttons {
             position: absolute !important;
-            right: var(--space-md) !important;
-            bottom: 280px !important; /* Moved much higher */
+            right: 15px !important;
+            bottom: 150px !important; /* Lowered from 280px to 150px */
             display: flex !important;
             flex-direction: column !important;
             gap: var(--space-md) !important;
-            z-index: 1001 !important; /* Ensure high z-index */
+            z-index: 2000 !important; /* Ensure high z-index */
         }
         
         .action-button {
@@ -2624,7 +2624,7 @@
         #action-buttons {
             position: absolute !important;
             right: 15px !important;
-            bottom: 280px !important;
+            bottom: 150px !important; /* Lowered from 280px to 150px */
             z-index: 2000 !important;
         }
         
@@ -7689,7 +7689,7 @@
                 if (actionButtons) {
                     actionButtons.style.position = 'absolute';
                     actionButtons.style.right = '15px';
-                    actionButtons.style.bottom = '280px';
+                    actionButtons.style.bottom = '150px'; /* Lowered from 280px to 150px */
                     actionButtons.style.zIndex = '2000';
                 }
                 
@@ -7720,7 +7720,7 @@
                 
                 const actionButtons = document.getElementById('action-buttons');
                 if (actionButtons) {
-                    actionButtons.style.bottom = '280px';
+                    actionButtons.style.bottom = '150px'; /* Lowered from 280px to 150px */
                 }
                 
                 const lineSelector = document.getElementById('line-type-selector');
