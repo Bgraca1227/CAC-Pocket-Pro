@@ -3277,13 +3277,17 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label" for="annotation-text">Annotation Text</label>
-                    <input type="text" id="annotation-text" class="form-control" placeholder="e.g. 6' from curb">
+                    <label class="form-label">Note Text</label>
+                    <textarea class="form-control" id="annotation-text" rows="4" placeholder="Enter note text here..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancel-annotation">Cancel</button>
-                <button class="btn btn-primary" id="confirm-annotation">Add Annotation</button>
+                <button class="btn btn-secondary" id="cancel-annotation">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="confirm-annotation">
+                    <i class="fas fa-check"></i> Save
+                </button>
             </div>
         </div>
     </div>
@@ -3312,35 +3316,38 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
-            <!-- Modal body content -->
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Connection Type</label>
-                    <select id="connection-type" class="form-control">
-                        <option value="tap">Tap Main Line</option>
-                        <option value="extend">Extend Line</option>
-                        <option value="connect-structure">Connect to Structure</option>
+                    <label class="form-label">Connect To</label>
+                    <select class="form-control" id="connection-target">
+                        <!-- Options will be filled in dynamically -->
                     </select>
                 </div>
-                <div class="form-group" id="connection-target-group">
-                    <label class="form-label">Connect To</label>
-                    <select id="connection-target" class="form-control">
-                        <!-- Will be populated dynamically -->
+                <div class="form-group">
+                    <label class="form-label">Connection Type</label>
+                    <select class="form-control" id="connection-type">
+                        <option value="tap">Tap/Junction</option>
+                        <option value="valve">Valve</option>
+                        <option value="meter">Meter</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Notes</label>
-                    <textarea id="connection-notes" class="form-control" rows="2" placeholder="Any additional details..."></textarea>
+                    <textarea class="form-control" id="connection-notes" rows="3" placeholder="Add any notes about this connection..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancel-connect">Cancel</button>
-                <button class="btn btn-primary" id="confirm-connect">Connect</button>
+                <button class="btn btn-secondary" id="cancel-connect">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="confirm-connect">
+                    <i class="fas fa-check"></i> Connect
+                </button>
             </div>
         </div>
     </div>
-    
+
     <!-- Add confirm drawing button -->
     <button class="confirm-drawing-btn" id="confirm-drawing-btn">
         <i class="fas fa-check"></i>
@@ -3962,7 +3969,7 @@
                                 ${svgIcon}
                                 <div class="location-center"></div>
                                 <div class="location-heading"></div>
-                        </div>
+                            </div>
                         `,
                         iconSize: [48, 48],
                         iconAnchor: [24, 24]
@@ -4533,7 +4540,7 @@
                         const labelHtml = `
                             <div class="measure-label">
                                 ${measurement.distance.toFixed(2)} ft
-                    </div>
+                            </div>
                         `;
                         
                         const icon = L.divIcon({
@@ -4685,7 +4692,7 @@
                     const markerHtml = `
                         <div class="utility-marker ${utilityType} ${lineType}">
                             <i class="fas fa-${icons[utilityType]}"></i>
-                </div>
+                        </div>
                     `;
                     
                     const icon = L.divIcon({
@@ -6064,352 +6071,352 @@
                 
                 // Update UI based on current app state
                 updateButtons: function() {
-                    // Update mode buttons
-                    document.querySelectorAll('#mode-toggle .mode-button').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
+                // Update mode buttons
+                document.querySelectorAll('#mode-toggle .mode-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
                     document.querySelector(`#mode-toggle .mode-button[data-mode="${AppState.mode}"]`).classList.add('active');
-                    
-                    // Update utility type buttons
-                    document.querySelectorAll('#utility-toolbar .utility-button').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
+                
+                // Update utility type buttons
+                document.querySelectorAll('#utility-toolbar .utility-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
                     document.querySelector(`#utility-toolbar .utility-button[data-utility="${AppState.activeUtilityType}"]`).classList.add('active');
-                    
-                    // Update line type buttons
-                    document.querySelectorAll('#line-type-selector .line-type-button').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
+                
+                // Update line type buttons
+                document.querySelectorAll('#line-type-selector .line-type-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
                     document.querySelector(`#line-type-selector .line-type-button[data-type="${AppState.activeLineType}"]`).classList.add('active');
-                    
-                    // Update measurement button
-                    if (AppState.isMeasuring) {
-                        document.getElementById('measure-btn').classList.add('active');
-                    } else {
-                        document.getElementById('measure-btn').classList.remove('active');
-                    }
-                    
-                    // Update floating action button based on mode
-                    const addBtn = document.getElementById('add-utility-btn');
-                    if (AppState.mode === 'discovery') {
-                        addBtn.innerHTML = '<i class="fas fa-plus"></i>';
-                        addBtn.title = 'Add Utility';
-                        addBtn.style.display = AppState.isExcavationMode ? 'none' : 'flex';
-                    } else if (AppState.mode === 'mapping') {
-                        addBtn.innerHTML = '<i class="fas fa-draw-polygon"></i>';
-                        addBtn.title = 'Draw Utility';
-                        addBtn.style.display = AppState.isExcavationMode ? 'none' : 'flex';
-                    } else if (AppState.mode === 'excavation') {
-                        addBtn.style.display = 'none';
-                    }
-                },
                 
-                // Show status bar with message
-                showStatusBar: function(message) {
-                    const statusBar = document.getElementById('status-bar');
-                    document.getElementById('status-text').textContent = message;
-                    statusBar.classList.add('visible');
-                },
+                // Update measurement button
+                if (AppState.isMeasuring) {
+                    document.getElementById('measure-btn').classList.add('active');
+                } else {
+                    document.getElementById('measure-btn').classList.remove('active');
+                }
                 
-                // Hide status bar
-                hideStatusBar: function() {
-                    const statusBar = document.getElementById('status-bar');
-                    statusBar.classList.remove('visible');
-                },
+                // Update floating action button based on mode
+                const addBtn = document.getElementById('add-utility-btn');
+                if (AppState.mode === 'discovery') {
+                    addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+                    addBtn.title = 'Add Utility';
+                    addBtn.style.display = AppState.isExcavationMode ? 'none' : 'flex';
+                } else if (AppState.mode === 'mapping') {
+                    addBtn.innerHTML = '<i class="fas fa-draw-polygon"></i>';
+                    addBtn.title = 'Draw Utility';
+                    addBtn.style.display = AppState.isExcavationMode ? 'none' : 'flex';
+                } else if (AppState.mode === 'excavation') {
+                    addBtn.style.display = 'none';
+                }
+            },
+            
+            // Show status bar with message
+            showStatusBar: function(message) {
+                const statusBar = document.getElementById('status-bar');
+                document.getElementById('status-text').textContent = message;
+                statusBar.classList.add('visible');
+            },
+            
+            // Hide status bar
+            hideStatusBar: function() {
+                const statusBar = document.getElementById('status-bar');
+                statusBar.classList.remove('visible');
+            },
+            
+            // Show a toast notification
+            showToast: function(message, type = 'info') {
+                const container = document.getElementById('notification-container');
                 
-                // Show a toast notification
-                showToast: function(message, type = 'info') {
-                    const container = document.getElementById('notification-container');
-                    
-                    // Create toast element
-                    const toast = document.createElement('div');
-                    toast.className = `toast ${type}`;
-                    
-                    // Set icon based on type
-                    let icon = 'info-circle';
-                    if (type === 'success') icon = 'check-circle';
-                    if (type === 'error') icon = 'exclamation-circle';
-                    if (type === 'warning') icon = 'exclamation-triangle';
-                    
-                    toast.innerHTML = `
-                        <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
-                        <div class="toast-content">${message}</div>
-                        <button class="toast-close"><i class="fas fa-times"></i></button>
-                    `;
-                    
-                    // Add to container
-                    container.appendChild(toast);
-                    
-                    // Add close event
-                    toast.querySelector('.toast-close').addEventListener('click', () => {
+                // Create toast element
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                
+                // Set icon based on type
+                let icon = 'info-circle';
+                if (type === 'success') icon = 'check-circle';
+                if (type === 'error') icon = 'exclamation-circle';
+                if (type === 'warning') icon = 'exclamation-triangle';
+                
+                toast.innerHTML = `
+                    <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
+                    <div class="toast-content">${message}</div>
+                    <button class="toast-close"><i class="fas fa-times"></i></button>
+                `;
+                
+                // Add to container
+                container.appendChild(toast);
+                
+                // Add close event
+                toast.querySelector('.toast-close').addEventListener('click', () => {
+                    toast.classList.remove('visible');
+                    setTimeout(() => {
+                        container.removeChild(toast);
+                    }, 300);
+                });
+                
+                // Show toast with animation
+                setTimeout(() => {
+                    toast.classList.add('visible');
+                }, 10);
+                
+                // Auto-hide after timeout
+                setTimeout(() => {
+                    if (container.contains(toast)) {
                         toast.classList.remove('visible');
                         setTimeout(() => {
-                            container.removeChild(toast);
+                            if (container.contains(toast)) {
+                                container.removeChild(toast);
+                            }
                         }, 300);
-                    });
-                    
-                    // Show toast with animation
-                    setTimeout(() => {
-                        toast.classList.add('visible');
-                    }, 10);
-                    
-                    // Auto-hide after timeout
-                    setTimeout(() => {
-                        if (container.contains(toast)) {
-                            toast.classList.remove('visible');
-                            setTimeout(() => {
-                                if (container.contains(toast)) {
-                                    container.removeChild(toast);
-                                }
-                            }, 300);
-                        }
-                    }, 5000);
-                },
-                
-                // Show context menu
-                showContextMenu: function(e, element) {
-                    const contextMenu = document.getElementById('context-menu');
-                    
-                    // Position menu at click coordinates
-                    const x = e.containerPoint.x;
-                    const y = e.containerPoint.y;
-                    
-                    contextMenu.style.left = `${x}px`;
-                    contextMenu.style.top = `${y}px`;
-                    
-                    // Store selected element
-                    AppState.selectedElement = element;
-                    
-                    // Update menu items based on element type
-                    if (element.type === 'utility') {
-                        document.getElementById('connect-item').style.display = 'flex';
-                        document.getElementById('measure-item').style.display = 'flex';
-                        document.getElementById('reposition-item').style.display = 'flex';
-                    } else {
-                        document.getElementById('connect-item').style.display = 'none';
-                        document.getElementById('measure-item').style.display = 'none';
-                        document.getElementById('reposition-item').style.display = 'none';
                     }
-                    
-                    // Show menu
-                    contextMenu.classList.add('visible');
-                },
+                }, 5000);
+            },
+            
+            // Show context menu
+            showContextMenu: function(e, element) {
+                const contextMenu = document.getElementById('context-menu');
                 
-                // Close context menu
-                closeContextMenu: function() {
-                    const contextMenu = document.getElementById('context-menu');
-                    contextMenu.classList.remove('visible');
-                },
+                // Position menu at click coordinates
+                const x = e.containerPoint.x;
+                const y = e.containerPoint.y;
                 
-                // Show utility info card
-                showUtilityInfoCard: function(utility, position) {
-                    const infoCard = document.getElementById('utility-info-card');
-                    
-                    // Set position
-                    infoCard.style.left = `${position.x}px`;
-                    infoCard.style.top = `${position.y}px`;
-                    
-                    // Fill in utility details
-                    const utilityTypeNames = {
-                        water: 'Water',
-                        gas: 'Gas',
-                        electric: 'Electric',
-                        sewer: 'Sewer',
-                        telecom: 'Telecom'
-                    };
-                    
-                    const lineTypeNames = {
-                        main: 'Main Line',
-                        service: 'Service Line'
-                    };
-                    
-                    document.getElementById('info-title').textContent = `${utilityTypeNames[utility.type]} ${lineTypeNames[utility.lineType]}`;
-                    document.getElementById('info-type').textContent = utilityTypeNames[utility.type];
-                    document.getElementById('info-line-type').textContent = lineTypeNames[utility.lineType];
-                    document.getElementById('info-size').textContent = `${utility.size} inches`;
-                    document.getElementById('info-depth').textContent = `${utility.depth} feet`;
-                    document.getElementById('info-material').textContent = utility.material || 'Unknown';
-                    document.getElementById('info-condition').textContent = utility.condition || 'Unknown';
-                    
-                    // Format date
-                    const date = utility.date ? new Date(utility.date) : new Date();
-                    document.getElementById('info-date').textContent = date.toLocaleString();
-                    
-                    // Display image if available
-                    const imageElement = document.getElementById('info-image');
-                    if (utility.imageData) {
-                        imageElement.src = utility.imageData;
-                        imageElement.style.display = 'block';
-                    } else {
-                        imageElement.style.display = 'none';
-                    }
-                    
-                    // Store selected element
-                    AppState.selectedElement = {
-                        type: 'utility',
-                        element: utility
-                    };
-                    
-                    // Show card
-                    infoCard.classList.add('visible');
-                },
+                contextMenu.style.left = `${x}px`;
+                contextMenu.style.top = `${y}px`;
                 
-                // Hide utility info card
-                hideUtilityInfoCard: function() {
-                    const infoCard = document.getElementById('utility-info-card');
-                    infoCard.classList.remove('visible');
-                },
+                // Store selected element
+                AppState.selectedElement = element;
                 
-                // Show add utility modal
-                showAddUtilityModal: function() {
-                    const modal = document.getElementById('add-utility-modal');
-                    
-                    // Reset form values
-                    document.querySelectorAll('#add-utility-modal .utility-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    
-                    // Select current utility type
-                    document.querySelector(`#add-utility-modal .utility-option[data-type="${AppState.activeUtilityType}"]`).classList.add('selected');
-                    
-                    // Set line type to current
-                    if (AppState.activeLineType === 'main') {
-                        document.getElementById('main-type').checked = true;
-                    } else {
-                        document.getElementById('service-type').checked = true;
-                    }
-                    
-                    // Reset other form fields
-                    document.getElementById('utility-size').value = '4';
-                    document.getElementById('utility-depth').value = '3';
-                    document.getElementById('utility-material').value = 'PVC';
-                    document.getElementById('utility-condition').value = 'Good';
-                    document.getElementById('utility-photo').value = '';
-                    document.getElementById('utility-notes').value = '';
-                    
-                    // Show modal
-                    modal.classList.add('visible');
-                    modal.querySelector('.modal-container').style.opacity = '0';
-                    
-                    setTimeout(() => {
-                        modal.querySelector('.modal-container').style.opacity = '1';
-                    }, 10);
-                },
+                // Update menu items based on element type
+                if (element.type === 'utility') {
+                    document.getElementById('connect-item').style.display = 'flex';
+                    document.getElementById('measure-item').style.display = 'flex';
+                    document.getElementById('reposition-item').style.display = 'flex';
+                } else {
+                    document.getElementById('connect-item').style.display = 'none';
+                    document.getElementById('measure-item').style.display = 'none';
+                    document.getElementById('reposition-item').style.display = 'none';
+                }
                 
-                // Hide add utility modal
-                hideAddUtilityModal: function() {
-                    const modal = document.getElementById('add-utility-modal');
-                    modal.querySelector('.modal-container').style.opacity = '0';
-                    
-                    setTimeout(() => {
-                        modal.classList.remove('visible');
-                    }, 300);
-                },
+                // Show menu
+                contextMenu.classList.add('visible');
+            },
+            
+            // Close context menu
+            closeContextMenu: function() {
+                const contextMenu = document.getElementById('context-menu');
+                contextMenu.classList.remove('visible');
+            },
+            
+            // Show utility info card
+            showUtilityInfoCard: function(utility, position) {
+                const infoCard = document.getElementById('utility-info-card');
                 
-                // Show add structure modal
-                showAddStructureModal: function() {
-                    const modal = document.getElementById('add-structure-modal');
-                    
-                    // Reset form values
-                    document.querySelectorAll('#add-structure-modal .structure-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    
-                    // Reset form fields
-                    document.getElementById('structure-size').value = '24';
-                    document.getElementById('structure-depth').value = '3';
-                    document.getElementById('structure-material').value = 'Concrete';
-                    document.getElementById('structure-condition').value = 'Good';
-                    document.getElementById('structure-photo').value = '';
-                    document.getElementById('structure-notes').value = '';
-                    
-                    // Show modal
-                    modal.classList.add('visible');
-                    modal.querySelector('.modal-container').style.opacity = '0';
-                    
-                    setTimeout(() => {
-                        modal.querySelector('.modal-container').style.opacity = '1';
-                    }, 10);
-                },
+                // Set position
+                infoCard.style.left = `${position.x}px`;
+                infoCard.style.top = `${position.y}px`;
                 
-                // Hide add structure modal
-                hideAddStructureModal: function() {
-                    const modal = document.getElementById('add-structure-modal');
-                    modal.querySelector('.modal-container').style.opacity = '0';
-                    
-                    setTimeout(() => {
-                        modal.classList.remove('visible');
-                    }, 300);
-                },
+                // Fill in utility details
+                const utilityTypeNames = {
+                    water: 'Water',
+                    gas: 'Gas',
+                    electric: 'Electric',
+                    sewer: 'Sewer',
+                    telecom: 'Telecom'
+                };
                 
-                // Toggle layers panel
-                toggleLayersPanel: function() {
-                    const panel = document.getElementById('layers-panel');
-                    
-                    if (panel.classList.contains('visible')) {
-                        this.hideLayersPanel();
-                    } else {
-                        this.showLayersPanel();
-                    }
-                },
+                const lineTypeNames = {
+                    main: 'Main Line',
+                    service: 'Service Line'
+                };
                 
-                // Show layers panel
-                showLayersPanel: function() {
-                    const panel = document.getElementById('layers-panel');
-                    panel.classList.add('visible');
-                },
+                document.getElementById('info-title').textContent = `${utilityTypeNames[utility.type]} ${lineTypeNames[utility.lineType]}`;
+                document.getElementById('info-type').textContent = utilityTypeNames[utility.type];
+                document.getElementById('info-line-type').textContent = lineTypeNames[utility.lineType];
+                document.getElementById('info-size').textContent = `${utility.size} inches`;
+                document.getElementById('info-depth').textContent = `${utility.depth} feet`;
+                document.getElementById('info-material').textContent = utility.material || 'Unknown';
+                document.getElementById('info-condition').textContent = utility.condition || 'Unknown';
                 
-                // Hide layers panel
-                hideLayersPanel: function() {
-                    const panel = document.getElementById('layers-panel');
-                    panel.classList.remove('visible');
-                },
+                // Format date
+                const date = utility.date ? new Date(utility.date) : new Date();
+                document.getElementById('info-date').textContent = date.toLocaleString();
                 
-                // Show main menu
-                showMainMenu: function() {
-                    const panel = document.getElementById('main-menu-panel');
-                    panel.classList.add('visible');
-                },
+                // Display image if available
+                const imageElement = document.getElementById('info-image');
+                if (utility.imageData) {
+                    imageElement.src = utility.imageData;
+                    imageElement.style.display = 'block';
+                } else {
+                    imageElement.style.display = 'none';
+                }
                 
-                // Hide main menu
-                hideMainMenu: function() {
-                    const panel = document.getElementById('main-menu-panel');
-                    panel.classList.remove('visible');
-                },
+                // Store selected element
+                AppState.selectedElement = {
+                    type: 'utility',
+                    element: utility
+                };
                 
-                // Show measurement toolbar
-                showMeasurementToolbar: function() {
-                    const toolbar = document.getElementById('measurement-toolbar');
-                    toolbar.classList.add('visible');
-                    
-                    // Set the first button as active
-                    toolbar.querySelectorAll('.measurement-button').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    toolbar.querySelector('.measurement-button[data-tool="measure-distance"]').classList.add('active');
-                },
+                // Show card
+                infoCard.classList.add('visible');
+            },
+            
+            // Hide utility info card
+            hideUtilityInfoCard: function() {
+                const infoCard = document.getElementById('utility-info-card');
+                infoCard.classList.remove('visible');
+            },
+            
+            // Show add utility modal
+            showAddUtilityModal: function() {
+                const modal = document.getElementById('add-utility-modal');
                 
-                // Hide measurement toolbar
-                hideMeasurementToolbar: function() {
-                    const toolbar = document.getElementById('measurement-toolbar');
-                    toolbar.classList.remove('visible');
-                },
+                // Reset form values
+                document.querySelectorAll('#add-utility-modal .utility-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
                 
-                // Show add annotation modal
-                showAddAnnotationModal: function() {
-                    const modal = document.getElementById('add-annotation-modal');
-                    
-                    // Reset form
-                    document.getElementById('annotation-text').value = '';
-                    
-                    // Show modal
-                    modal.classList.add('visible');
-                    modal.querySelector('.modal-container').style.opacity = '0';
-                    
-                    setTimeout(() => {
-                        modal.querySelector('.modal-container').style.opacity = '1';
-                    }, 10);
-                },
+                // Select current utility type
+                document.querySelector(`#add-utility-modal .utility-option[data-type="${AppState.activeUtilityType}"]`).classList.add('selected');
+                
+                // Set line type to current
+                if (AppState.activeLineType === 'main') {
+                    document.getElementById('main-type').checked = true;
+                } else {
+                    document.getElementById('service-type').checked = true;
+                }
+                
+                // Reset other form fields
+                document.getElementById('utility-size').value = '4';
+                document.getElementById('utility-depth').value = '3';
+                document.getElementById('utility-material').value = 'PVC';
+                document.getElementById('utility-condition').value = 'Good';
+                document.getElementById('utility-photo').value = '';
+                document.getElementById('utility-notes').value = '';
+                
+                // Show modal
+                modal.classList.add('visible');
+                modal.querySelector('.modal-container').style.opacity = '0';
+                
+                setTimeout(() => {
+                    modal.querySelector('.modal-container').style.opacity = '1';
+                }, 10);
+            },
+            
+            // Hide add utility modal
+            hideAddUtilityModal: function() {
+                const modal = document.getElementById('add-utility-modal');
+                modal.querySelector('.modal-container').style.opacity = '0';
+                
+                setTimeout(() => {
+                    modal.classList.remove('visible');
+                }, 300);
+            },
+            
+            // Show add structure modal
+            showAddStructureModal: function() {
+                const modal = document.getElementById('add-structure-modal');
+                
+                // Reset form values
+                document.querySelectorAll('#add-structure-modal .structure-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                
+                // Reset form fields
+                document.getElementById('structure-size').value = '24';
+                document.getElementById('structure-depth').value = '3';
+                document.getElementById('structure-material').value = 'Concrete';
+                document.getElementById('structure-condition').value = 'Good';
+                document.getElementById('structure-photo').value = '';
+                document.getElementById('structure-notes').value = '';
+                
+                // Show modal
+                modal.classList.add('visible');
+                modal.querySelector('.modal-container').style.opacity = '0';
+                
+                setTimeout(() => {
+                    modal.querySelector('.modal-container').style.opacity = '1';
+                }, 10);
+            },
+            
+            // Hide add structure modal
+            hideAddStructureModal: function() {
+                const modal = document.getElementById('add-structure-modal');
+                modal.querySelector('.modal-container').style.opacity = '0';
+                
+                setTimeout(() => {
+                    modal.classList.remove('visible');
+                }, 300);
+            },
+            
+            // Toggle layers panel
+            toggleLayersPanel: function() {
+                const panel = document.getElementById('layers-panel');
+                
+                if (panel.classList.contains('visible')) {
+                    this.hideLayersPanel();
+                } else {
+                    this.showLayersPanel();
+                }
+            },
+            
+            // Show layers panel
+            showLayersPanel: function() {
+                const panel = document.getElementById('layers-panel');
+                panel.classList.add('visible');
+            },
+            
+            // Hide layers panel
+            hideLayersPanel: function() {
+                const panel = document.getElementById('layers-panel');
+                panel.classList.remove('visible');
+            },
+            
+            // Show main menu
+            showMainMenu: function() {
+                const panel = document.getElementById('main-menu-panel');
+                panel.classList.add('visible');
+            },
+            
+            // Hide main menu
+            hideMainMenu: function() {
+                const panel = document.getElementById('main-menu-panel');
+                panel.classList.remove('visible');
+            },
+            
+            // Show measurement toolbar
+            showMeasurementToolbar: function() {
+                const toolbar = document.getElementById('measurement-toolbar');
+                toolbar.classList.add('visible');
+                
+                // Set the first button as active
+                toolbar.querySelectorAll('.measurement-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                toolbar.querySelector('.measurement-button[data-tool="measure-distance"]').classList.add('active');
+            },
+            
+            // Hide measurement toolbar
+            hideMeasurementToolbar: function() {
+                const toolbar = document.getElementById('measurement-toolbar');
+                toolbar.classList.remove('visible');
+            },
+            
+            // Show add annotation modal
+            showAddAnnotationModal: function() {
+                const modal = document.getElementById('add-annotation-modal');
+                
+                // Reset form
+                document.getElementById('annotation-text').value = '';
+                
+                // Show modal
+                modal.classList.add('visible');
+                modal.querySelector('.modal-container').style.opacity = '0';
+                
+                setTimeout(() => {
+                    modal.querySelector('.modal-container').style.opacity = '1';
+                }, 10);
+            },
                 
                 // Hide add annotation modal
                 hideAddAnnotationModal: function() {
@@ -6566,7 +6573,7 @@
                         modal.classList.remove('visible');
                     });
                 },
-
+                
                 // Show confirm drawing button
                 showConfirmDrawingButton: function() {
                     const btn = document.getElementById('confirm-drawing-btn');
@@ -6788,29 +6795,29 @@
                             <div class="proximity-alert-title">
                                 <i class="fas fa-${icons[utility.type]}"></i>
                                 <span>${typeNames[utility.type]} Line Nearby</span>
-                    </div>
+                            </div>
                             <button class="proximity-alert-dismiss" data-utility-id="${utility.id}">
                                 <i class="fas fa-times"></i>
                             </button>
-                </div>
+                        </div>
                         <div class="proximity-alert-body">
                             <div class="proximity-alert-info">
                                 <div class="proximity-info-item">
                                     <div class="proximity-info-label">Line Type</div>
                                     <div class="proximity-info-value">${utility.lineType === 'main' ? 'Main Line' : 'Service Line'}</div>
-                </div>
+                                </div>
                                 <div class="proximity-info-item">
                                     <div class="proximity-info-label">Size</div>
                                     <div class="proximity-info-value">${utility.size ? utility.size + ' in' : 'UNKNOWN'}</div>
-                </div>
+                                </div>
                                 <div class="proximity-info-item">
                                     <div class="proximity-info-label">Depth</div>
                                     <div class="proximity-info-value">${utility.depth ? utility.depth + ' ft' : 'UNKNOWN'}</div>
-                </div>
+                                </div>
                                 <div class="proximity-info-item">
                                     <div class="proximity-info-label">Material</div>
                                     <div class="proximity-info-value">${utility.material || 'UNKNOWN'}</div>
-                </div>
+                                </div>
                             </div>
                         </div>
                         <div class="proximity-alert-footer">
@@ -6951,7 +6958,7 @@
                     UI.hideUtilityInfoCard();
                     
                     // Handle based on current mode and state
-                    if (AppState.isMeasuring) {
+                if (AppState.isMeasuring) {
                         this.handleMeasurementClick(e);
                         return;
                     }
@@ -7178,24 +7185,6 @@
                         connections: []
                     };
                     
-                    // Ask for details using simple browser prompts
-                    const sizeStr = prompt("Enter size (inches):", utility.size);
-                    if (sizeStr !== null) utility.size = parseFloat(sizeStr) || 4;
-                    
-                    const depthStr = prompt("Enter depth (feet):", utility.depth);
-                    if (depthStr !== null) utility.depth = parseFloat(depthStr) || 3;
-                    
-                    const materials = ["PVC", "Cast Iron", "Ductile Iron", "Copper", "HDPE", "Steel", "Clay", "Concrete", "Unknown"];
-                    const material = prompt("Enter material (" + materials.join(", ") + "):", utility.material);
-                    if (material !== null) utility.material = material;
-                    
-                    const conditions = ["Excellent", "Good", "Fair", "Poor", "Critical", "Unknown"];
-                    const condition = prompt("Enter condition (" + conditions.join(", ") + "):", utility.condition);
-                    if (condition !== null) utility.condition = condition;
-                    
-                    const notes = prompt("Enter notes (optional):", "");
-                    if (notes !== null) utility.notes = notes;
-                    
                     // Handle connection to main if available
                     if (AppState.activeLineType === 'service' && AppState.potentialConnection) {
                         const mainLine = AppState.potentialConnection.mainLine;
@@ -7226,7 +7215,7 @@
                         utility.connector = connector;
                         
                         UI.showToast('Service connected to main line', 'success');
-                    } else {
+                } else {
                         // No connection, just a regular utility line
                         UI.showToast('Utility line added successfully', 'success');
                     }
@@ -7240,27 +7229,684 @@
                     // Clean up drawing state
                     this.cancelDrawing();
                     
+                    // Show the utility details modal to allow the user to edit details
+                    UI.showUtilityDetailsModal(utility);
+                    
                     // Save data
                     DataStore.saveData();
                 },
                 
-                // Finalize utility with details
-                finalizeUtility: function() {
-                    const utility = AppState.tempUtility;
-                    if (!utility) {
-                        UI.showToast('Error: No utility data available', 'error');
+                // Cancel drawing
+                cancelDrawing: function() {
+                    // Reset drawing state
+                    AppState.isDrawing = false;
+                    AppState.drawingPoints = [];
+                    AppState.potentialConnection = null;
+                    
+                    // Remove temp line if exists
+                    if (AppState.tempLine) {
+                        MapController.map.removeLayer(AppState.tempLine);
+                        AppState.tempLine = null;
+                    }
+                    
+                    // Remove connection point marker if exists
+                    if (AppState.connectionPointMarker) {
+                        MapController.map.removeLayer(AppState.connectionPointMarker);
+                        AppState.connectionPointMarker = null;
+                    }
+                    
+                    // Update UI
+                    document.body.style.cursor = '';
+                    UI.hideStatusBar();
+                    UI.hideConfirmDrawingButton();
+                    UI.hideConnectionIndicator();
+                },
+                
+                // Handle add utility form submission
+                handleAddUtility: function() {
+                    // Get selected utility type
+                    const selectedTypeEl = document.querySelector('#add-utility-modal .utility-option.selected');
+                    if (!selectedTypeEl) {
+                        UI.showToast('Please select a utility type', 'warning');
                         return;
                     }
                     
-                    // Handle connection to main if pending
-                    if (utility.pendingConnection) {
-                        const mainLine = utility.pendingConnection.mainLine;
-                        const connectionPoint = utility.pendingConnection.connectionPoint;
+                    const utilityType = selectedTypeEl.getAttribute('data-type');
+                    
+                    // Get line type
+                    const lineType = document.querySelector('input[name="line-type"]:checked').value;
+                    
+                    // Get other form values
+                    const size = parseFloat(document.getElementById('utility-size').value) || 4;
+                    const depth = parseFloat(document.getElementById('utility-depth').value) || 3;
+                    const material = document.getElementById('utility-material').value;
+                    const condition = document.getElementById('utility-condition').value;
+                    const notes = document.getElementById('utility-notes').value;
+                    
+                    // Process photo if uploaded
+                    const photoInput = document.getElementById('utility-photo');
+                    let imageData = null;
+                    
+                    if (photoInput.files && photoInput.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            imageData = e.target.result;
+                            
+                            // Create and add utility with image
+                            createUtility(imageData);
+                        };
+                        reader.readAsDataURL(photoInput.files[0]);
+                } else {
+                        // Create utility without image
+                        createUtility(null);
+                    }
+                    
+                    function createUtility(imageData) {
+                        // Must have a location
+                        if (!AppState.tempLocation) {
+                            UI.showToast('No location selected', 'error');
+                            return;
+                        }
                         
-                        // Record the connection in both utilities
-                        utility.connections.push({
-                            type: 'main',
-                            targetId: mainLine.id,
+                        // For discovery mode, we add a short segment
+                        const startPoint = AppState.tempLocation;
+                        
+                        // Create a second point 10 meters in the direction of 0 degrees (north)
+                        // This will be updated later when the direction is known
+                        const endPoint = L.latLng(
+                            startPoint.lat + 0.0001, // Approximately 10 meters north
+                            startPoint.lng
+                        );
+                        
+                        // Create utility object
+                        const utility = {
+                            id: DataStore.generateId('utility'),
+                            type: utilityType,
+                            lineType: lineType,
+                            points: [startPoint, endPoint],
+                            size: size,
+                            depth: depth,
+                            material: material,
+                            condition: condition,
+                            date: new Date().toISOString(),
+                            notes: notes,
+                            imageData: imageData,
+                            connections: []
+                        };
+                        
+                        // Add to data store
+                        DataStore.utilities[utilityType].push(utility);
+                        
+                        // Add to map
+                        MapController.addUtilityLine(utility);
+                        
+                        // Hide modal
+                        UI.hideAddUtilityModal();
+                        
+                        // Show success message
+                        UI.showToast('Utility added successfully', 'success');
+                        
+                        // Clear temp location
+                        AppState.tempLocation = null;
+                        
+                        // Save data
+                        DataStore.saveData();
+                    }
+                },
+                
+                // Handle add structure form submission
+                handleAddStructure: function() {
+                    // Get selected structure type
+                    const selectedEl = document.querySelector('#add-structure-modal .structure-option.selected');
+                    if (!selectedEl) {
+                        UI.showToast('Please select a structure type', 'warning');
+                        return;
+                    }
+                    
+                    const structureType = selectedEl.getAttribute('data-structure');
+                    const utilityType = selectedEl.getAttribute('data-utility');
+                    
+                    // Get form values
+                    const size = parseFloat(document.getElementById('structure-size').value) || 24;
+                    const depth = parseFloat(document.getElementById('structure-depth').value) || 3;
+                    const material = document.getElementById('structure-material').value;
+                    const condition = document.getElementById('structure-condition').value;
+                    const notes = document.getElementById('structure-notes').value;
+                    
+                    // Process photo if uploaded
+                    const photoInput = document.getElementById('structure-photo');
+                    let imageData = null;
+                    
+                    if (photoInput.files && photoInput.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            imageData = e.target.result;
+                            
+                            // Create and add structure with image
+                            createStructure(imageData);
+                        };
+                        reader.readAsDataURL(photoInput.files[0]);
+                } else {
+                        // Create structure without image
+                        createStructure(null);
+                    }
+                    
+                    function createStructure(imageData) {
+                        // Must have a location
+                        if (!AppState.tempLocation) {
+                            UI.showToast('No location selected', 'error');
+                            return;
+                        }
+                        
+                        // Create structure object
+                        const structure = {
+                            id: DataStore.generateId('structure'),
+                            type: utilityType,
+                            structureType: structureType,
+                            latlng: AppState.tempLocation,
+                            size: size,
+                            depth: depth,
+                            material: material,
+                            condition: condition,
+                            date: new Date().toISOString(),
+                            notes: notes,
+                            imageData: imageData,
+                            connections: []
+                        };
+                        
+                        // Add to data store
+                        DataStore.structures[utilityType].push(structure);
+                        
+                        // Add to map
+                        MapController.addStructureMarker(structure);
+                        
+                        // Hide modal
+                        UI.hideAddStructureModal();
+                        
+                        // Show success message
+                        UI.showToast('Structure added successfully', 'success');
+                        
+                        // Clear temp location
+                        AppState.tempLocation = null;
+                        
+                        // Save data
+                        DataStore.saveData();
+                    }
+                },
+                
+                // Delete the currently selected element
+                deleteSelectedElement: function() {
+                    if (!AppState.selectedElement) return;
+                    
+                    if (AppState.selectedElement.type === 'utility') {
+                        const utility = AppState.selectedElement.element;
+                        
+                        // Remove from map
+                        if (utility.line) {
+                            MapController.utilityLayers[utility.type].removeLayer(utility.line);
+                        }
+                        
+                        if (utility.marker) {
+                            MapController.utilityLayers[utility.type].removeLayer(utility.marker);
+                        }
+                        
+                        // Remove from data store
+                        const utilities = DataStore.utilities[utility.type];
+                        const index = utilities.findIndex(u => u.id === utility.id);
+                        
+                        if (index >= 0) {
+                            utilities.splice(index, 1);
+                        }
+                        
+                        UI.showToast('Utility deleted', 'success');
+                    } 
+                    else if (AppState.selectedElement.type === 'structure') {
+                        const structure = AppState.selectedElement.element;
+                        
+                        // Remove from map
+                        if (structure.marker) {
+                            MapController.structureLayers[structure.type].removeLayer(structure.marker);
+                        }
+                        
+                        // Remove from data store
+                        const structures = DataStore.structures[structure.type];
+                        const index = structures.findIndex(s => s.id === structure.id);
+                        
+                        if (index >= 0) {
+                            structures.splice(index, 1);
+                        }
+                        
+                        UI.showToast('Structure deleted', 'success');
+                    }
+                    
+                    // Clear selected element
+                    AppState.selectedElement = null;
+                    
+                    // Save data
+                    DataStore.saveData();
+                },
+                
+                // Toggle measurement mode
+                toggleMeasurementMode: function() {
+                    if (AppState.isMeasuring) {
+                        this.cancelMeasurement();
+                } else {
+                        this.startMeasurement();
+                    }
+                },
+                
+                // Start measurement mode
+                startMeasurement: function() {
+                    // Cancel any active drawing
+                    this.cancelDrawing();
+                    
+                    // Set measurement state
+                    AppState.isMeasuring = true;
+                    AppState.measurePoints = [];
+                    
+                    // Update UI
+                    document.getElementById('measure-btn').classList.add('active');
+                    UI.showMeasurementToolbar();
+                    UI.showStatusBar('Click on the map to start measuring');
+                    
+                    // Change cursor
+                    document.body.style.cursor = 'crosshair';
+                },
+                
+                // Cancel measurement mode
+                cancelMeasurement: function() {
+                    // Reset measurement state
+                    AppState.isMeasuring = false;
+                    AppState.measurePoints = [];
+                    
+                    // Remove temp line if exists
+                    if (AppState.measureLine) {
+                        MapController.map.removeLayer(AppState.measureLine);
+                        AppState.measureLine = null;
+                    }
+                    
+                    // Update UI
+                    document.getElementById('measure-btn').classList.remove('active');
+                    UI.hideMeasurementToolbar();
+                    UI.hideStatusBar();
+                    
+                    // Reset cursor
+                    document.body.style.cursor = '';
+                },
+                
+                // Handle click in measurement mode
+                handleMeasurementClick: function(e) {
+                    if (!AppState.isMeasuring) return;
+                    
+                    // Get active measurement tool
+                    const activeTool = document.querySelector('#measurement-toolbar .measurement-button.active');
+                    if (!activeTool) return;
+                    
+                    const toolType = activeTool.getAttribute('data-tool');
+                    
+                    if (toolType === 'measure-distance') {
+                        // Distance measurement
+                        if (AppState.measurePoints.length === 0) {
+                            // First point
+                            AppState.measurePoints.push(e.latlng);
+                            UI.showStatusBar('Click on second point to complete measurement');
+                        } else if (AppState.measurePoints.length === 1) {
+                            // Second point - complete measurement
+                            AppState.measurePoints.push(e.latlng);
+                            
+                            // Create measurement line
+                            MapController.addMeasurementLine(AppState.measurePoints);
+                            
+                            // Reset for next measurement
+                            AppState.measurePoints = [];
+                            
+                            // Clean up temp line
+                            if (AppState.measureLine) {
+                                MapController.map.removeLayer(AppState.measureLine);
+                                AppState.measureLine = null;
+                            }
+                            
+                            UI.showStatusBar('Measurement added. Click to start a new measurement.');
+                        }
+                    } else if (toolType === 'add-note') {
+                        // Add annotation
+                        AppState.tempLocation = e.latlng;
+                        UI.showAddAnnotationModal();
+                    }
+                },
+                
+                // Start measuring from a selected element
+                startMeasuringFromElement: function(element) {
+                    // Enable measurement mode
+                    this.startMeasurement();
+                    
+                    // Get starting point
+                    let startPoint = null;
+                    
+                    if (element.type === 'utility') {
+                        // For utilities, use the first point
+                        startPoint = element.points[0];
+                    } else if (element.type === 'structure') {
+                        // For structures, use their position
+                        startPoint = element.latlng;
+                    }
+                    
+                    if (startPoint) {
+                        // Add as first measurement point
+                        AppState.measurePoints = [startPoint];
+                        UI.showStatusBar('Now click on the target point to complete measurement');
+                    }
+                },
+                
+                // Handle measurement toolbar button click
+                handleMeasurementTool: function(tool) {
+                    // Update button states
+                    document.querySelectorAll('#measurement-toolbar .measurement-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                    
+                    document.querySelector(`#measurement-toolbar .measurement-button[data-tool="${tool}"]`).classList.add('active');
+                    
+                    // Handle tool actions
+                    if (tool === 'measure-distance') {
+                        // Reset measurement points
+                        AppState.measurePoints = [];
+                        UI.showStatusBar('Click on the map to start measuring');
+                    } else if (tool === 'add-note') {
+                        // Nothing to do, just wait for click
+                        UI.showStatusBar('Click on the map to add a note');
+                    } else if (tool === 'clear-measurements') {
+                        // Clear all measurements
+                        MapController.clearMeasurements();
+                        UI.showToast('Measurements cleared', 'info');
+                        
+                        // Reset to measure distance
+                        this.handleMeasurementTool('measure-distance');
+                    } else if (tool === 'exit-measure') {
+                        // Exit measurement mode
+                        this.cancelMeasurement();
+                    }
+                },
+                
+                // Add annotation at current temp location
+                addAnnotation: function() {
+                    // Get annotation text
+                    const text = document.getElementById('annotation-text').value.trim();
+                    
+                    if (!text) {
+                        UI.showToast('Please enter annotation text', 'warning');
+                        return;
+                    }
+                    
+                    if (!AppState.tempLocation) {
+                        UI.showToast('No location selected', 'error');
+                        UI.hideAddAnnotationModal();
+                        return;
+                    }
+                    
+                    // Create annotation object
+                    const annotation = {
+                        id: DataStore.generateId('annotation'),
+                        text: text,
+                        latlng: AppState.tempLocation,
+                        date: new Date().toISOString()
+                    };
+                    
+                    // Add to data store
+                    DataStore.annotations.push(annotation);
+                    
+                    // Add to map
+                    MapController.addAnnotation(annotation);
+                    
+                    // Hide modal
+                    UI.hideAddAnnotationModal();
+                    
+                    // Show success message
+                    UI.showToast('Annotation added', 'success');
+                    
+                    // Clear temp location
+                    AppState.tempLocation = null;
+                    
+                    // Save data
+                    DataStore.saveData();
+                },
+                
+                // Connect utility with another utility or structure
+                connectUtility: function() {
+                    if (!AppState.selectedElement || AppState.selectedElement.type !== 'utility') {
+                        UI.hideConnectUtilityModal();
+                        return;
+                    }
+                    
+                    const utility = AppState.selectedElement.element;
+                    
+                    // Get connection type
+                    const connectionType = document.getElementById('connection-type').value;
+                    
+                    // Get connection target (if available)
+                    const targetId = document.getElementById('connection-target').value;
+                    let target = null;
+                    
+                    if (targetId) {
+                        // Try to find target in utilities first
+                        target = DataStore.getUtilityById(targetId);
+                        
+                        // If not found, check structures
+                        if (!target) {
+                            target = DataStore.getStructureById(targetId);
+                        }
+                    }
+                    
+                    // Get notes
+                    const notes = document.getElementById('connection-notes').value;
+                    
+                    // Create connection based on type
+                    if (connectionType === 'tap' && target) {
+                        // Tap into a main line
+                        this.createTapConnection(utility, target, notes);
+                    } else if (connectionType === 'extend' && target) {
+                        // Extend from an existing line
+                        this.createExtendConnection(utility, target, notes);
+                    } else if (connectionType === 'connect-structure' && target) {
+                        // Connect to a structure
+                        this.createStructureConnection(utility, target, notes);
+                    }
+                    
+                    // Hide modal
+                    UI.hideConnectUtilityModal();
+                    
+                    // Save data
+                    DataStore.saveData();
+                },
+                
+                // Create a tap connection from a service to a main
+                createTapConnection: function(service, main, notes) {
+                    if (!service || !main) return;
+                    
+                    // Verify main is a main line
+                    if (main.lineType !== 'main') {
+                        UI.showToast('Target must be a main line for tap connection', 'warning');
+                        return;
+                    }
+                    
+                    // Find closest point on main to service start point
+                    const servicePoint = service.points[0];
+                    const mainPoints = main.line.getLatLngs();
+                    
+                    let closestDistance = Infinity;
+                    let closestPoint = null;
+                    let segmentIndex = 0;
+                    
+                    for (let i = 0; i < mainPoints.length - 1; i++) {
+                        const dist = MapController.distanceToSegment(
+                            servicePoint,
+                            mainPoints[i],
+                            mainPoints[i + 1]
+                        );
+                        
+                        if (dist < closestDistance) {
+                            closestDistance = dist;
+                            
+                            // Calculate closest point on the segment
+                            const p = L.latLng(servicePoint);
+                            const p1 = L.latLng(mainPoints[i]);
+                            const p2 = L.latLng(mainPoints[i + 1]);
+                            
+                            // Project point onto segment
+                            const x = p.lng;
+                            const y = p.lat;
+                            const x1 = p1.lng;
+                            const y1 = p1.lat;
+                            const x2 = p2.lng;
+                            const y2 = p2.lat;
+                            
+                            const A = x - x1;
+                            const B = y - y1;
+                            const C = x2 - x1;
+                            const D = y2 - y1;
+                            
+                            const dot = A * C + B * D;
+                            const lenSq = C * C + D * D;
+                            let param = -1;
+                            
+                            if (lenSq !== 0) {
+                                param = dot / lenSq;
+                            }
+                            
+                            let xx, yy;
+                            
+                            if (param < 0) {
+                                xx = x1;
+                                yy = y1;
+                            } else if (param > 1) {
+                                xx = x2;
+                                yy = y2;
+                            } else {
+                                xx = x1 + param * C;
+                                yy = y1 + param * D;
+                            }
+                            
+                            closestPoint = L.latLng(yy, xx);
+                            segmentIndex = i;
+                        }
+                    }
+                    
+                    if (!closestPoint) {
+                        UI.showToast('Could not find tap point on main', 'error');
+                        return;
+                    }
+                    
+                    // Record the connection
+                    service.connections.push({
+                        type: 'tap',
+                        targetId: main.id,
+                        point: closestPoint,
+                        notes: notes,
+                        date: new Date().toISOString()
+                    });
+                    
+                    main.connections.push({
+                        type: 'tapped',
+                        targetId: service.id,
+                        point: closestPoint,
+                        notes: notes,
+                        date: new Date().toISOString()
+                    });
+                    
+                    // Update service line points to connect to the tap point
+                    service.points[0] = closestPoint;
+                    service.line.setLatLngs(service.points);
+                    
+                    // Update service marker position
+                    if (service.marker) {
+                        service.marker.setLatLng(closestPoint);
+                    }
+                    
+                    // Show success message
+                    UI.showToast('Service connected to main', 'success');
+                },
+                
+                // Create an extend connection between two utilities
+                createExtendConnection: function(utility1, utility2, notes) {
+                    if (!utility1 || !utility2) return;
+                    
+                    // Find the closest endpoints between the two utilities
+                    const u1Points = utility1.points;
+                    const u2Points = utility2.points;
+                    
+                    const u1Start = u1Points[0];
+                    const u1End = u1Points[u1Points.length - 1];
+                    const u2Start = u2Points[0];
+                    const u2End = u2Points[u2Points.length - 1];
+                    
+                    // Calculate distances between all endpoint combinations
+                    const distances = [
+                        { from: u1End, to: u2Start, fromIndex: u1Points.length - 1, toIndex: 0, dist: MapController.map.distance(u1End, u2Start) },
+                        { from: u1End, to: u2End, fromIndex: u1Points.length - 1, toIndex: u2Points.length - 1, dist: MapController.map.distance(u1End, u2End) },
+                        { from: u1Start, to: u2Start, fromIndex: 0, toIndex: 0, dist: MapController.map.distance(u1Start, u2Start) },
+                        { from: u1Start, to: u2End, fromIndex: 0, toIndex: u2Points.length - 1, dist: MapController.map.distance(u1Start, u2End) }
+                    ];
+                    
+                    // Sort by distance
+                    distances.sort((a, b) => a.dist - b.dist);
+                    
+                    // Get closest pair
+                    const closest = distances[0];
+                    
+                    // Record the connection for both utilities
+                    utility1.connections.push({
+                        type: 'extend',
+                        targetId: utility2.id,
+                        point: closest.from,
+                        notes: notes,
+                        date: new Date().toISOString()
+                    });
+                    
+                    utility2.connections.push({
+                        type: 'extend',
+                        targetId: utility1.id,
+                        point: closest.to,
+                        notes: notes,
+                        date: new Date().toISOString()
+                    });
+                    
+                    // Show success message
+                    UI.showToast('Utilities connected', 'success');
+                },
+                
+                // Create a connection from a utility to a structure
+                createStructureConnection: function(utility, structure, notes) {
+                    if (!utility || !structure) return;
+                    
+                    // Find the closest endpoint of the utility to the structure
+                    const utilityPoints = utility.points;
+                    const structureLatLng = structure.latlng;
+                    
+                    const startDist = MapController.map.distance(utilityPoints[0], structureLatLng);
+                    const endDist = MapController.map.distance(utilityPoints[utilityPoints.length - 1], structureLatLng);
+                    
+                    let connectionPoint;
+                    if (startDist < endDist) {
+                        connectionPoint = utilityPoints[0];
+                        
+                        // Update utility line points to connect to the structure
+                        utility.points[0] = structureLatLng;
+                        utility.line.setLatLngs(utility.points);
+                        
+                        // Update utility marker position
+                        if (utility.marker) {
+                            utility.marker.setLatLng(structureLatLng);
+                        }
+                    } else {
+                        connectionPoint = utilityPoints[utilityPoints.length - 1];
+                        
+                        // Update utility line points to connect to the structure
+                        utility.points[utilityPoints.length - 1] = structureLatLng;
+                        utility.line.setLatLngs(utility.points);
+                    }
+                    
+                    // Record the connection
+                    utility.connections.push({
                         type: 'structure',
                         targetId: structure.id,
                         point: structureLatLng,
@@ -7478,8 +8124,8 @@
     <div class="excavation-mode-indicator" id="excavation-indicator">
         <i class="fas fa-exclamation-triangle"></i>
         <span>EXCAVATION MODE ACTIVE</span>
-                </div>
-                
+    </div>
+
     <!-- Proximity Alert Container -->
     <div class="proximity-alert-container" id="proximity-alerts"></div>
 
@@ -7494,7 +8140,7 @@
         <div class="exit-confirmation">
             <div class="exit-confirmation-title">
                 <i class="fas fa-exclamation-triangle"></i> Exit Excavation Mode?
-                </div>
+            </div>
             <div class="exit-confirmation-message">
                 Are you sure you want to exit excavation mode? This will disable real-time proximity alerts.
             </div>
@@ -7505,88 +8151,107 @@
         </div>
     </div>
 
-    <!-- Force element positioning script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Force positions immediately after DOM loads
-            setTimeout(function() {
-                // Position utility toolbar
-                const utilityToolbar = document.getElementById('utility-toolbar');
-                if (utilityToolbar) {
-                    utilityToolbar.style.position = 'absolute';
-                    utilityToolbar.style.top = '5px';
-                    utilityToolbar.style.left = '50%';
-                    utilityToolbar.style.transform = 'translateX(-50%)';
-                    utilityToolbar.style.maxWidth = '70%';
-                    utilityToolbar.style.padding = '4px';
-                    utilityToolbar.style.zIndex = '2000';
-                    
-                    // Make buttons smaller
-                    const buttons = utilityToolbar.querySelectorAll('.utility-button');
-                    buttons.forEach(function(btn) {
-                        btn.style.minWidth = '38px';
-                        btn.style.padding = '2px 6px';
-                        btn.style.gap = '0px';
-                        
-                        const icon = btn.querySelector('i');
-                        if (icon) icon.style.fontSize = '0.85rem';
-                        
-                        const label = btn.querySelector('.utility-label');
-                        if (label) label.style.fontSize = '0.5rem';
-                    });
-                }
-                
-                // Position action buttons
-                const actionButtons = document.getElementById('action-buttons');
-                if (actionButtons) {
-                    actionButtons.style.position = 'absolute';
-                    actionButtons.style.right = '15px';
-                    actionButtons.style.bottom = '150px'; /* Lowered from 280px to 150px */
-                    actionButtons.style.zIndex = '2000';
-                }
-                
-                // Position line type selector lower
-                const lineSelector = document.getElementById('line-type-selector');
-                if (lineSelector) {
-                    lineSelector.style.top = 'calc(var(--space-lg) + 120px)';
-                }
-                
-                // Position mode toggle lower
-                const modeToggle = document.getElementById('mode-toggle');
-                if (modeToggle) {
-                    modeToggle.style.position = 'absolute';
-                    modeToggle.style.left = '50%';
-                    modeToggle.style.bottom = '80px';
-                    modeToggle.style.transform = 'translateX(-50%)';
-                    modeToggle.style.zIndex = '2000';
-                }
-            }, 500);
-            
-            // Ensure positions are maintained
-            setInterval(function() {
-                const utilityToolbar = document.getElementById('utility-toolbar');
-                if (utilityToolbar) {
-                    utilityToolbar.style.top = '5px';
-                    utilityToolbar.style.maxWidth = '70%';
-                }
-                
-                const actionButtons = document.getElementById('action-buttons');
-                if (actionButtons) {
-                    actionButtons.style.bottom = '150px'; /* Lowered from 280px to 150px */
-                }
-                
-                const lineSelector = document.getElementById('line-type-selector');
-                if (lineSelector) {
-                    lineSelector.style.top = 'calc(var(--space-lg) + 120px)';
-                }
-                
-                const modeToggle = document.getElementById('mode-toggle');
-                if (modeToggle) {
-                    modeToggle.style.bottom = '80px';
-                }
-            }, 1000);
-        });
-    </script>
+    <!-- Utility Details Modal -->
+    <div class="modal-overlay" id="utility-details-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">Edit Utility Details</div>
+                <button class="modal-close" id="close-utility-details">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Size (inches)</label>
+                    <input type="number" class="form-control" id="utility-details-size" placeholder="Size in inches" step="0.5" min="0.5">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Depth (feet)</label>
+                    <input type="number" class="form-control" id="utility-details-depth" placeholder="Depth in feet" step="0.5" min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Material</label>
+                    <select class="form-control" id="utility-details-material">
+                        <option value="PVC">PVC</option>
+                        <option value="Steel">Steel</option>
+                        <option value="Cast Iron">Cast Iron</option>
+                        <option value="Concrete">Concrete</option>
+                        <option value="Copper">Copper</option>
+                        <option value="HDPE">HDPE</option>
+                        <option value="Clay">Clay</option>
+                        <option value="Unknown">Unknown</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Condition</label>
+                    <select class="form-control" id="utility-details-condition">
+                        <option value="Excellent">Excellent</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                        <option value="Poor">Poor</option>
+                        <option value="Unknown">Unknown</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Photo</label>
+                    <input type="file" class="form-control" id="utility-details-photo" accept="image/*" capture="environment">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" id="utility-details-notes" rows="3" placeholder="Add any notes about this utility..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-utility-details">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="save-utility-details">
+                    <i class="fas fa-check"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connect Utility Modal -->
+    <div class="modal-overlay" id="connect-utility-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">Connect Utility</div>
+                <button class="modal-close" id="close-connect">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Connect To</label>
+                    <select class="form-control" id="connection-target">
+                        <!-- Options will be filled in dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Connection Type</label>
+                    <select class="form-control" id="connection-type">
+                        <option value="tap">Tap/Junction</option>
+                        <option value="valve">Valve</option>
+                        <option value="meter">Meter</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" id="connection-notes" rows="3" placeholder="Add any notes about this connection..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-connect">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="confirm-connect">
+                    <i class="fas fa-check"></i> Connect
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
                 
